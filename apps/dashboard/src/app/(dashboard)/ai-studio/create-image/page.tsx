@@ -1687,12 +1687,12 @@ export default function CreateImagePage() {
                   <button
                     onClick={() => {
                       const activeImages = [...history].filter(img => !img.deletedAt).reverse()
-                      const newIndex = (selectedImageIndex + 1) % activeImages.length
+                      const newIndex = selectedImageIndex === 0 ? activeImages.length - 1 : selectedImageIndex - 1
                       setSelectedImage(activeImages[newIndex])
                       setSelectedImageIndex(newIndex)
                     }}
                     className="absolute left-2 p-2 bg-white/20 hover:bg-white/40 rounded-full transition-colors"
-                    title="Previous image"
+                    title="Newer images"
                   >
                     <ChevronLeft className="w-6 h-6 text-white" />
                   </button>
@@ -1700,12 +1700,12 @@ export default function CreateImagePage() {
                   <button
                     onClick={() => {
                       const activeImages = [...history].filter(img => !img.deletedAt).reverse()
-                      const newIndex = selectedImageIndex === 0 ? activeImages.length - 1 : selectedImageIndex - 1
+                      const newIndex = (selectedImageIndex + 1) % activeImages.length
                       setSelectedImage(activeImages[newIndex])
                       setSelectedImageIndex(newIndex)
                     }}
                     className="absolute right-2 p-2 bg-white/20 hover:bg-white/40 rounded-full transition-colors"
-                    title="Next image"
+                    title="Older images"
                   >
                     <ChevronRight className="w-6 h-6 text-white" />
                   </button>
