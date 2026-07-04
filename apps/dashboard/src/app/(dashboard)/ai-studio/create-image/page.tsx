@@ -284,6 +284,7 @@ export default function CreateImagePage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [history, setHistory] = useState<GeneratedImage[]>([])
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null)
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [credits, setCredits] = useState(100)
   const [workspaceId, setWorkspaceId] = useState<string>('')
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null)
@@ -1432,6 +1433,7 @@ export default function CreateImagePage() {
                     }`}
                     onClick={() => {
                       setSelectedImage(image)
+                      setSelectedImageIndex(idx)
                     }}
                   >
                     <img
@@ -1659,7 +1661,7 @@ export default function CreateImagePage() {
           onClick={() => setSelectedImage(null)}
         >
           <div
-            className="bg-gray-900 rounded-lg overflow-hidden max-w-2xl max-h-[90vh] flex flex-col shadow-2xl"
+            className="bg-gray-900 rounded-lg overflow-hidden max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-gray-700">
@@ -1672,12 +1674,43 @@ export default function CreateImagePage() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-auto flex items-center justify-center p-6 bg-black/50">
+            <div className="flex-1 overflow-auto flex items-center justify-center p-6 bg-black/50 relative">
               <img
                 src={selectedImage.image}
                 alt="Generated"
                 className="max-w-full max-h-full object-contain rounded"
               />
+
+              {/* Navigation Arrows */}
+              {history.filter(img => !img.deletedAt).length > 1 && (
+                <>
+                  <button
+                    onClick={() => {
+                      const activeImages = [...history].filter(img => !img.deletedAt).reverse()
+                      const newIndex = (selectedImageIndex + 1) % activeImages.length
+                      setSelectedImage(activeImages[newIndex])
+                      setSelectedImageIndex(newIndex)
+                    }}
+                    className="absolute left-2 p-2 bg-white/20 hover:bg-white/40 rounded-full transition-colors"
+                    title="Previous image"
+                  >
+                    <ChevronLeft className="w-6 h-6 text-white" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const activeImages = [...history].filter(img => !img.deletedAt).reverse()
+                      const newIndex = selectedImageIndex === 0 ? activeImages.length - 1 : selectedImageIndex - 1
+                      setSelectedImage(activeImages[newIndex])
+                      setSelectedImageIndex(newIndex)
+                    }}
+                    className="absolute right-2 p-2 bg-white/20 hover:bg-white/40 rounded-full transition-colors"
+                    title="Next image"
+                  >
+                    <ChevronRight className="w-6 h-6 text-white" />
+                  </button>
+                </>
+              )}
             </div>
 
             <div className="p-4 border-t border-gray-700 bg-gray-900">
