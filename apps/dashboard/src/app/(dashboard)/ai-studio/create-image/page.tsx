@@ -1033,6 +1033,9 @@ export default function CreateImagePage() {
                   <span className="ml-2 text-xs text-gray-600">Enable</span>
                 </label>
               </div>
+              {!bodyTypeExpanded && (
+                <p className="text-xs text-gray-500 italic">💡 Tip: Enable body type to avoid default slim figures</p>
+              )}
               <div className="space-y-3">
                   {/* Body Type - Multiple Selection */}
                   {bodyTypeExpanded && (
@@ -1113,6 +1116,9 @@ export default function CreateImagePage() {
                         <span className="ml-2 text-xs text-gray-600">Enable</span>
                       </label>
                     </div>
+                    {!hairTypeExpanded && (
+                      <p className="text-xs text-gray-500 italic">💡 Tip: Enable to specify hair type</p>
+                    )}
                     {hairTypeExpanded && (
                     <>
                     <div className="grid grid-cols-2 gap-2">
