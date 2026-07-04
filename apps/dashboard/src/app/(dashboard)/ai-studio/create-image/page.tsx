@@ -1651,6 +1651,78 @@ export default function CreateImagePage() {
           </div>
         </div>
       )}
+
+      {/* Image Overlay Modal */}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div
+            className="bg-gray-900 rounded-lg overflow-hidden max-w-2xl max-h-[90vh] flex flex-col shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-gray-700">
+              <h3 className="text-white font-semibold">Generated Image</h3>
+              <button
+                onClick={() => setSelectedImage(null)}
+                className="p-1 hover:bg-gray-800 rounded transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400 hover:text-white" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto flex items-center justify-center p-6 bg-black/50">
+              <img
+                src={selectedImage.image}
+                alt="Generated"
+                className="max-w-full max-h-full object-contain rounded"
+              />
+            </div>
+
+            <div className="p-4 border-t border-gray-700 bg-gray-900">
+              <div className="mb-4">
+                <p className="text-sm text-gray-400 mb-2">Prompt:</p>
+                <p className="text-sm text-white bg-gray-800 p-3 rounded line-clamp-3">
+                  {selectedImage.prompt}
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(selectedImage.prompt)
+                    alert('Prompt copied!')
+                  }}
+                  className="flex-1 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition-colors flex items-center justify-center gap-2"
+                >
+                  <Copy className="w-4 h-4" /> Copy Prompt
+                </button>
+                <button
+                  onClick={() => {
+                    const link = document.createElement('a')
+                    link.href = selectedImage.image
+                    link.download = `image-${selectedImage.id || selectedImage.timestamp}.jpg`
+                    link.click()
+                  }}
+                  className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors flex items-center justify-center gap-2"
+                >
+                  <Download className="w-4 h-4" /> Download
+                </button>
+                <button
+                  onClick={() => {
+                    handleDeleteImage(selectedImage.id)
+                    setSelectedImage(null)
+                  }}
+                  className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors flex items-center justify-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" /> Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
