@@ -1657,11 +1657,11 @@ export default function CreateImagePage() {
       {/* Image Overlay Modal */}
       {selectedImage && (
         <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 pointer-events-none"
           onClick={() => setSelectedImage(null)}
         >
           <div
-            className="bg-gray-900 rounded-lg overflow-hidden max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative"
+            className="bg-gray-900 rounded-lg overflow-hidden max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative pointer-events-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-gray-700">
