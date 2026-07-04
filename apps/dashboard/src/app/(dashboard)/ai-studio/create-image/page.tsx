@@ -278,6 +278,7 @@ export default function CreateImagePage() {
   // State management
   const [prompt, setPrompt] = useState('')
   const [bodyTypeExpanded, setBodyTypeExpanded] = useState(true)
+  const [hairTypeExpanded, setHairTypeExpanded] = useState(true)
   const [cameraExpanded, setCameraExpanded] = useState(true)
   const [originalPrompt, setOriginalPrompt] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -1013,11 +1014,28 @@ export default function CreateImagePage() {
 
             {/* Body Type */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-black uppercase tracking-widest block">
-                Body Type
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-black uppercase tracking-widest block">
+                  Body Type
+                </label>
+                <label className="inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={bodyTypeExpanded}
+                    onChange={(e) => {
+                      setBodyTypeExpanded(e.target.checked)
+                      if (!e.target.checked) {
+                        setBodyTypes([])
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-xs text-gray-600">Enable</span>
+                </label>
+              </div>
               <div className="space-y-3">
                   {/* Body Type - Multiple Selection */}
+                  {bodyTypeExpanded && (
                   <div>
                     <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">Body Type (up to 2)</label>
                     <div className="grid grid-cols-2 gap-2">
@@ -1053,6 +1071,7 @@ export default function CreateImagePage() {
                       </p>
                     )}
                   </div>
+                  )}
 
                   {/* Ethnicity */}
                   <div>
@@ -1077,7 +1096,25 @@ export default function CreateImagePage() {
 
                   {/* Hair Type - Multiple Selection */}
                   <div>
-                    <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">Hair Type (up to 2)</label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-semibold text-black uppercase tracking-widest block">Hair Type (up to 2)</label>
+                      <label className="inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={hairTypeExpanded}
+                          onChange={(e) => {
+                            setHairTypeExpanded(e.target.checked)
+                            if (!e.target.checked) {
+                              setHairTypes([])
+                            }
+                          }}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="ml-2 text-xs text-gray-600">Enable</span>
+                      </label>
+                    </div>
+                    {hairTypeExpanded && (
+                    <>
                     <div className="grid grid-cols-2 gap-2">
                       {HAIR_TYPES.filter(ht => ht.id !== 'none').map((ht) => (
                         <button
@@ -1109,6 +1146,8 @@ export default function CreateImagePage() {
                           .filter(Boolean)
                           .join(', ')}
                       </p>
+                    )}
+                    </>
                     )}
                   </div>
               </div>
