@@ -47,20 +47,9 @@ class NanoBananaAdapter {
         }
 
         // Add aspect ratio to generation config if specified
+        // Gemini API uses snake_case for parameter names
         if (params.aspectRatio && params.aspectRatio !== '1:1') {
-          // Map aspect ratios to Gemini's expected format
-          const aspectRatioMap: Record<string, string> = {
-            '16:9': '16:9',
-            '9:16': '9:16',
-            '3:4': '3:4',
-            '4:3': '4:3',
-            '21:9': '21:9',
-            '2:3': '2:3',
-          }
-          const geminiAspectRatio = aspectRatioMap[params.aspectRatio]
-          if (geminiAspectRatio) {
-            generationConfig.aspectRatio = geminiAspectRatio
-          }
+          generationConfig.aspect_ratio = params.aspectRatio
         }
 
         const payload = {
