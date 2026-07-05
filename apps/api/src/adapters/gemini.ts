@@ -28,7 +28,7 @@ class GeminiAdapter {
       throw new Error('Gemini API key not configured')
     }
 
-    const prompt = this.buildPrompt(params.prompt, params.style, params.lighting, params.aspectRatio, params.resolution)
+    const basePrompt = this.buildPrompt(params.prompt, params.style, params.lighting, params.aspectRatio, params.resolution)
     const numImages = params.numImages || 1
 
     // Gemini API only generates 1 image per request, so we need to make multiple requests
@@ -37,6 +37,28 @@ class GeminiAdapter {
 
     for (let i = 0; i < numImages; i++) {
       try {
+        // Force facial variation with multiple approaches
+        const facialVariations = [
+          ', generate unique face variant A',
+          ', generate unique face variant B',
+          ', generate unique face variant C',
+          ', generate face variation 1',
+          ', generate face variation 2',
+          ', generate face variation 3',
+          ', different person each image',
+          ', alternative facial appearance',
+          ', distinct individual face',
+          ', unique facial structure',
+          ', varied face variation',
+          ', contrasting facial type',
+        ]
+        const variation = facialVariations[i % facialVariations.length]
+
+        // Build prompt with variation and seed-breaking instructions
+        let prompt = basePrompt
+        prompt += variation
+        prompt += '. Generate a completely different face than previous variations. Each person should have unique and distinct facial features.'
+
         const payload = {
           contents: [
             {
@@ -49,7 +71,7 @@ class GeminiAdapter {
           ],
           generationConfig: {
             responseModalities: ['TEXT', 'IMAGE'],
-            temperature: params.temperature ?? 0.7,
+            temperature: params.temperature ?? 0.9,
           },
         }
 

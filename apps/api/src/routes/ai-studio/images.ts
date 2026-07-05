@@ -490,14 +490,32 @@ export async function imageRoutes(app: FastifyInstance) {
             const urls = img.output_urls ? JSON.parse(img.output_urls) : []
             const validUrl = urls.find((u: string) => u && u.startsWith('http'))
             if (validUrl) {
-              console.log('[Image Generation] Found Supabase URL for migrated image:', img.id.substring(0, 8))
+              // Extract the file path and generate a fresh public URL
+              const filePath = validUrl.includes('ai_images/')
+                ? validUrl.split('ai_images/')[1]?.split('?')[0]
+                : null
+
+              if (filePath) {
+                try {
+                  // Use getPublicUrl to generate a permanent public URL (no expiry)
+                  const { data: publicUrl } = supabase.storage
+                    .from('ai_images')
+                    .getPublicUrl(decodeURIComponent(filePath))
+
+                  if (publicUrl?.publicUrl) {
+                    console.log('[Image Generation] Generated fresh public URL for image:', img.id.substring(0, 8))
+                    return { ...img, output_url: publicUrl.publicUrl }
+                  }
+                } catch (e) {
+                  console.warn('[Image Generation] Failed to regenerate public URL:', e)
+                }
+              }
+              console.log('[Image Generation] Using stored URL for image:', img.id.substring(0, 8))
               return { ...img, output_url: validUrl }
             }
           } catch (e) {
             console.warn('[Image Generation] Failed to parse output_urls for image:', img.id)
           }
-          // If no Supabase URL found, still return the image with its base64 data
-          // This allows old images to still display while we migrate them
           console.log('[Image Generation] Returning base64 image (not yet migrated):', img.id.substring(0, 8))
           return img
         }
