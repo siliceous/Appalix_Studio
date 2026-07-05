@@ -29,7 +29,7 @@ class NanoBananaAdapter {
       throw new Error('Gemini API key not configured')
     }
 
-    const prompt = this.buildPrompt(params.prompt, params.style, params.lighting, params.resolution)
+    const prompt = this.buildPrompt(params.prompt, params.style, params.lighting, params.resolution, params.aspectRatio)
     const numImages = params.numImages || 1
     const allImageUrls: string[] = []
 
@@ -164,8 +164,25 @@ class NanoBananaAdapter {
     ]
   }
 
-  private buildPrompt(userPrompt: string, style?: string, lighting?: string, resolution?: string): string {
+  private buildPrompt(userPrompt: string, style?: string, lighting?: string, resolution?: string, aspectRatio?: string): string {
     let fullPrompt = userPrompt
+
+    // Add aspect ratio to prompt for proper image dimensions
+    if (aspectRatio) {
+      const aspectMap: Record<string, string> = {
+        '1:1': '1:1 square aspect ratio',
+        '16:9': '16:9 widescreen landscape aspect ratio',
+        '9:16': '9:16 portrait tall vertical aspect ratio',
+        '3:4': '3:4 portrait vertical aspect ratio',
+        '4:3': '4:3 landscape horizontal aspect ratio',
+        '21:9': '21:9 ultra-wide cinematic aspect ratio',
+        '2:3': '2:3 portrait vertical aspect ratio',
+      }
+      const aspectHint = aspectMap[aspectRatio] || ''
+      if (aspectHint) {
+        fullPrompt = `${aspectHint}, ${fullPrompt}`
+      }
+    }
 
     if (resolution) {
       const resolutionMap: Record<string, string> = {
