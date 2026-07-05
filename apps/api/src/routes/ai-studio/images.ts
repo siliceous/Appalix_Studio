@@ -497,17 +497,31 @@ export async function imageRoutes(app: FastifyInstance) {
 
               if (filePath) {
                 try {
-                  // Use getPublicUrl to generate a permanent public URL (no expiry)
+                  // Try public URL first
                   const { data: publicUrl } = supabase.storage
                     .from('ai_images')
                     .getPublicUrl(decodeURIComponent(filePath))
 
                   if (publicUrl?.publicUrl) {
-                    console.log('[Image Generation] Generated fresh public URL for image:', img.id.substring(0, 8))
+                    console.log('[Image Generation] Using public URL for image:', img.id.substring(0, 8))
                     return { ...img, output_url: publicUrl.publicUrl }
                   }
+
+                  // If public URL doesn't work, generate a long-lived signed URL (7 days)
+                  const { data: signedUrl, error: signError } = await supabase.storage
+                    .from('ai_images')
+                    .createSignedUrl(decodeURIComponent(filePath), 7 * 24 * 60 * 60) // 7 days
+
+                  if (signedUrl?.signedUrl) {
+                    console.log('[Image Generation] Generated 7-day signed URL for image:', img.id.substring(0, 8))
+                    return { ...img, output_url: signedUrl.signedUrl }
+                  }
+
+                  if (signError) {
+                    console.warn('[Image Generation] Failed to create signed URL:', signError.message)
+                  }
                 } catch (e) {
-                  console.warn('[Image Generation] Failed to regenerate public URL:', e)
+                  console.warn('[Image Generation] Failed to regenerate URL:', e)
                 }
               }
               console.log('[Image Generation] Using stored URL for image:', img.id.substring(0, 8))
