@@ -480,7 +480,7 @@ export async function imageRoutes(app: FastifyInstance) {
       }
 
       // Process images: handle both Supabase URLs and base64 data
-      const processedImages = (generations || []).map((img: any) => {
+      const processedImages = await Promise.all((generations || []).map(async (img: any) => {
         // Check if output_url is a signed URL (starts with http) or base64 (starts with data:)
         const isBase64 = img.output_url?.startsWith('data:')
 
@@ -535,7 +535,7 @@ export async function imageRoutes(app: FastifyInstance) {
         }
 
         return img
-      }).filter((img) => img !== null && img !== undefined)
+      })).then(imgs => imgs.filter((img) => img !== null && img !== undefined))
 
       return reply.send({
         images: processedImages,
