@@ -391,12 +391,22 @@ export default function CreateImagePage() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Handle Escape for both modals
+      if (e.key === 'Escape') {
+        if (selectedImage) {
+          setSelectedImage(null)
+          return
+        }
+        if (fullscreenImage) {
+          setFullscreenImage(null)
+          setFullscreenImageData(null)
+          return
+        }
+      }
+
       if (!fullscreenImage) return
 
-      if (e.key === 'Escape') {
-        setFullscreenImage(null)
-        setFullscreenImageData(null)
-      } else if (e.key === 'ArrowLeft') {
+      if (e.key === 'ArrowLeft') {
         if (fullscreenImageIndex > 0) {
           const newIdx = fullscreenImageIndex - 1
           setFullscreenImageIndex(newIdx)
@@ -1657,24 +1667,25 @@ export default function CreateImagePage() {
       {/* Image Overlay Modal */}
       {selectedImage && (
         <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 pointer-events-none"
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
           onClick={() => setSelectedImage(null)}
         >
           <div
-            className="bg-gray-900 rounded-lg overflow-hidden max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative pointer-events-auto"
+            className="bg-gray-900 rounded-lg overflow-hidden max-w-4xl max-h-[90vh] flex flex-col shadow-2xl relative"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-gray-700">
               <h3 className="text-white font-semibold">Generated Image</h3>
               <button
                 onClick={() => setSelectedImage(null)}
-                className="p-1 hover:bg-gray-800 rounded transition-colors"
+                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                title="Close (Esc)"
               >
-                <X className="w-5 h-5 text-gray-400 hover:text-white" />
+                <X className="w-6 h-6 text-gray-300 hover:text-white" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-auto flex items-center justify-center p-6 bg-black/50 relative">
+            <div className="flex-1 overflow-hidden flex items-center justify-center p-6 bg-black/50 relative">
               <img
                 src={selectedImage.image}
                 alt="Generated"
