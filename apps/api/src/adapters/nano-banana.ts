@@ -33,13 +33,13 @@ class NanoBananaAdapter {
     const numImages = params.numImages || 1
     const allImageUrls: string[] = []
 
-    console.log('[Nano Banana] Sending generation request to Gemini:', {
-      prompt: params.prompt,
+    console.log('[Nano Banana] Sending generation request to Gemini 3 Pro Image:', {
+      prompt: params.prompt.substring(0, 100),
       aspectRatio: params.aspectRatio,
       numImages,
     })
 
-    // Use Gemini 2.0 Flash for image generation
+    // Use Gemini 3 Pro Image for image generation (proper image generation API)
     for (let i = 0; i < numImages; i++) {
       try {
         const payload = {
@@ -58,10 +58,10 @@ class NanoBananaAdapter {
           },
         }
 
-        console.log(`[Nano Banana] Sending Gemini request ${i + 1}/${numImages}`)
+        console.log(`[Nano Banana] Sending Gemini 3 Pro Image request ${i + 1}/${numImages}`)
 
         const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${this.apiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image:generateContent?key=${this.apiKey}`,
           {
             method: 'POST',
             headers: {
@@ -81,7 +81,7 @@ class NanoBananaAdapter {
 
         const data = await response.json() as any
 
-        // Extract image from candidates[0].content.parts[].inlineData.data
+        // Extract image from response
         if (data.candidates && Array.isArray(data.candidates) && data.candidates.length > 0) {
           const candidate = data.candidates[0]
           if (candidate.content && candidate.content.parts) {
@@ -108,7 +108,7 @@ class NanoBananaAdapter {
     }
 
     if (allImageUrls.length === 0) {
-      throw new Error('No images returned from Gemini API')
+      throw new Error('No images returned from Gemini 3 Pro Image API')
     }
 
     // Store the images with a job ID

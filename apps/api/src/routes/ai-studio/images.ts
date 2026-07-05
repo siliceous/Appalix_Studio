@@ -182,11 +182,11 @@ export async function imageRoutes(app: FastifyInstance) {
 
       if (isGeminiModel) {
         provider = 'gemini'
+      } else if (isNanoBananaModel) {
+        provider = 'nano-banana'
       } else if (isSeedenceModel) {
         provider = 'seedence'
       }
-      // Note: nano-banana is routed to Stability API since Gemini doesn't support image generation
-      // Keep model name but use Stability provider for actual generation
 
       let jobId: string
 
@@ -204,6 +204,19 @@ export async function imageRoutes(app: FastifyInstance) {
             modelId: model,
           })
           console.log('[Image Generation] Gemini job created:', jobId)
+        } else if (isNanoBananaModel) {
+          console.log('[Image Generation] Calling Nano Banana (Gemini 3 Pro Image) for generation:', generationId)
+          jobId = await nanoBanana.generateImage({
+            prompt,
+            negativePrompt,
+            style,
+            lighting,
+            aspectRatio,
+            temperature,
+            numImages: quantity,
+            modelId: model,
+          })
+          console.log('[Image Generation] Nano Banana job created:', jobId)
         } else if (isSeedenceModel) {
           console.log('[Image Generation] Calling Seedence for generation:', generationId)
           jobId = await seedence.generateImage({
@@ -218,16 +231,8 @@ export async function imageRoutes(app: FastifyInstance) {
           })
           console.log('[Image Generation] Seedence job created:', jobId)
         } else {
-          // Default to Stability API for all other models (including nano-banana)
+          // Default to Stability API for all other models
           console.log('[Image Generation] Calling Stability AI for generation:', generationId, 'model:', model)
-
-          // Map model names to valid Stability models
-          let stabilityModel = 'sd3.5-large-turbo'
-          if (model === 'nano-banana-pro' || model?.startsWith('nano-banana')) {
-            stabilityModel = 'sd3.5-large-turbo'  // Fast model for nano-banana
-          } else if (model === 'quality' || model?.includes('quality')) {
-            stabilityModel = 'sd3.5-large'  // Higher quality
-          }
 
           jobId = await stability.generateImage({
             prompt,
@@ -237,7 +242,7 @@ export async function imageRoutes(app: FastifyInstance) {
             aspectRatio,
             temperature,
             numImages: quantity,
-            modelId: stabilityModel,
+            modelId: model || 'sd3.5-large-turbo',
           })
           console.log('[Image Generation] Stability AI job created:', jobId)
         }
