@@ -183,7 +183,7 @@ export async function imageRoutes(app: FastifyInstance) {
       if (isGeminiModel) {
         provider = 'gemini'
       } else if (isNanoBananaModel) {
-        provider = 'nano-banana'
+        provider = 'stability'  // nano-banana routes to Stability API for proper aspect ratio support
       } else if (isSeedenceModel) {
         provider = 'seedence'
       }
@@ -205,8 +205,10 @@ export async function imageRoutes(app: FastifyInstance) {
           })
           console.log('[Image Generation] Gemini job created:', jobId)
         } else if (isNanoBananaModel) {
-          console.log('[Image Generation] Calling Nano Banana (Gemini 3 Pro Image) for generation:', generationId)
-          jobId = await nanoBanana.generateImage({
+          // Route nano-banana to Stability API since it properly supports aspect ratios
+          // Gemini doesn't have aspect ratio support in the API
+          console.log('[Image Generation] Routing nano-banana to Stability API for generation:', generationId)
+          jobId = await stability.generateImage({
             prompt,
             negativePrompt,
             style,
@@ -214,9 +216,9 @@ export async function imageRoutes(app: FastifyInstance) {
             aspectRatio,
             temperature,
             numImages: quantity,
-            modelId: model,
+            modelId: 'sd3.5-large-turbo',
           })
-          console.log('[Image Generation] Nano Banana job created:', jobId)
+          console.log('[Image Generation] Stability API job created:', jobId)
         } else if (isSeedenceModel) {
           console.log('[Image Generation] Calling Seedence for generation:', generationId)
           jobId = await seedence.generateImage({
