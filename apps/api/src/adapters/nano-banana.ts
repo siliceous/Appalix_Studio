@@ -42,16 +42,6 @@ class NanoBananaAdapter {
     // Use Gemini 3 Pro Image for image generation (proper image generation API)
     for (let i = 0; i < numImages; i++) {
       try {
-        const generationConfig: any = {
-          temperature: params.temperature ?? 0.7,
-        }
-
-        // Add aspect ratio to generation config if specified
-        // Gemini API uses snake_case for parameter names
-        if (params.aspectRatio && params.aspectRatio !== '1:1') {
-          generationConfig.aspect_ratio = params.aspectRatio
-        }
-
         const payload = {
           contents: [
             {
@@ -63,7 +53,9 @@ class NanoBananaAdapter {
               ],
             },
           ],
-          generationConfig,
+          generationConfig: {
+            temperature: params.temperature ?? 0.7,
+          },
         }
 
         console.log(`[Nano Banana] Sending Gemini 3 Pro Image request ${i + 1}/${numImages}`)
