@@ -161,7 +161,7 @@ const ETHNICITIES = [
   { id: 'indonesian', label: 'Indonesian', phrase: 'Indonesian woman, tan warm skin, dark eyes, defined nose, warm tan complexion, Southeast Asian structure' },
   { id: 'indian', label: 'Indian', phrase: 'Indian woman, warm medium to deep brown skin (between Pakistani and Bangladeshi), dark brown eyes, defined nose, full lips, warm brown undertones, South Asian features, medium brown complexion' },
   { id: 'pakistani', label: 'Pakistani', phrase: 'Pakistani woman, fair to light olive skin tone (lighter/fairer than Indian), light to dark brown eyes, defined nose, warm fair complexion, North Indian Pakistani features, fairer skin' },
-  { id: 'bangladeshi', label: 'Bangladeshi', phrase: 'Bangladeshi woman, very deep dark brown skin (darker than Indian), dark warm eyes, defined nose, full lips, very deep brown complexion, South Asian features, darkest of South Asian skin tones' },
+  { id: 'bangladeshi', label: 'Bangladeshi', phrase: 'Bangladeshi woman, deep warm brown skin (darker than Indian but with warm golden undertones), dark warm eyes, defined nose, full lips, rich warm brown complexion, South Asian features, warm deep brown tone' },
   { id: 'srilankn', label: 'Sri Lankan', phrase: 'Sri Lankan woman, warm deep brown skin, dark warm eyes, defined nose, warm complexion, South Asian structure' },
   { id: 'middleeast', label: 'Middle Eastern', phrase: 'Middle Eastern woman, olive to warm brown skin, dark expressive eyes, defined nose, full lips, olive undertones, Middle Eastern features' },
   { id: 'arab', label: 'Arab', phrase: 'Arab woman, olive brown skin, very dark expressive eyes, defined prominent nose, full lips, olive warm tone, Arab facial structure' },
