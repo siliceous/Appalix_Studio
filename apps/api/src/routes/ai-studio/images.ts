@@ -202,6 +202,15 @@ export async function imageRoutes(app: FastifyInstance) {
         } else {
           // Default to Stability API for all other models (including nano-banana)
           console.log('[Image Generation] Calling Stability AI for generation:', generationId, 'model:', model)
+
+          // Map model names to valid Stability models
+          let stabilityModel = 'sd3.5-large-turbo'
+          if (model === 'nano-banana-pro' || model?.startsWith('nano-banana')) {
+            stabilityModel = 'sd3.5-large-turbo'  // Fast model for nano-banana
+          } else if (model === 'quality' || model?.includes('quality')) {
+            stabilityModel = 'sd3.5-large'  // Higher quality
+          }
+
           jobId = await stability.generateImage({
             prompt,
             negativePrompt,
@@ -210,7 +219,7 @@ export async function imageRoutes(app: FastifyInstance) {
             aspectRatio,
             temperature,
             numImages: quantity,
-            modelId: model || 'sd3.5-large-turbo',
+            modelId: stabilityModel,
           })
           console.log('[Image Generation] Stability AI job created:', jobId)
         }

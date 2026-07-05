@@ -80,16 +80,23 @@ export default function AIStudio() {
 
         // Also load localStorage (for recently generated images not yet in Supabase)
         const savedHistory = localStorage.getItem('imageGenerationHistory')
+        console.log('localStorage history exists:', !!savedHistory, 'size:', savedHistory?.length || 0)
+
         if (savedHistory) {
           try {
             const parsed = JSON.parse(savedHistory)
+            console.log('Parsed localStorage history:', parsed.length, 'items')
+
             const historyWithIds = parsed
               .filter((img: any) => img && img.image && typeof img.image === 'string' && img.image.length > 0)
               .map((img: any, idx: number) => ({
                 ...img,
                 id: img.id || `legacy-${img.timestamp || idx}`,
               }))
+            console.log('After filtering by image:', historyWithIds.length, 'items')
+
             const activeImages = historyWithIds.filter((img: any) => !img.deletedAt)
+            console.log('Active images (not deleted):', activeImages.length)
 
             // Merge: add localStorage images that aren't already in Supabase
             const supabaseIds = new Set(allImages.map(img => img.id))
@@ -99,6 +106,8 @@ export default function AIStudio() {
           } catch (e) {
             console.error('Error loading localStorage:', e)
           }
+        } else {
+          console.log('No localStorage history found')
         }
 
         // Sort all by timestamp (newest first)
