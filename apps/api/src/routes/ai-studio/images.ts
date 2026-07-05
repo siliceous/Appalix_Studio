@@ -164,14 +164,13 @@ export async function imageRoutes(app: FastifyInstance) {
 
       if (isGeminiModel) {
         provider = 'gemini'
-      } else if (isNanoBananaModel) {
-        provider = 'nano-banana'
       } else if (isSeedenceModel) {
         provider = 'seedence'
       }
+      // Note: nano-banana is routed to Stability API since Gemini doesn't support image generation
+      // Keep model name but use Stability provider for actual generation
 
       let jobId: string
-      let lastError: Error | null = null
 
       try {
         if (isGeminiModel) {
@@ -187,19 +186,6 @@ export async function imageRoutes(app: FastifyInstance) {
             modelId: model,
           })
           console.log('[Image Generation] Gemini job created:', jobId)
-        } else if (isNanoBananaModel) {
-          console.log('[Image Generation] Calling Nano Banana for generation:', generationId)
-          jobId = await nanoBanana.generateImage({
-            prompt,
-            negativePrompt,
-            style,
-            lighting,
-            aspectRatio,
-            temperature,
-            numImages: quantity,
-            modelId: model,
-          })
-          console.log('[Image Generation] Nano Banana job created:', jobId)
         } else if (isSeedenceModel) {
           console.log('[Image Generation] Calling Seedence for generation:', generationId)
           jobId = await seedence.generateImage({
@@ -214,45 +200,19 @@ export async function imageRoutes(app: FastifyInstance) {
           })
           console.log('[Image Generation] Seedence job created:', jobId)
         } else {
-          console.log('[Image Generation] Calling Stability AI for generation:', generationId)
-          try {
-            jobId = await stability.generateImage({
-              prompt,
-              negativePrompt,
-              style,
-              lighting,
-              aspectRatio,
-              temperature,
-              numImages: quantity,
-              modelId: model || 'sd3.5-large-turbo',
-            })
-            console.log('[Image Generation] Stability AI job created:', jobId)
-          } catch (stabError) {
-            const errorMsg = stabError instanceof Error ? stabError.message : String(stabError)
-            // If Stability API rejects for content moderation (403), try Gemini fallback
-            if (errorMsg.includes('403') || errorMsg.includes('content moderation') || errorMsg.includes('flagged')) {
-              console.log('[Image Generation] Stability rejected (content moderation), trying Gemini fallback...')
-              lastError = stabError instanceof Error ? stabError : new Error(errorMsg)
-              try {
-                jobId = await gemini.generateImage({
-                  prompt,
-                  negativePrompt,
-                  style,
-                  lighting,
-                  aspectRatio,
-                  temperature,
-                  numImages: quantity,
-                  modelId: 'gemini-3.1-flash-image',
-                })
-                console.log('[Image Generation] Gemini fallback succeeded:', jobId)
-              } catch (geminiFallbackError) {
-                console.error('[Image Generation] Gemini fallback also failed:', geminiFallbackError instanceof Error ? geminiFallbackError.message : geminiFallbackError)
-                throw stabError // Throw original Stability error
-              }
-            } else {
-              throw stabError
-            }
-          }
+          // Default to Stability API for all other models (including nano-banana)
+          console.log('[Image Generation] Calling Stability AI for generation:', generationId, 'model:', model)
+          jobId = await stability.generateImage({
+            prompt,
+            negativePrompt,
+            style,
+            lighting,
+            aspectRatio,
+            temperature,
+            numImages: quantity,
+            modelId: model || 'sd3.5-large-turbo',
+          })
+          console.log('[Image Generation] Stability AI job created:', jobId)
         }
 
         // Update generation record with job ID

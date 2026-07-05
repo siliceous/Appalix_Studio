@@ -71,6 +71,7 @@ export default function AIStudio() {
               })).filter((img: any) => img.image && !img.image.startsWith('data:'))
 
               allImages = allImages.concat(supabaseImages)
+              console.log('Loaded from Supabase:', supabaseImages.length)
             }
           } catch (e) {
             console.error('Error fetching from Supabase:', e)
@@ -94,6 +95,7 @@ export default function AIStudio() {
             const supabaseIds = new Set(allImages.map(img => img.id))
             const newFromLocalStorage = activeImages.filter((img: any) => !supabaseIds.has(img.id))
             allImages = allImages.concat(newFromLocalStorage)
+            console.log('Loaded from localStorage:', newFromLocalStorage.length, 'Total:', allImages.length)
           } catch (e) {
             console.error('Error loading localStorage:', e)
           }
@@ -102,9 +104,10 @@ export default function AIStudio() {
         // Sort all by timestamp (newest first)
         if (allImages.length > 0) {
           allImages.sort((a: any, b: any) => b.timestamp - a.timestamp)
-          setImages(allImages)
         }
 
+        console.log('Setting images:', allImages.length)
+        setImages(allImages)
         setLoading(false)
       } catch (error) {
         console.error('Error loading images:', error)
@@ -145,8 +148,9 @@ export default function AIStudio() {
   }, [workspaceId])
 
   const filteredImages = images.filter((img) => {
-    const matchesSearch = img.prompt.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesProject = !selectedProjectId || img.projectId === selectedProjectId
+    const matchesSearch = !searchQuery || img.prompt.toLowerCase().includes(searchQuery.toLowerCase())
+    // Project filter: only apply if a project is selected AND image has projectId
+    const matchesProject = !selectedProjectId || img.projectId === selectedProjectId || !img.projectId
     const matchesGender = !selectedGender ||
       (selectedGender === 'man' && (img.prompt.toLowerCase().includes('man') || img.prompt.toLowerCase().includes('male'))) ||
       (selectedGender === 'woman' && (img.prompt.toLowerCase().includes('woman') || img.prompt.toLowerCase().includes('female'))) ||
