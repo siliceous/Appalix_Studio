@@ -680,6 +680,10 @@ export default function CreateImagePage() {
     if (isoData && isoData.phrase) {
       enhanced = `${enhanced}, ${isoData.phrase}`
     }
+
+    // Add quality control instructions to prevent distortion
+    enhanced += '. Realistic human proportions. Natural anatomy. No distortion. Symmetrical face. Proper body proportions. Well-balanced composition. High quality realistic photography.'
+
     return enhanced
   }
 

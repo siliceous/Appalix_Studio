@@ -59,10 +59,10 @@ class NanoBananaAdapter {
         ]
         const variation = facialVariations[i % facialVariations.length]
 
-        // Build prompt with variation and seed-breaking instructions
+        // Build prompt with variation and quality control
         let prompt = basePrompt
         prompt += variation
-        prompt += '. Generate a completely different face than previous variations. Each person should have unique and distinct facial features.'
+        prompt += '. Generate a completely different face than previous variations. Each person should have unique and distinct facial features. Realistic natural human anatomy with proper proportions. No distortion, no warping, symmetrical features. Professional quality photography.'
 
         const payload = {
           contents: [
