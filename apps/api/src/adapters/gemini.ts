@@ -76,11 +76,25 @@ class GeminiAdapter {
 
         const data = await response.json() as any
 
+        console.log(`[Gemini] Response data (first 500 chars):`, JSON.stringify(data).substring(0, 500))
+
+        // Check for errors in response
+        if (data.error) {
+          console.error(`[Gemini] API returned error:`, data.error)
+          throw new Error(`Gemini API error: ${JSON.stringify(data.error)}`)
+        }
+
         // Extract image from candidates[0].content.parts[].inlineData.data
         if (data.candidates && Array.isArray(data.candidates) && data.candidates.length > 0) {
           const candidate = data.candidates[0]
+          console.log(`[Gemini] Checking candidate content...`)
+
           if (candidate.content && candidate.content.parts) {
+            console.log(`[Gemini] Found ${candidate.content.parts.length} parts in response`)
+
             for (const part of candidate.content.parts) {
+              console.log(`[Gemini] Part keys:`, Object.keys(part).join(', '))
+
               if (part.inlineData && part.inlineData.data) {
                 // Found base64 image data
                 const base64Data = part.inlineData.data
@@ -88,9 +102,15 @@ class GeminiAdapter {
                 const dataUrl = `data:${mimeType};base64,${base64Data}`
                 allImageUrls.push(dataUrl)
                 console.log(`[Gemini] Found image ${i + 1}/${numImages} in inlineData`)
+              } else if (part.text) {
+                console.log(`[Gemini] Found text response instead of image. Text (first 200 chars):`, part.text.substring(0, 200))
               }
             }
+          } else {
+            console.log(`[Gemini] No content/parts found in candidate`)
           }
+        } else {
+          console.log(`[Gemini] No candidates found in response`)
         }
 
         // Small delay between requests to avoid rate limiting
