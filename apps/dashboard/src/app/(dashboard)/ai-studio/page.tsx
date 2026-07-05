@@ -68,7 +68,7 @@ export default function AIStudio() {
                 prompt: img.prompt || '',
                 timestamp: new Date(img.created_at).getTime(),
                 aspectRatio: img.aspect_ratio,
-              })).filter((img: any) => img.image && !img.image.startsWith('data:'))
+              })).filter((img: any) => img.image)
 
               allImages = allImages.concat(supabaseImages)
               console.log('Loaded from Supabase:', supabaseImages.length)

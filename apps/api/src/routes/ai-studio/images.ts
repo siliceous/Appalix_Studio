@@ -447,28 +447,31 @@ export async function imageRoutes(app: FastifyInstance) {
         return reply.status(500).send({ error: 'Failed to fetch images' })
       }
 
-      // Process images: filter out base64 data and regenerate signed URLs if needed
+      // Process images: handle both Supabase URLs and base64 data
       const processedImages = (generations || []).map((img: any) => {
         // Check if output_url is a signed URL (starts with http) or base64 (starts with data:)
         const isBase64 = img.output_url?.startsWith('data:')
 
         if (isBase64) {
-          // For old base64 images, try to use output_urls if available
+          // For images with base64, try to use output_urls if available (migrated images)
           try {
             const urls = img.output_urls ? JSON.parse(img.output_urls) : []
             const validUrl = urls.find((u: string) => u && u.startsWith('http'))
             if (validUrl) {
+              console.log('[Image Generation] Found Supabase URL for migrated image:', img.id.substring(0, 8))
               return { ...img, output_url: validUrl }
             }
           } catch (e) {
             console.warn('[Image Generation] Failed to parse output_urls for image:', img.id)
           }
-          // Skip images with only base64 data
-          return null
+          // If no Supabase URL found, still return the image with its base64 data
+          // This allows old images to still display while we migrate them
+          console.log('[Image Generation] Returning base64 image (not yet migrated):', img.id.substring(0, 8))
+          return img
         }
 
         return img
-      }).filter(Boolean)
+      }).filter((img) => img !== null && img !== undefined)
 
       return reply.send({
         images: processedImages,
