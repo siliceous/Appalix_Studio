@@ -103,8 +103,8 @@ const FEMALE_BODY_TYPES = [
   { id: 'chubby', label: 'Chubby', phrase: 'woman, body type: heavier-set figure, rounder body proportions, fuller rounded shape throughout, substantial body weight, softly padded frame, generously proportioned build' },
   { id: 'plussize', label: 'Plus-Size', phrase: 'woman, body type: plus-size, larger overall frame, voluminous body proportions, size 18-20 frame, substantial body mass throughout, generous curvatures, larger all-over dimensions' },
   { id: 'size16', label: 'Size 16', phrase: 'woman, body type: size 16, larger frame proportions, rounder body shape, fuller width throughout, substantial body dimensions' },
-  { id: 'mature', label: 'Mature', phrase: 'woman, age 50s, mature appearance, visible age lines, graying hair, softer body shape from maturity, aged facial features, mature woman body composition' },
-  { id: 'older', label: 'Older Woman', phrase: 'woman, age 60s-70s, elderly appearance, heavily lined face, white or gray hair, aged body shape, senior woman appearance, advanced age features' },
+  { id: 'mature', label: 'Mature', phrase: 'woman in her 50s, mature adult appearance, facial lines and wrinkles visible, graying or partially gray hair, softer body with mature proportions, middle-aged woman look, experienced appearance, mother age range' },
+  { id: 'older', label: 'Older Woman', phrase: 'woman in her 60s to 70s, extensive facial wrinkles and deep lines throughout face, age spots on skin, white gray or silver hair, older adult body type, mature proportions, softer body composition, visible signs of aging, older woman appearance, grandparent age range' },
   { id: 'young', label: 'Young Woman', phrase: 'woman, age 20s, youthful appearance, smooth skin, young facial features, fresh-looking young woman, youthful beauty and vitality' },
   { id: 'athletic', label: 'Athletic', phrase: 'woman, body type: athletic, toned muscular body, fit athletic shape, defined muscles, lean athletic build, strong athletic physique' },
   { id: 'muscular', label: 'Muscular', phrase: 'woman, body type: very muscular, highly defined muscles, pronounced muscle development, strong muscular physique, heavily muscled frame, powerful muscular build' },
@@ -128,8 +128,8 @@ const MALE_BODY_TYPES = [
   { id: 'average-male', label: 'Average Build', phrase: 'man, body type: average build, normal proportions, typical body shape, everyday build, standard male proportions' },
   { id: 'tall-man', label: 'Tall', phrase: 'man, height: very tall, 180cm plus, long legs relative to body, tall stature, tall proportions appearance, elongated body frame' },
   { id: 'short-man', label: 'Short', phrase: 'man, height: short and compact, 160-170cm, shorter stature, compact body, petite male frame' },
-  { id: 'mature-male', label: 'Mature', phrase: 'man, age 40s-50s, mature appearance, visible age lines, graying or salt-pepper hair, mature man features, middle-aged appearance' },
-  { id: 'older-man', label: 'Older Man', phrase: 'man, age 60s-70s, elderly appearance, heavily lined face, white or gray hair, aged body shape, senior man appearance' },
+  { id: 'mature-male', label: 'Mature', phrase: 'man in his 40s to 50s, mature adult appearance, facial lines and wrinkles visible, graying or salt-pepper hair, middle-aged man look, softer body with mature proportions, father age range' },
+  { id: 'older-man', label: 'Older Man', phrase: 'man in his 60s to 70s, extensive facial wrinkles and deep lines throughout face, age spots on skin, white gray or silver hair, older adult body type, mature proportions, softer body composition, visible signs of aging, older man appearance, grandfather age range' },
   { id: 'young-man', label: 'Young Man', phrase: 'man, age 20s, youthful appearance, smooth skin, young facial features, fresh-looking young man, youthful beauty' },
 ]
 
