@@ -433,12 +433,12 @@ export async function imageRoutes(app: FastifyInstance) {
         return reply.status(400).send({ error: 'Missing workspace ID' })
       }
 
-      // Fetch all completed image generations
+      // Fetch all image generations that have images (completed or failed with output)
       const { data: generations, error } = await supabase
         .from('ai_image_generations')
         .select('id, prompt, created_at, output_url, output_urls, status, quantity, aspect_ratio')
         .eq('workspace_id', workspaceId)
-        .eq('status', 'completed')
+        .not('output_url', 'is', null)
         .order('created_at', { ascending: false })
         .limit(100)
 
