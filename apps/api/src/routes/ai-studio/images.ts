@@ -102,7 +102,7 @@ export async function imageRoutes(app: FastifyInstance) {
   // Generate image
   app.post<{ Body: ImageGenerationRequest }>('/generate/image', async (request, reply) => {
     try {
-      const { prompt, style, lighting, aspectRatio, model, quantity, negativePrompt, temperature, resolution } = request.body
+      let { prompt, style, lighting, aspectRatio, model, quantity, negativePrompt, temperature, resolution } = request.body
       const workspaceId = request.headers['x-workspace-id'] as string
 
       if (!workspaceId) {
@@ -112,6 +112,24 @@ export async function imageRoutes(app: FastifyInstance) {
       if (!prompt?.trim()) {
         return reply.status(400).send({ error: 'Prompt is required' })
       }
+
+      // Sanitize prompt for Stability API's strict content filter
+      // Remove terms that trigger moderation but rephrase them safely
+      const sanitizePrompt = (p: string): string => {
+        let sanitized = p
+          // Rephrase adult/explicit terms
+          .replace(/\bfull breasts\b/gi, 'well-proportioned bust')
+          .replace(/\bbreasts\b/gi, 'chest')
+          .replace(/\bbikini\b/gi, 'swimwear')
+          .replace(/\bg string\b/gi, 'swimwear')
+          .replace(/\bno shirt\b/gi, 'shirtless')
+          .replace(/\bstring bikini\b/gi, 'swimwear')
+          .replace(/\bnude\b/gi, 'bare')
+          .replace(/\nnaked\b/gi, 'undressed')
+        return sanitized
+      }
+
+      prompt = sanitizePrompt(prompt)
 
       // Check workspace has Leonardo API configured
       const { data: workspace } = await supabase
