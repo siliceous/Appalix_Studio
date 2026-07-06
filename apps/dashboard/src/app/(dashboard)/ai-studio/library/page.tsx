@@ -43,32 +43,64 @@ export default function AIStudioLibrary() {
   const [selectedDateRange, setSelectedDateRange] = useState<string | null>(null)
 
   useEffect(() => {
-    // Load workspace ID
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
     setWorkspaceId(wId)
-
-    // Load images from localStorage
-    try {
-      const savedHistory = localStorage.getItem('imageGenerationHistory')
-      if (savedHistory) {
-        const parsed = JSON.parse(savedHistory)
-        const historyWithIds = parsed
-          .filter((img: any) => img && img.image && typeof img.image === 'string' && img.image.length > 0)
-          .map((img: any, idx: number) => ({
-            ...img,
-            id: img.id || `legacy-${img.timestamp || idx}`,
-          }))
-        const activeImages = historyWithIds.filter((img: any) => !img.deletedAt)
-        activeImages.sort((a: any, b: any) => b.timestamp - a.timestamp)
-        setImages(activeImages)
-      }
-      setLoading(false)
-    } catch (error) {
-      console.error('Error loading images from localStorage:', error)
-      localStorage.removeItem('imageGenerationHistory')
-      setLoading(false)
-    }
   }, [])
+
+  useEffect(() => {
+    if (!workspaceId) {
+      setLoading(false)
+      return
+    }
+
+    const fetchImages = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/ai-studio/all-images', {
+          headers: { 'x-workspace-id': workspaceId },
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const apiImages = (data.images || []).map((img: any) => ({
+            id: img.id,
+            image: img.output_url,
+            prompt: img.prompt,
+            timestamp: new Date(img.created_at).getTime(),
+            aspectRatio: img.aspect_ratio,
+            projectId: img.projectId,
+            projectName: img.projectName,
+          }))
+          setImages(apiImages)
+        } else {
+          throw new Error('Failed to fetch from API')
+        }
+      } catch (error) {
+        console.error('Error loading images:', error)
+        try {
+          const savedHistory = localStorage.getItem('imageGenerationHistory')
+          if (savedHistory) {
+            const parsed = JSON.parse(savedHistory)
+            const historyWithIds = parsed
+              .filter((img: any) => img && img.image && typeof img.image === 'string' && img.image.length > 0)
+              .map((img: any, idx: number) => ({
+                ...img,
+                id: img.id || `legacy-${img.timestamp || idx}`,
+              }))
+            const activeImages = historyWithIds.filter((img: any) => !img.deletedAt)
+            activeImages.sort((a: any, b: any) => b.timestamp - a.timestamp)
+            setImages(activeImages)
+          }
+        } catch (error) {
+          console.error('Error loading from localStorage:', error)
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchImages()
+  }, [workspaceId])
 
   // Load projects from API
   useEffect(() => {
