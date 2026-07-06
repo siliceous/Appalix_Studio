@@ -176,13 +176,13 @@ export class GeminiVoiceService {
     lipSyncStrength: number
   ): Promise<void> {
     try {
-      const { error } = await (this.supabase
-        .from('talking_actor_voice_links')
+      const { error } = await this.supabase
+        .from('talking_actor_voice_links' as never)
         .update({
           lip_sync_strength: Math.max(0, Math.min(1, lipSyncStrength)),
-        } as any)
+        } as never)
         .eq('talking_actor_id', actorId)
-        .eq('gemini_voice_id', voiceId)) as any
+        .eq('gemini_voice_id', voiceId)
 
       if (error) throw error
     } catch (error) {
