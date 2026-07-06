@@ -479,62 +479,51 @@ export async function imageRoutes(app: FastifyInstance) {
         return reply.status(500).send({ error: 'Failed to fetch images' })
       }
 
-      // Process images: handle both Supabase URLs and base64 data
+      // Process images: generate fresh signed URLs
       const processedImages = await Promise.all((generations || []).map(async (img: any) => {
-        // Check if output_url is a signed URL (starts with http) or base64 (starts with data:)
-        const isBase64 = img.output_url?.startsWith('data:')
+        try {
+          // Extract file path from the stored URL
+          let filePath: string | null = null
 
-        if (isBase64) {
-          // For images with base64, try to use output_urls if available (migrated images)
-          try {
-            const urls = img.output_urls ? JSON.parse(img.output_urls) : []
-            const validUrl = urls.find((u: string) => u && u.startsWith('http'))
-            if (validUrl) {
-              // Extract the file path and generate a fresh public URL
-              const filePath = validUrl.includes('ai_images/')
-                ? validUrl.split('ai_images/')[1]?.split('?')[0]
-                : null
-
-              if (filePath) {
-                try {
-                  // Try public URL first
-                  const { data: publicUrl } = supabase.storage
-                    .from('ai_images')
-                    .getPublicUrl(decodeURIComponent(filePath))
-
-                  if (publicUrl?.publicUrl) {
-                    console.log('[Image Generation] Using public URL for image:', img.id.substring(0, 8))
-                    return { ...img, output_url: publicUrl.publicUrl }
-                  }
-
-                  // If public URL doesn't work, generate a long-lived signed URL (7 days)
-                  const { data: signedUrl, error: signError } = await supabase.storage
-                    .from('ai_images')
-                    .createSignedUrl(decodeURIComponent(filePath), 7 * 24 * 60 * 60) // 7 days
-
-                  if (signedUrl?.signedUrl) {
-                    console.log('[Image Generation] Generated 7-day signed URL for image:', img.id.substring(0, 8))
-                    return { ...img, output_url: signedUrl.signedUrl }
-                  }
-
-                  if (signError) {
-                    console.warn('[Image Generation] Failed to create signed URL:', signError.message)
-                  }
-                } catch (e) {
-                  console.warn('[Image Generation] Failed to regenerate URL:', e)
-                }
-              }
-              console.log('[Image Generation] Using stored URL for image:', img.id.substring(0, 8))
-              return { ...img, output_url: validUrl }
+          if (img.output_url?.startsWith('http')) {
+            // Try to extract path from signed or public URL
+            const url = new URL(img.output_url)
+            const pathname = url.pathname
+            // Match patterns like /storage/v1/object/sign/ai-image-generations/... or /storage/v1/object/public/ai-image-generations/...
+            const match = pathname.match(/\/ai-image-generations\/(.+)$/)
+            if (match) {
+              filePath = decodeURIComponent(match[1])
             }
-          } catch (e) {
-            console.warn('[Image Generation] Failed to parse output_urls for image:', img.id)
+          } else if (img.output_url?.startsWith('data:')) {
+            // Base64 image, return as-is
+            return img
           }
-          console.log('[Image Generation] Returning base64 image (not yet migrated):', img.id.substring(0, 8))
+
+          if (!filePath) {
+            console.warn('[Image Generation] Could not extract file path for image:', img.id.substring(0, 8))
+            return img
+          }
+
+          // Generate a fresh signed URL (7 days)
+          const { data: signedUrl, error: signError } = await supabase.storage
+            .from('ai-image-generations')
+            .createSignedUrl(filePath, 7 * 24 * 60 * 60) // 7 days
+
+          if (signedUrl?.signedUrl) {
+            console.log('[Image Generation] Generated fresh signed URL for image:', img.id.substring(0, 8))
+            return { ...img, output_url: signedUrl.signedUrl }
+          }
+
+          if (signError) {
+            console.warn('[Image Generation] Failed to create signed URL:', signError.message)
+          }
+
+          // If signing fails, return the original URL
+          return img
+        } catch (e) {
+          console.warn('[Image Generation] Error processing image URL:', e)
           return img
         }
-
-        return img
       })).then(imgs => imgs.filter((img) => img !== null && img !== undefined))
 
       return reply.send({
