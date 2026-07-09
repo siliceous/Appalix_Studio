@@ -154,10 +154,30 @@ async function handleAnswered(payload: TelnyxCallPayload) {
     .replace(/^https:\/\//, 'wss://')
     .replace(/^http:\/\//, 'ws://') + '/telnyx/call-ws'
 
+  const now = new Date().toISOString()
   await supabase
     .from('call_sessions' as never)
-    .update({ status: 'answered', answered_at: new Date().toISOString() })
+    .update({ status: 'answered', answered_at: now })
     .eq('telnyx_call_control_id', call_control_id)
+
+  // Also update outbound_call_records if this is an outbound call
+  const { data: session } = await supabase
+    .from('call_sessions' as never)
+    .select('id, direction')
+    .eq('telnyx_call_control_id', call_control_id)
+    .maybeSingle() as {
+      data: {
+        id: string
+        direction: 'inbound' | 'outbound'
+      } | null
+    }
+
+  if (session?.direction === 'outbound') {
+    await supabase
+      .from('outbound_call_records' as never)
+      .update({ status: 'answered', answered: true, answered_at: now })
+      .eq('call_session_id', session.id)
+  }
 
   // Start one-way media stream — inbound = what the caller says
   await callControlAction(call_control_id, 'streaming_start', {
@@ -206,6 +226,19 @@ async function handleHangup(payload: TelnyxCallPayload) {
     .eq('id', session.id)
 
   console.info(`[telnyx-voice] call ended — duration=${duration}s cause=${hangup_cause}`)
+
+  // ── Update outbound_call_records if this is an outbound call ────────────────
+  if (session.direction === 'outbound') {
+    await supabase
+      .from('outbound_call_records' as never)
+      .update({
+        status: 'completed',
+        duration_seconds: duration || 0,
+        hangup_cause: hangup_cause || null,
+        completed_at: endedAt.toISOString(),
+      })
+      .eq('call_session_id', session.id)
+  }
 
   // ── Wallet billing ────────────────────────────────────────────────────────
   if (duration && duration > 0 && session.workspace_id) {

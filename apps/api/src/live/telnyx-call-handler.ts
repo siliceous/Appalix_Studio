@@ -21,6 +21,7 @@
 import { WebSocket }   from 'ws'
 import type { IncomingMessage } from 'http'
 import { supabase }    from '../lib/supabase.js'
+import { buildCallContext } from '../services/outbound-calls.service.js'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -66,6 +67,7 @@ interface CallMeta {
   workspaceId:   string
   fromE164:      string
   toE164:        string
+  direction:     'inbound' | 'outbound'
   botName:       string
   systemPrompt:  string
   voiceName:     string
@@ -119,7 +121,7 @@ export async function handleTelnyxCallWs(
   async function initSession(callControlId: string) {
     const { data: session } = await supabase
       .from('call_sessions' as never)
-      .select('id, workspace_id, voice_agent_id, from_e164, to_e164')
+      .select('id, workspace_id, voice_agent_id, from_e164, to_e164, direction')
       .eq('telnyx_call_control_id', callControlId)
       .maybeSingle() as {
         data: {
@@ -128,6 +130,7 @@ export async function handleTelnyxCallWs(
           voice_agent_id: string | null
           from_e164:      string
           to_e164:        string
+          direction:      'inbound' | 'outbound'
         } | null
       }
 
@@ -174,21 +177,43 @@ export async function handleTelnyxCallWs(
       }
     }
 
-    // Build system prompt with voice rules
-    const fullPrompt =
-      (systemPrompt.trim() || `You are ${botName}, a helpful phone assistant.`) +
-      '\n\nVOICE RULES: This is a real-time phone call. ' +
-      'Keep every response to 1–3 short sentences. ' +
-      'Be conversational and natural — no lists, no markdown. ' +
-      'Speak in plain, flowing sentences.' +
-      '\n\nOPENING: Your very first spoken output must greet the caller naturally, ' +
-      `e.g. "Hello, this is ${botName}, how can I help you today?"`
+    // Get contact context for outbound calls
+    let contactData: Record<string, unknown> | undefined
+    let customContext: Record<string, unknown> | undefined
+
+    if (session.direction === 'outbound') {
+      const { data: callRecord } = await supabase
+        .from('outbound_call_records' as never)
+        .select('contact_data, custom_context')
+        .eq('call_session_id', session.id)
+        .maybeSingle() as {
+          data: {
+            contact_data: Record<string, unknown> | null
+            custom_context: Record<string, unknown> | null
+          } | null
+        }
+
+      contactData = callRecord?.contact_data ?? undefined
+      customContext = callRecord?.custom_context ?? undefined
+    }
+
+    // Build system prompt with voice rules and context
+    const fullPrompt = session.direction === 'outbound'
+      ? buildCallContext(botName, systemPrompt || null, contactData, customContext)
+      : (systemPrompt.trim() || `You are ${botName}, a helpful phone assistant.`) +
+        '\n\nVOICE RULES: This is a real-time phone call. ' +
+        'Keep every response to 1–3 short sentences. ' +
+        'Be conversational and natural — no lists, no markdown. ' +
+        'Speak in plain, flowing sentences.' +
+        '\n\nOPENING: Your very first spoken output must greet the caller naturally, ' +
+        `e.g. "Hello, this is ${botName}, how can I help you today?"`
 
     meta = {
       callSessionId: session.id,
       workspaceId:   session.workspace_id,
       fromE164:      session.from_e164,
       toE164:        session.to_e164,
+      direction:     session.direction,
       botName,
       systemPrompt:  fullPrompt,
       voiceName,

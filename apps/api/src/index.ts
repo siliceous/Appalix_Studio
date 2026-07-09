@@ -42,6 +42,7 @@ import { handleLiveWsConnection }                   from './live/session-manager
 import { handleWidgetVoiceWs }                      from './live/widget-voice-handler.js'
 import { telnyxVoiceRoutes }                        from './routes/webhooks/telnyx-voice.js'
 import { handleTelnyxCallWs }                       from './live/telnyx-call-handler.js'
+import { outboundCallRoutes }                       from './routes/outbound-calls.js'
 import { resendWebhookRoutes }                      from './routes/webhooks/resend.js'
 import { emailCampaignRoutes }                      from './routes/email/campaigns.js'
 import { startAutomationScheduler }                 from './modules/automations/automationScheduler.js'
@@ -185,6 +186,9 @@ await server.register(emailCampaignRoutes, { prefix: '/email' })
 // AI Studio — image/video/avatar generation
 await server.register(imageRoutes, { prefix: '/api/ai-studio' })
 await server.register(cleanupRoutes, { prefix: '/api/ai-studio' })
+
+// Outbound voice calls — initiate campaigns and single calls
+await server.register(outboundCallRoutes)
 
 // ---------------------------------------------------------------
 // Error handler
