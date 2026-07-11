@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Plus, GripVertical, Search, SlidersHorizontal, ArrowUpDown, Settings2, Pencil, LayoutList, KanbanSquare } from 'lucide-react'
 import { moveDeal } from '@/app/actions/sage'
 import { exportDeals } from '@/app/actions/csv-export'
-import { importDeals } from '@/app/actions/csv-import'
+import { importPipelineDeals } from '@/app/actions/csv-import'
 import { CsvExportButton } from '@/components/ui/csv-export-button'
 import { CsvImportButton } from '@/components/ui/csv-import-button'
 import { DealModal } from './deal-modal'
@@ -317,7 +317,7 @@ export function PipelineBoard({
           />
           {canWrite && (
             <CsvImportButton
-              action={importDeals}
+              action={importPipelineDeals}
               label="Import"
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
               onSuccess={() => router.refresh()}
