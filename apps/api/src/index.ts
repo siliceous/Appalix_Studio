@@ -52,6 +52,7 @@ import { startVideoJobPolling }                    from './modules/video-generat
 // import { geminiVoiceRoutes }                       from './routes/gemini-voice.js'
 import { talkingActorsRoutes }                     from './routes/talking-actors.js'
 import { imageRoutes }                             from './routes/ai-studio/images.js'
+import { videoRoutes as aiStudioVideoRoutes }      from './routes/ai-studio/videos.js'
 import { cleanupRoutes }                           from './routes/ai-studio/cleanup.js'
 
 const server = Fastify({
@@ -185,6 +186,7 @@ await server.register(talkingActorsRoutes, { prefix: '/api/talking-actors' })
 
 // AI Studio — image/video/avatar generation
 await server.register(imageRoutes, { prefix: '/api/ai-studio' })
+await server.register(aiStudioVideoRoutes, { prefix: '/api/ai-studio' })
 await server.register(cleanupRoutes, { prefix: '/api/ai-studio' })
 
 // Outbound voice calls — initiate campaigns and single calls
