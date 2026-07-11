@@ -150,9 +150,7 @@ export async function createVoiceAgent(formData: FormData) {
     working_hours:      (formData.get('working_hours') as string)?.trim() || undefined,
   }
 
-  const goalValue = (formData.get('goal') as string)?.trim()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const insertData: any = {
+  const { data, error } = await admin.from('voice_agents').insert({
     workspace_id: workspaceId,
     name:         (formData.get('name') as string)?.trim(),
     type:         (formData.get('type') as string) || 'inbound',
@@ -161,14 +159,7 @@ export async function createVoiceAgent(formData: FormData) {
     preset:       (formData.get('preset') as string) || null,
     is_active:    false,
     config,
-  }
-
-  // Only include goal if it has a value
-  if (goalValue) {
-    insertData.goal = goalValue
-  }
-
-  const { data, error } = await admin.from('voice_agents').insert(insertData).select('id').single()
+  }).select('id').single()
 
   if (error) throw new Error(error.message)
   redirect(`/phone/voice-agents/${(data as { id: string }).id}`)
@@ -193,9 +184,7 @@ export async function updateVoiceAgent(agentId: string, formData: FormData) {
     collect_lead_first: formData.get('collect_lead_first') === 'on',
   }
 
-  const goalValue = (formData.get('goal') as string)?.trim()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const updateData: any = {
+  const { error } = await admin.from('voice_agents').update({
     name:         (formData.get('name') as string)?.trim(),
     type:         (formData.get('type') as string) || 'inbound',
     phone_number: (formData.get('phone_number') as string)?.trim() || null,
@@ -204,14 +193,7 @@ export async function updateVoiceAgent(agentId: string, formData: FormData) {
     is_active:    formData.get('is_active') === 'on',
     config,
     updated_at:   new Date().toISOString(),
-  }
-
-  // Only include goal if it has a value
-  if (goalValue) {
-    updateData.goal = goalValue
-  }
-
-  const { error } = await admin.from('voice_agents').update(updateData)
+  })
     .eq('id', agentId)
     .eq('workspace_id', workspaceId)
 
