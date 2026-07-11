@@ -151,17 +151,24 @@ export async function createVoiceAgent(formData: FormData) {
   }
 
   const goalValue = (formData.get('goal') as string)?.trim()
-  const { data, error } = await admin.from('voice_agents').insert({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const insertData: any = {
     workspace_id: workspaceId,
     name:         (formData.get('name') as string)?.trim(),
     type:         (formData.get('type') as string) || 'inbound',
     phone_number: (formData.get('phone_number') as string)?.trim() || null,
     bot_id:       (formData.get('bot_id') as string) || null,
     preset:       (formData.get('preset') as string) || null,
-    goal:         goalValue || null,
     is_active:    false,
     config,
-  }).select('id').single()
+  }
+
+  // Only include goal if it has a value
+  if (goalValue) {
+    insertData.goal = goalValue
+  }
+
+  const { data, error } = await admin.from('voice_agents').insert(insertData).select('id').single()
 
   if (error) throw new Error(error.message)
   redirect(`/phone/voice-agents/${(data as { id: string }).id}`)
@@ -187,17 +194,24 @@ export async function updateVoiceAgent(agentId: string, formData: FormData) {
   }
 
   const goalValue = (formData.get('goal') as string)?.trim()
-  const { error } = await admin.from('voice_agents').update({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updateData: any = {
     name:         (formData.get('name') as string)?.trim(),
     type:         (formData.get('type') as string) || 'inbound',
     phone_number: (formData.get('phone_number') as string)?.trim() || null,
     bot_id:       (formData.get('bot_id') as string) || null,
     preset:       (formData.get('preset') as string) || null,
-    goal:         goalValue || null,
     is_active:    formData.get('is_active') === 'on',
     config,
     updated_at:   new Date().toISOString(),
-  })
+  }
+
+  // Only include goal if it has a value
+  if (goalValue) {
+    updateData.goal = goalValue
+  }
+
+  const { error } = await admin.from('voice_agents').update(updateData)
     .eq('id', agentId)
     .eq('workspace_id', workspaceId)
 
