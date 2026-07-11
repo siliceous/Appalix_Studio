@@ -150,6 +150,7 @@ export async function createVoiceAgent(formData: FormData) {
     working_hours:      (formData.get('working_hours') as string)?.trim() || undefined,
   }
 
+  const goalValue = (formData.get('goal') as string)?.trim()
   const { data, error } = await admin.from('voice_agents').insert({
     workspace_id: workspaceId,
     name:         (formData.get('name') as string)?.trim(),
@@ -157,7 +158,7 @@ export async function createVoiceAgent(formData: FormData) {
     phone_number: (formData.get('phone_number') as string)?.trim() || null,
     bot_id:       (formData.get('bot_id') as string) || null,
     preset:       (formData.get('preset') as string) || null,
-    goal:         (formData.get('goal') as string) || null,
+    goal:         goalValue || null,
     is_active:    false,
     config,
   }).select('id').single()
@@ -185,13 +186,14 @@ export async function updateVoiceAgent(agentId: string, formData: FormData) {
     collect_lead_first: formData.get('collect_lead_first') === 'on',
   }
 
+  const goalValue = (formData.get('goal') as string)?.trim()
   const { error } = await admin.from('voice_agents').update({
     name:         (formData.get('name') as string)?.trim(),
     type:         (formData.get('type') as string) || 'inbound',
     phone_number: (formData.get('phone_number') as string)?.trim() || null,
     bot_id:       (formData.get('bot_id') as string) || null,
     preset:       (formData.get('preset') as string) || null,
-    goal:         (formData.get('goal') as string) || null,
+    goal:         goalValue || null,
     is_active:    formData.get('is_active') === 'on',
     config,
     updated_at:   new Date().toISOString(),
