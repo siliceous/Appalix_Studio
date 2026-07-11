@@ -45,7 +45,7 @@ create table if not exists outbound_call_records (
   campaign_id       uuid references outbound_campaigns(id) on delete set null,
   call_session_id   uuid references call_sessions(id) on delete set null,
 
-  contact_id        uuid references contacts(id) on delete set null,
+  contact_id        uuid,  -- optional reference to contacts if exists
   to_phone_number   text not null,  -- E.164 format
 
   status            text not null default 'pending',  -- pending | initiated | ringing | answered | completed | failed | cancelled
