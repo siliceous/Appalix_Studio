@@ -1290,6 +1290,7 @@ export default function CreateImagePage() {
               if (selectedImage) {
                 setFullscreenImageData(selectedImage)
                 setFullscreenImage(selectedImage.image)
+                setImageZoom(1)
               }
             }}
             data-canvas
@@ -1309,6 +1310,7 @@ export default function CreateImagePage() {
                   setFullscreenImageData(selectedImage)
                   const idx = history.findIndex(img => img.id === selectedImage.id)
                   setFullscreenImageIndex(Math.max(0, idx))
+                  setImageZoom(1)
                 }}
               />
             ) : (
