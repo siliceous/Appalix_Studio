@@ -112,8 +112,7 @@ export async function videoRoutes(app: FastifyInstance) {
         const limit = parseInt(request.query.limit || '50')
         const offset = parseInt(request.query.offset || '0')
 
-        const result = await service.listVideos({
-          workspace_id: workspaceId,
+        const result = await service.listVideos(workspaceId, {
           status: request.query.status as any,
           limit,
           offset,
@@ -180,12 +179,7 @@ export async function videoRoutes(app: FastifyInstance) {
         }
 
         const service = new VideoGenerationService()
-        const result = await service.deleteVideo(id, workspaceId)
-
-        if (!result) {
-          return reply.status(404).send({ error: 'Video not found' })
-        }
-
+        await service.deleteVideo(id, workspaceId)
         return reply.send({ success: true })
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error'
