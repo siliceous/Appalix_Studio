@@ -170,10 +170,10 @@ export function Sidebar({ workspace, callerRole, userPermissions, branding }: Si
       )}>
 
         {/* ── Logo + workspace ─────────────────────────────────── */}
-        <div className="px-3 py-4 border-b dark:border-white/8 shrink-0">
+        <Link href="/settings" className="px-3 py-4 border-b dark:border-white/8 shrink-0 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg transition-colors">
 
           {/* Logo row */}
-          <div className="flex items-center justify-center group-hover:justify-start group-hover:gap-2.5 mb-3 min-w-0">
+          <div className="flex items-center justify-center group-hover:justify-start group-hover:gap-2.5 mb-3 min-w-0 cursor-pointer">
             {/* Icon — visible when collapsed, hidden when expanded */}
             <div className="shrink-0 group-hover:hidden">
               {branding?.favicon_url ? (
@@ -235,7 +235,7 @@ export function Sidebar({ workspace, callerRole, userPermissions, branding }: Si
             </div>
           </div>
 
-        </div>
+        </Link>
 
         {/* ── Navigation ───────────────────────────────────────── */}
         <nav className="flex-1 px-2 py-3 space-y-3 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
