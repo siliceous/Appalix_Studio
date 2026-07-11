@@ -125,7 +125,7 @@ export async function imageRoutes(app: FastifyInstance) {
           .replace(/\bno shirt\b/gi, 'shirtless')
           .replace(/\bstring bikini\b/gi, 'swimwear')
           .replace(/\bnude\b/gi, 'bare')
-          .replace(/\nnaked\b/gi, 'undressed')
+          .replace(/\bnaked\b/gi, 'undressed')
         return sanitized
       }
 

@@ -650,7 +650,12 @@ export default function CreateImagePage() {
         .filter(bt => bt && bt.phrase)
         .map(bt => bt!.phrase)
       if (bodyPhrases.length > 0) {
-        enhanced = `${enhanced}, ${bodyPhrases.join(', ')}`
+        // Remove "woman, body type: " prefix from all but first body phrase to avoid conflicts
+        const mergedBodyPhrase = bodyPhrases.map((phrase, idx) => {
+          if (idx === 0) return phrase
+          return phrase.replace(/^woman,\s*body type:\s*/, '')
+        }).join(', ')
+        enhanced = `${enhanced}, ${mergedBodyPhrase}`
       }
     }
     if (ethnicityData && ethnicityData.phrase) {
