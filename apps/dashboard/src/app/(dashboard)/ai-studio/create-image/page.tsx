@@ -304,6 +304,20 @@ export default function CreateImagePage() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const imageContainerRef = useRef<HTMLDivElement>(null)
 
+
+  // Handle wheel zoom with non-passive listener
+  useEffect(() => {
+    const container = imageContainerRef.current
+    if (!container) return
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      setImageZoom(prev => Math.max(0.5, Math.min(5, prev - e.deltaY * 0.001)))
+    }
+
+    container.addEventListener('wheel', handleWheel, { passive: false })
+    return () => container.removeEventListener('wheel', handleWheel)
+  }, [imageZoom])
   // Load initial data
   useEffect(() => {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
@@ -1505,7 +1519,7 @@ export default function CreateImagePage() {
       {/* Fullscreen Modal with Actions */}
       {fullscreenImage && fullscreenImageData && (
         <div className="fixed inset-0 bg-black/90 z-[9999] flex" onClick={() => { setFullscreenImage(null); setFullscreenImageData(null); setImageZoom(1) }}>
-          <div className="flex-1 flex items-center justify-center overflow-hidden p-4 relative" ref={imageContainerRef} onWheel={(e) => { e.preventDefault(); setImageZoom(Math.max(0.5, Math.min(5, imageZoom - e.deltaY * 0.001))) }} onClick={(e) => e.stopPropagation()}>
+          <div className="flex-1 flex items-center justify-center overflow-hidden p-4 relative" ref={imageContainerRef}  onClick={(e) => e.stopPropagation()}>
             <div
               className="overflow-auto"
               style={{ userSelect: 'none', cursor: isDragging ? 'grabbing' : 'grab', width: '100%', height: '100%' }}
