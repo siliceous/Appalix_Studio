@@ -85,17 +85,22 @@ export async function imageRoutes(app: FastifyInstance) {
       console.log('[Image Models] Models fetched:', models?.length || 0)
 
       if (!models || models.length === 0) {
+        console.warn('[Image Models] No models available')
         return reply.status(200).send({
           models: [],
           message: 'No models available. Check Stability API configuration.',
         })
       }
 
+      console.log('[Image Models] Returning models:', models.map(m => m.id))
       return reply.send({ models })
     } catch (error) {
-      console.error('[Image Models] Error:', error instanceof Error ? error.message : error)
-      console.error('[Image Models] Full error:', error)
-      return reply.status(500).send({ error: 'Failed to fetch models' })
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      const errorStack = error instanceof Error ? error.stack : ''
+      console.error('[Image Models] Error:', errorMsg)
+      console.error('[Image Models] Stack:', errorStack)
+      console.error('[Image Models] Full error object:', error)
+      return reply.status(500).send({ error: 'Failed to fetch models', details: errorMsg })
     }
   })
 
