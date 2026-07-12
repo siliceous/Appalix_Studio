@@ -550,7 +550,12 @@ export default function CreateImagePage() {
 
               setHistory(prev => {
                 console.log('Previous history length:', prev.length)
-                const updated = [...prev, ...newImages]
+                // Deduplicate: don't add images that already exist by ID
+                const existingIds = new Set(prev.map(img => img.id))
+                const uniqueNewImages = newImages.filter((img: any) => !existingIds.has(img.id))
+                
+                console.log('Unique new images:', uniqueNewImages.length, '/', newImages.length)
+                const updated = [...prev, ...uniqueNewImages]
                 console.log('Updated history length after append:', updated.length)
                 console.log('Storing to localStorage...')
 
@@ -1560,7 +1565,7 @@ export default function CreateImagePage() {
 
             <div className="flex flex-col gap-2 flex-shrink-0">
               <p className="text-xs text-white uppercase font-semibold">Gallery</p>
-              <div className="flex flex-col gap-2 overflow-y-auto max-h-40">
+              <div className="flex flex-col gap-2 overflow-y-auto flex-1">
                 {history.map((img, idx) => (
                   <img 
                     key={`thumb-${img.id || img.timestamp}-${idx}`}
