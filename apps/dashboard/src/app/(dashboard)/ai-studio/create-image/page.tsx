@@ -611,17 +611,22 @@ export default function CreateImagePage() {
   }
 
   const handleDeleteImage = (imageId: string) => {
+    console.log('[Delete] Deleting image:', imageId)
     // Soft delete: mark with deletedAt timestamp
-    setHistory(prev =>
-      prev.map(img =>
+    setHistory(prev => {
+      const updated = prev.map(img =>
         img.id === imageId ? { ...img, deletedAt: Date.now() } : img
       )
-    )
+      console.log('[Delete] Updated history, marking as deleted')
+      return updated
+    })
     if (selectedImage?.id === imageId) {
+      console.log('[Delete] Clearing selectedImage')
       setSelectedImage(null)
     }
     // Close fullscreen if open
     if (fullscreenImageData?.id === imageId) {
+      console.log('[Delete] Closing fullscreen')
       setFullscreenImage(null)
       setFullscreenImageData(null)
     }
@@ -712,24 +717,32 @@ export default function CreateImagePage() {
   }
 
   const handleDownloadImage = async (image: GeneratedImage | null) => {
-    if (!image) return
+    if (!image) {
+      console.warn('[Download] No image provided')
+      return
+    }
     try {
+      console.log('[Download] Starting download for image:', image.id)
       // If it's a data URL, download directly
       if (image.image.startsWith('data:')) {
+        console.log('[Download] Using data URL')
         const link = document.createElement('a')
         link.href = image.image
         link.download = `appalix-image-${image.id}.png`
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
+        console.log('[Download] ✓ Download complete')
         return
       }
 
       // For Supabase URLs, fetch and convert to blob
+      console.log('[Download] Fetching image from URL:', image.image.substring(0, 100))
       const response = await fetch(image.image)
-      if (!response.ok) throw new Error('Failed to fetch image')
+      if (!response.ok) throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`)
 
       const blob = await response.blob()
+      console.log('[Download] Got blob, size:', blob.size, 'bytes')
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
@@ -738,9 +751,10 @@ export default function CreateImagePage() {
       link.click()
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
+      console.log('[Download] ✓ Download complete')
     } catch (error) {
-      console.error('Download failed:', error)
-      alert('Failed to download image')
+      console.error('[Download] ✗ Download failed:', error)
+      alert('Failed to download image: ' + (error instanceof Error ? error.message : String(error)))
     }
   }
 
