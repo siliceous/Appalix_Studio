@@ -1563,8 +1563,8 @@ export default function CreateImagePage() {
 
             <div className="text-xs text-white bg-gray-900 rounded-lg p-2 border border-gray-700 flex-shrink-0">Scroll image to zoom (50% - 500%) | Current: {Math.round(imageZoom * 100)}%</div>
 
-            <div className="flex flex-col gap-2 flex-shrink-0">
-              <p className="text-xs text-white uppercase font-semibold">Gallery</p>
+            <div className="flex flex-col gap-2 flex-1 min-h-0">
+              <p className="text-xs text-white uppercase font-semibold flex-shrink-0">Gallery</p>
               <div className="flex flex-col gap-2 overflow-y-auto flex-1">
                 {history.map((img, idx) => (
                   <img 
