@@ -77,23 +77,7 @@ export default function AIStudioLibrary() {
         }
       } catch (error) {
         console.error('Error loading images:', error)
-        try {
-          const savedHistory = localStorage.getItem('imageGenerationHistory')
-          if (savedHistory) {
-            const parsed = JSON.parse(savedHistory)
-            const historyWithIds = parsed
-              .filter((img: any) => img && img.image && typeof img.image === 'string' && img.image.length > 0)
-              .map((img: any, idx: number) => ({
-                ...img,
-                id: img.id || `legacy-${img.timestamp || idx}`,
-              }))
-            const activeImages = historyWithIds.filter((img: any) => !img.deletedAt)
-            activeImages.sort((a: any, b: any) => b.timestamp - a.timestamp)
-            setImages(activeImages)
-          }
-        } catch (error) {
-          console.error('Error loading from localStorage:', error)
-        }
+        setImages([])
       } finally {
         setLoading(false)
       }
