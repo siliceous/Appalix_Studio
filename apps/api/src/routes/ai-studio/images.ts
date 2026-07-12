@@ -534,6 +534,7 @@ export async function imageRoutes(app: FastifyInstance) {
       // Flatten: each generation record with multiple images becomes multiple image objects
       const flattenedImages = processedImages.flatMap((gen: any) => {
         const urls = gen.output_urls ? JSON.parse(gen.output_urls) : [gen.output_url]
+        console.log('[Image Generation] Generation:', gen.id.substring(0, 8), 'has', urls.length, 'URLs')
         return urls.map((url: string, idx: number) => ({
           id: `${gen.id}-${idx}`,
           prompt: gen.prompt,
@@ -544,6 +545,7 @@ export async function imageRoutes(app: FastifyInstance) {
         }))
       })
 
+      console.log('[Image Generation] Total flattened images:', flattenedImages.length)
       return reply.send({
         images: flattenedImages,
         total: flattenedImages.length,
