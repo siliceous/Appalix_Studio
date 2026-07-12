@@ -330,8 +330,23 @@ export default function CreateImagePage() {
         if (savedHistory) {
           const parsed = JSON.parse(savedHistory)
           if (Array.isArray(parsed)) {
-            setHistory(parsed)
-            console.log('[Load] Loaded', parsed.length, 'images from localStorage')
+            // Deduplicate by ID
+            const seen = new Set<string>()
+            const deduped = parsed.filter((img: any) => {
+              if (!img?.id) return false
+              if (seen.has(img.id)) {
+                console.log('[Load] Filtering duplicate from localStorage:', img.id)
+                return false
+              }
+              seen.add(img.id)
+              return true
+            })
+            setHistory(deduped)
+            console.log('[Load] Loaded', deduped.length, 'unique images from localStorage (removed', parsed.length - deduped.length, 'duplicates)')
+            // Update localStorage with deduplicated data
+            if (deduped.length < parsed.length) {
+              localStorage.setItem('imageGenerationHistory', JSON.stringify(deduped))
+            }
           }
         }
       } catch (error) {
