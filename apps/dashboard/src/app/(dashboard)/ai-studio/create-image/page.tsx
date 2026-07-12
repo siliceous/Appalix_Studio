@@ -1526,10 +1526,10 @@ export default function CreateImagePage() {
       {/* Fullscreen Modal with Actions */}
       {fullscreenImage && fullscreenImageData && (
         <div className="fixed inset-0 bg-black/90 z-[9999] flex" onClick={() => { setFullscreenImage(null); setFullscreenImageData(null); setImageZoom(1) }}>
-          <div className="flex-1 flex items-center justify-center overflow-hidden p-4 relative" ref={imageContainerRef}  onClick={(e) => e.stopPropagation()}>
+          <div className="flex-1 flex overflow-hidden p-4 relative" ref={imageContainerRef}  onClick={(e) => e.stopPropagation()}>
             <div
-              className="overflow-auto"
-              style={{ userSelect: 'none', cursor: isDragging ? 'grabbing' : 'grab', width: '100%', height: '100%' }}
+              className="flex-1 overflow-auto"
+              style={{ userSelect: 'none', cursor: isDragging ? 'grabbing' : 'grab' }}
               onMouseDown={(e) => {
                 setIsDragging(true)
                 setDragStart({ x: e.clientX, y: e.clientY })
@@ -1562,6 +1562,12 @@ export default function CreateImagePage() {
             </div>
 
             <div className="text-xs text-white bg-gray-900 rounded-lg p-2 border border-gray-700 flex-shrink-0">Scroll image to zoom (50% - 500%) | Current: {Math.round(imageZoom * 100)}%</div>
+
+            <div className="flex gap-2 flex-shrink-0">
+              <button onClick={() => setImageZoom(Math.max(0.5, imageZoom - 0.1))} className="flex-1 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm font-medium transition-colors">− Zoom Out</button>
+              <button onClick={() => setImageZoom(1)} className="flex-1 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm font-medium transition-colors">Reset</button>
+              <button onClick={() => setImageZoom(Math.min(5, imageZoom + 0.1))} className="flex-1 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm font-medium transition-colors">+ Zoom In</button>
+            </div>
 
             <div className="flex flex-col gap-2 flex-1 min-h-0">
               <p className="text-xs text-white uppercase font-semibold flex-shrink-0">Gallery</p>
