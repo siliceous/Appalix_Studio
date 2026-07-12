@@ -476,8 +476,6 @@ export async function imageRoutes(app: FastifyInstance) {
       }
 
       // Fetch all completed image generations
-      // Note: using Supabase RPC or raw SQL would be better for DISTINCT, but PostgREST doesn't support it
-      // So we'll deduplicate in code instead
       const { data: allGenerations, error } = await supabase
         .from('ai_image_generations')
         .select('id, prompt, created_at, output_url, output_urls, status, quantity, aspect_ratio')
@@ -486,14 +484,14 @@ export async function imageRoutes(app: FastifyInstance) {
         .order('created_at', { ascending: false })
         .limit(100)
 
-      // Deduplicate by ID (in case database has duplicates)
-      const seenIds = new Set<string>()
+      // Deduplicate by ID - keep only first occurrence
+      const seen = new Map<string, any>()
       const generations = (allGenerations || []).filter((gen: any) => {
-        if (seenIds.has(gen.id)) {
-          console.warn('[Image Generation] Filtered duplicate generation:', gen.id)
+        if (seen.has(gen.id)) {
+          console.log('[Image Generation] Duplicate found - filtering:', gen.id)
           return false
         }
-        seenIds.add(gen.id)
+        seen.set(gen.id, true)
         return true
       })
 
