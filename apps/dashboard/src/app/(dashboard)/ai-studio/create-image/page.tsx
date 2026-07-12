@@ -323,13 +323,36 @@ export default function CreateImagePage() {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
     setWorkspaceId(wId)
 
-    // Clear old image history - start fresh
+    // Smart cleanup: deduplicate and keep recent images
     if (typeof window !== 'undefined') {
       try {
-        localStorage.removeItem('imageGenerationHistory')
-        console.log('[Load] Cleared old image history from localStorage')
+        const savedHistory = localStorage.getItem('imageGenerationHistory')
+        if (savedHistory) {
+          const parsed = JSON.parse(savedHistory)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            // Deduplicate by keeping first occurrence of each ID
+            const seen = new Set<string>()
+            const deduped = parsed.filter((img: any) => {
+              if (!img?.id) return false
+              if (seen.has(img.id)) {
+                console.log('[Load] Filtering duplicate:', img.id)
+                return false
+              }
+              seen.add(img.id)
+              return true
+            })
+            
+            if (deduped.length < parsed.length) {
+              console.log('[Load] Removed', parsed.length - deduped.length, 'duplicates from', parsed.length, 'images')
+              localStorage.setItem('imageGenerationHistory', JSON.stringify(deduped))
+            } else {
+              console.log('[Load] Loaded', deduped.length, 'images from localStorage (no duplicates found)')
+            }
+            setHistory(deduped)
+          }
+        }
       } catch (error) {
-        console.error('[Load] Error clearing history:', error)
+        console.error('[Load] Error processing history:', error)
       }
     }
 
