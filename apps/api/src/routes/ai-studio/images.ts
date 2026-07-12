@@ -484,6 +484,11 @@ export async function imageRoutes(app: FastifyInstance) {
         return reply.status(500).send({ error: 'Failed to fetch images' })
       }
 
+      console.log('[Image Generation] Fetched', generations?.length || 0, 'completed generations from DB')
+      if (generations && generations.length > 0) {
+        console.log('[Image Generation] First generation ID:', generations[0].id, 'Created:', generations[0].created_at)
+      }
+
       // Process images: generate fresh signed URLs
       const processedImages = await Promise.all((generations || []).map(async (img: any) => {
         try {
