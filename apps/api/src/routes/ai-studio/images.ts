@@ -531,24 +531,36 @@ export async function imageRoutes(app: FastifyInstance) {
         }
       })).then(imgs => imgs.filter((img) => img !== null && img !== undefined))
 
-      // Flatten: each generation record with multiple images becomes multiple image objects
-      const flattenedImages = processedImages.flatMap((gen: any) => {
-        const urls = gen.output_urls ? JSON.parse(gen.output_urls) : [gen.output_url]
-        console.log('[Image Generation] Generation:', gen.id.substring(0, 8), 'has', urls.length, 'URLs')
-        return urls.map((url: string, idx: number) => ({
-          id: `${gen.id}-${idx}`,
+      // Return each generation as a single image (use first URL if multiple exist)
+      const images = processedImages.map((gen: any) => {
+        let outputUrl = gen.output_url
+
+        // If output_urls exists and is valid, use the first URL from it
+        if (gen.output_urls && typeof gen.output_urls === 'string') {
+          try {
+            const urls = JSON.parse(gen.output_urls)
+            if (Array.isArray(urls) && urls.length > 0) {
+              outputUrl = urls[0]
+            }
+          } catch (e) {
+            // If parsing fails, use the single output_url
+          }
+        }
+
+        return {
+          id: gen.id,
           prompt: gen.prompt,
           created_at: gen.created_at,
-          output_url: url,
+          output_url: outputUrl,
           aspect_ratio: gen.aspect_ratio,
           status: gen.status,
-        }))
+        }
       })
 
-      console.log('[Image Generation] Total flattened images:', flattenedImages.length)
+      console.log('[Image Generation] Returning', images.length, 'images')
       return reply.send({
-        images: flattenedImages,
-        total: flattenedImages.length,
+        images: images,
+        total: images.length,
       })
     } catch (error) {
       console.error('[Image Generation] All images endpoint error:', error)
