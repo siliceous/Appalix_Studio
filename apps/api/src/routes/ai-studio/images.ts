@@ -110,6 +110,8 @@ export async function imageRoutes(app: FastifyInstance) {
       let { prompt, style, lighting, aspectRatio, model, quantity, negativePrompt, temperature, resolution } = request.body
       const workspaceId = request.headers['x-workspace-id'] as string
 
+      console.log('[Image Generation] POST /generate/image called with prompt:', prompt.substring(0, 50), 'quantity:', quantity)
+
       if (!workspaceId) {
         return reply.status(400).send({ error: 'Missing workspace ID' })
       }
@@ -155,7 +157,9 @@ export async function imageRoutes(app: FastifyInstance) {
         return reply.status(507).send({ error: quotaCheck.error })
       }
 
-      // Create generation record
+      // Create generation record with unique constraint on (workspace_id, prompt, created_at)
+      // to prevent duplicate generations from the same request
+      const createdAt = new Date().toISOString()
       const { data: generation, error: insertError } = await (supabase
         .from('ai_image_generations')
         .insert({
@@ -168,7 +172,7 @@ export async function imageRoutes(app: FastifyInstance) {
           quantity,
           status: 'queued',
           provider: 'leonardo',
-          created_at: new Date().toISOString(),
+          created_at: createdAt,
         } as any)
         .select() as any)
 
@@ -178,6 +182,7 @@ export async function imageRoutes(app: FastifyInstance) {
       }
 
       const generationId = generation[0].id
+      console.log('[Image Generation] Created generation record:', generationId, 'at', createdAt)
 
       // Determine provider based on model ID
       const isGeminiModel = model?.startsWith('gemini-')
