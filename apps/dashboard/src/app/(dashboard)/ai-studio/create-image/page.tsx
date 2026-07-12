@@ -1558,6 +1558,27 @@ export default function CreateImagePage() {
 
             <div className="text-xs text-white bg-gray-900 rounded-lg p-2 border border-gray-700 flex-shrink-0">Scroll image to zoom (50% - 500%) | Current: {Math.round(imageZoom * 100)}%</div>
 
+            <div className="flex flex-col gap-2 flex-shrink-0">
+              <p className="text-xs text-white uppercase font-semibold">Gallery</p>
+              <div className="flex flex-col gap-2 overflow-y-auto max-h-40">
+                {history.map((img, idx) => (
+                  <img 
+                    key={`thumb-${img.id || img.timestamp}-${idx}`}
+                    src={img.image}
+                    alt={`Thumbnail ${idx}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setFullscreenImageIndex(idx)
+                      setFullscreenImageData(img)
+                      setFullscreenImage(img.image)
+                      setImageZoom(1)
+                    }}
+                    className={`w-full h-20 object-cover rounded-lg cursor-pointer transition-all ${fullscreenImageIndex === idx ? 'ring-2 ring-blue-500' : 'opacity-70 hover:opacity-100'}`}
+                  />
+                ))}
+              </div>
+            </div>
+
             <div className="flex flex-col gap-2 flex-1 min-h-0">
               <p className="text-xs text-white uppercase font-semibold flex-shrink-0">Prompt</p>
               <p className="text-white text-sm break-words bg-gray-900 rounded-lg p-3 border border-gray-700 overflow-y-auto flex-1">{fullscreenImageData?.prompt && fullscreenImageData.prompt.trim().length > 0 ? fullscreenImageData.prompt : '(No prompt saved for this image)'}</p>
