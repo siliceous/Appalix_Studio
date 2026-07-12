@@ -323,34 +323,13 @@ export default function CreateImagePage() {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
     setWorkspaceId(wId)
 
-    // Load existing images from localStorage
+    // Clear old image history - start fresh
     if (typeof window !== 'undefined') {
       try {
-        const savedHistory = localStorage.getItem('imageGenerationHistory')
-        if (savedHistory) {
-          const parsed = JSON.parse(savedHistory)
-          if (Array.isArray(parsed)) {
-            // Deduplicate by ID
-            const seen = new Set<string>()
-            const deduped = parsed.filter((img: any) => {
-              if (!img?.id) return false
-              if (seen.has(img.id)) {
-                console.log('[Load] Filtering duplicate from localStorage:', img.id)
-                return false
-              }
-              seen.add(img.id)
-              return true
-            })
-            setHistory(deduped)
-            console.log('[Load] Loaded', deduped.length, 'unique images from localStorage (removed', parsed.length - deduped.length, 'duplicates)')
-            // Update localStorage with deduplicated data
-            if (deduped.length < parsed.length) {
-              localStorage.setItem('imageGenerationHistory', JSON.stringify(deduped))
-            }
-          }
-        }
+        localStorage.removeItem('imageGenerationHistory')
+        console.log('[Load] Cleared old image history from localStorage')
       } catch (error) {
-        console.error('[Load] Error loading history from localStorage:', error)
+        console.error('[Load] Error clearing history:', error)
       }
     }
 
