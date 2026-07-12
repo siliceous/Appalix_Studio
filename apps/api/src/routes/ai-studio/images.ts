@@ -531,9 +531,22 @@ export async function imageRoutes(app: FastifyInstance) {
         }
       })).then(imgs => imgs.filter((img) => img !== null && img !== undefined))
 
+      // Flatten: each generation record with multiple images becomes multiple image objects
+      const flattenedImages = processedImages.flatMap((gen: any) => {
+        const urls = gen.output_urls ? JSON.parse(gen.output_urls) : [gen.output_url]
+        return urls.map((url: string, idx: number) => ({
+          id: `${gen.id}-${idx}`,
+          prompt: gen.prompt,
+          created_at: gen.created_at,
+          output_url: url,
+          aspect_ratio: gen.aspect_ratio,
+          status: gen.status,
+        }))
+      })
+
       return reply.send({
-        images: processedImages,
-        total: processedImages.length,
+        images: flattenedImages,
+        total: flattenedImages.length,
       })
     } catch (error) {
       console.error('[Image Generation] All images endpoint error:', error)
