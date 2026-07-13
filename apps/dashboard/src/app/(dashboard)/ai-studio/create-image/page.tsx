@@ -1471,7 +1471,7 @@ export default function CreateImagePage() {
                         alt="Deleted"
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute inset-0 bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-100">
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
                         <button
                           className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
                           onClick={(e) => {
@@ -1505,7 +1505,7 @@ export default function CreateImagePage() {
                   No images yet
                 </div>
               ) : (
-                [...history].filter(img => !img.deletedAt).reverse().map((image, idx) => (
+                [...history].filter(img => !img.deletedAt).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).map((image, idx) => (
                   <div
                     key={`image-${image.id || image.timestamp}-${idx}`}
                     className={`group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all col-span-1 ${
@@ -1521,7 +1521,7 @@ export default function CreateImagePage() {
                       alt="Generated"
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-100">
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
                       <button
                         className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
                         onClick={(e) => {
