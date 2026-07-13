@@ -1545,54 +1545,52 @@ export default function CreateImagePage() {
         </div>
       </div>
 
-            {/* Image Viewer Modal */}
-      {(() => {
-        const activeImages = history.filter(img => !img.deletedAt)
-        const currentIdx = fullscreenImageData ? activeImages.findIndex(img => img.id === fullscreenImageData.id) : -1
-        return (
-          <ImageViewerModal
-            image={fullscreenImageData}
-            isOpen={!!fullscreenImage}
-            onClose={() => {
-              setFullscreenImage(null)
-              setFullscreenImageData(null)
-              setImageZoom(1)
-            }}
-            onDownload={handleDownloadImage}
-            onDelete={handleDeleteImage}
-            onEdit={handleEditImage}
-            onSave={handleSaveToProject}
-            onPrevious={() => {
-              const activeImages = history.filter(img => !img.deletedAt)
-              const currentIdx = activeImages.findIndex(img => img.id === fullscreenImageData?.id)
-              if (currentIdx > 0) {
-                const newImage = activeImages[currentIdx - 1]
-                setFullscreenImageData(newImage)
-                setFullscreenImage(newImage.image)
-                setFullscreenImageIndex(currentIdx - 1)
-              }
-            }}
-            onNext={() => {
-              const activeImages = history.filter(img => !img.deletedAt)
-              const currentIdx = activeImages.findIndex(img => img.id === fullscreenImageData?.id)
-              if (currentIdx < activeImages.length - 1) {
-                const newImage = activeImages[currentIdx + 1]
-                setFullscreenImageData(newImage)
-                setFullscreenImage(newImage.image)
-                setFullscreenImageIndex(currentIdx + 1)
-              }
-            }}
-            hasPrevious={currentIdx > 0}
-            hasNext={currentIdx >= 0 && currentIdx < activeImages.length - 1}
-            allowZoom={true}
-            allowPan={true}
-            allowDownload={true}
-            allowDelete={true}
-            allowEdit={true}
-            allowSave={true}
-          />
-        )
-      })()}
+      {/* Image Viewer Modal */}
+      <ImageViewerModal
+        image={fullscreenImageData}
+        isOpen={!!fullscreenImage}
+        onClose={() => {
+          setFullscreenImage(null)
+          setFullscreenImageData(null)
+          setImageZoom(1)
+        }}
+        onDownload={handleDownloadImage}
+        onDelete={handleDeleteImage}
+        onEdit={handleEditImage}
+        onSave={handleSaveToProject}
+        onPrevious={() => {
+          const activeImages = history.filter(img => !img.deletedAt)
+          const currentIdx = activeImages.findIndex(img => img.id === fullscreenImageData?.id)
+          if (currentIdx > 0) {
+            const newImage = activeImages[currentIdx - 1]
+            setFullscreenImageData(newImage)
+            setFullscreenImage(newImage.image)
+            setFullscreenImageIndex(currentIdx - 1)
+          }
+        }}
+        onNext={() => {
+          const activeImages = history.filter(img => !img.deletedAt)
+          const currentIdx = activeImages.findIndex(img => img.id === fullscreenImageData?.id)
+          if (currentIdx < activeImages.length - 1) {
+            const newImage = activeImages[currentIdx + 1]
+            setFullscreenImageData(newImage)
+            setFullscreenImage(newImage.image)
+            setFullscreenImageIndex(currentIdx + 1)
+          }
+        }}
+        hasPrevious={fullscreenImageData ? history.filter(img => !img.deletedAt).findIndex(img => img.id === fullscreenImageData.id) > 0 : false}
+        hasNext={fullscreenImageData ? (() => {
+          const activeImages = history.filter(img => !img.deletedAt)
+          const idx = activeImages.findIndex(img => img.id === fullscreenImageData.id)
+          return idx >= 0 && idx < activeImages.length - 1
+        })() : false}
+        allowZoom={true}
+        allowPan={true}
+        allowDownload={true}
+        allowDelete={true}
+        allowEdit={true}
+        allowSave={true}
+      />
 
       {/* Save to Project Dialog */}
       {showSaveDialog && imageToSave && (
