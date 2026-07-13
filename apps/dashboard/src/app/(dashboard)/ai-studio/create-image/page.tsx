@@ -1648,7 +1648,7 @@ export default function CreateImagePage() {
                   Cancel
                 </button>
                 <button
-                  onClick={handleSaveToProject}
+                  onClick={() => imageToSave && handleSaveToProject(imageToSave)}
                   disabled={isSavingProject || (!selectedProjectId && !newProjectName.trim())}
                   className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
