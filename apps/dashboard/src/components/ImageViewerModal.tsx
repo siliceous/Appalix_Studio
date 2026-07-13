@@ -143,77 +143,23 @@ export default function ImageViewerModal({
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      {/* Top Toolbar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-            title="Back"
-          >
-            <ChevronLeft className="w-5 h-5 text-white" />
-          </button>
-          <div className="text-white">
-            <div className="text-sm font-medium">Image {image.id.substring(0, 8)}</div>
-            {image.aspectRatio && (
-              <div className="text-xs text-gray-400">{image.aspectRatio}</div>
-            )}
-          </div>
+      {/* Top Bar - Just close button */}
+      <div className="flex items-center justify-between px-6 py-3 border-b border-gray-700 flex-shrink-0">
+        <div className="text-white text-sm font-medium">
+          Image {image.id.substring(0, 8)} {image.aspectRatio && `• ${image.aspectRatio}`}
         </div>
-
-        <div className="flex items-center gap-2">
-          {allowSave && onSave && (
-            <button
-              onClick={() => onSave(image)}
-              className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-              title="Save"
-            >
-              <Heart className="w-5 h-5 text-red-400" />
-            </button>
-          )}
-          {allowEdit && onEdit && (
-            <button
-              onClick={() => onEdit(image)}
-              className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-              title="Edit"
-            >
-              <Edit2 className="w-5 h-5 text-white" />
-            </button>
-          )}
-          {allowDownload && onDownload && (
-            <button
-              onClick={() => onDownload(image)}
-              className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-              title="Download"
-            >
-              <Download className="w-5 h-5 text-white" />
-            </button>
-          )}
-          {allowDelete && onDelete && (
-            <button
-              onClick={() => {
-                onDelete(image.id)
-                onClose()
-              }}
-              className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-              title="Delete"
-            >
-              <Trash2 className="w-5 h-5 text-red-400" />
-            </button>
-          )}
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-            title="Close"
-          >
-            <X className="w-5 h-5 text-white" />
-          </button>
-        </div>
+        <button
+          onClick={onClose}
+          className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+          title="Close (ESC)"
+        >
+          <X className="w-5 h-5 text-white" />
+        </button>
       </div>
 
       {/* Image Container */}
-      <div 
-        className="flex-1 flex items-center justify-center overflow-hidden relative bg-black" 
+      <div
+        className="flex-1 flex items-center justify-center overflow-hidden relative bg-black"
         ref={containerRef}
         style={{ userSelect: 'none' }}
       >
@@ -270,39 +216,92 @@ export default function ImageViewerModal({
         )}
       </div>
 
-      {/* Bottom Zoom Controls */}
-      {allowZoom && (
-        <div className="flex items-center justify-center gap-4 px-6 py-4 border-t border-gray-700 flex-shrink-0 bg-gray-900/50">
-          <button
-            onClick={zoomOut}
-            disabled={zoom <= 100}
-            className="p-2 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
-            title="Zoom Out (Scroll down)"
-          >
-            <ZoomOut className="w-5 h-5 text-white" />
-          </button>
-          <div className="text-white text-sm font-medium min-w-[100px] text-center font-mono">
-            {zoom}%
+      {/* Bottom Controls - Prompt + Zoom + Action Buttons */}
+      <div className="flex flex-col gap-3 px-6 py-4 border-t border-gray-700 flex-shrink-0 bg-gray-900/80">
+        {/* Prompt */}
+        {image.prompt && (
+          <div className="bg-gray-800 rounded-lg p-3 max-h-24 overflow-y-auto">
+            <p className="text-white text-sm">{image.prompt}</p>
           </div>
-          <button
-            onClick={zoomIn}
-            disabled={zoom >= 1000}
-            className="p-2 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
-            title="Zoom In (Scroll up)"
-          >
-            <ZoomIn className="w-5 h-5 text-white" />
-          </button>
-          <div className="w-px h-6 bg-gray-700" />
-          <button
-            onClick={resetZoom}
-            disabled={zoom === 100}
-            className="px-3 py-2 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors text-white text-sm"
-            title="Reset to 100%"
-          >
-            Reset (R)
-          </button>
+        )}
+
+        {/* Zoom Controls and Action Buttons */}
+        <div className="flex items-center justify-between gap-3">
+          {/* Zoom Controls */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={zoomOut}
+              disabled={zoom <= 100}
+              className="p-2 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+              title="Zoom Out (Scroll down)"
+            >
+              <ZoomOut className="w-4 h-4 text-white" />
+            </button>
+            <div className="text-white text-xs font-medium min-w-[45px] text-center font-mono bg-gray-700 px-2 py-1 rounded">
+              {zoom}%
+            </div>
+            <button
+              onClick={zoomIn}
+              disabled={zoom >= 1000}
+              className="p-2 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+              title="Zoom In (Scroll up)"
+            >
+              <ZoomIn className="w-4 h-4 text-white" />
+            </button>
+            <button
+              onClick={resetZoom}
+              disabled={zoom === 100}
+              className="px-2 py-1 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded text-white text-xs"
+              title="Reset (R)"
+            >
+              Reset
+            </button>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            {allowSave && onSave && (
+              <button
+                onClick={() => onSave(image)}
+                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                title="Save (Heart)"
+              >
+                <Heart className="w-4 h-4 text-red-400" />
+              </button>
+            )}
+            {allowEdit && onEdit && (
+              <button
+                onClick={() => onEdit(image)}
+                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                title="Edit"
+              >
+                <Edit2 className="w-4 h-4 text-white" />
+              </button>
+            )}
+            {allowDownload && onDownload && (
+              <button
+                onClick={() => onDownload(image)}
+                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                title="Download"
+              >
+                <Download className="w-4 h-4 text-white" />
+              </button>
+            )}
+            {allowDelete && onDelete && (
+              <button
+                onClick={() => {
+                  onDelete(image.id)
+                  onClose()
+                }}
+                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                title="Delete"
+              >
+                <Trash2 className="w-4 h-4 text-red-400" />
+              </button>
+            )}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }
