@@ -168,8 +168,8 @@ export default function ImageViewerModal({
         onWheel={(e) => {
           if (!allowZoom) return
           e.preventDefault()
-          const zoomFactor = e.deltaY > 0 ? 0.98 : 1.02
-          setZoom(prev => Math.max(100, Math.min(1000, Math.round(prev * zoomFactor))))
+          const increment = e.deltaY > 0 ? -50 : 50
+          setZoom(prev => Math.max(100, Math.min(1000, prev + increment)))
         }}
       >
         <div
