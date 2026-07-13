@@ -43,9 +43,7 @@ export default function CreateVideoPage() {
           const importedImage = JSON.parse(importedImageStr)
           console.log('[CreateVideo] Imported image:', importedImage)
           setStartImage(importedImage.image)
-          const promptText = importedImage.prompt || ''
-          console.log('[CreateVideo] Setting prompt:', promptText)
-          setPrompt(promptText)
+          // Don't set prompt - user can enter their own description for the video
           sessionStorage.removeItem('importedImage')
         } catch (e) {
           console.error('Error loading imported image:', e)
@@ -111,6 +109,11 @@ export default function CreateVideoPage() {
       return
     }
 
+    if (!prompt.trim()) {
+      alert('Please enter a prompt for the video')
+      return
+    }
+
     setIsGenerating(true)
     try {
       const response = await fetch('/api/ai-studio/generate/video', {
@@ -120,6 +123,7 @@ export default function CreateVideoPage() {
           'x-workspace-id': workspaceId,
         },
         body: JSON.stringify({
+          prompt,
           start_image: startImage,
           end_image: endImage,
           duration_seconds: duration,
@@ -135,6 +139,7 @@ export default function CreateVideoPage() {
 
       const data = await response.json()
       setVideos([data, ...videos])
+      setPrompt('')
       alert('Video generation started!')
     } catch (error) {
       console.error('Generation failed:', error)
@@ -325,15 +330,31 @@ export default function CreateVideoPage() {
             )}
           </div>
 
-          {/* Generate Button */}
-          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex items-center justify-end">
-            <button
-              onClick={handleGenerate}
-              disabled={!startImage || isGenerating}
-              className="px-6 py-2 bg-black text-white text-sm font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors whitespace-nowrap"
-            >
-              {isGenerating ? 'Generating...' : 'Generate'}
-            </button>
+          {/* Prompt Bar */}
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex flex-col gap-2">
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Describe what you want to create..."
+              rows={6}
+              maxLength={2000}
+              className="w-full px-4 py-3 text-black placeholder-gray-500 bg-white border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            />
+            <div className="flex justify-between items-center gap-2">
+              <div className="flex gap-2 flex-1">
+                {/* Placeholder for future action buttons */}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">{prompt.length}/2000</span>
+                <button
+                  onClick={handleGenerate}
+                  disabled={!prompt.trim() || !startImage || isGenerating}
+                  className="px-4 py-2 bg-black text-white text-sm font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors whitespace-nowrap"
+                >
+                  {isGenerating ? 'Generating...' : 'Generate'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
