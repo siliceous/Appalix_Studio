@@ -57,7 +57,7 @@ export default function ImageViewerModal({
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLDivElement>(null)
 
-  // Handle wheel zoom
+  // Handle wheel zoom - more sensitive and natural
   useEffect(() => {
     if (!allowZoom) return
     const container = containerRef.current
@@ -65,10 +65,10 @@ export default function ImageViewerModal({
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault()
-      const delta = e.deltaY > 0 ? -50 : 50
+      // More granular zoom: 2% per wheel tick for better control
+      const zoomFactor = e.deltaY > 0 ? 0.98 : 1.02
       setZoom(prev => {
-        const newZoom = Math.max(100, Math.min(1000, prev + delta))
-        console.log('[Zoom] Updated to:', newZoom + '%')
+        const newZoom = Math.max(100, Math.min(1000, Math.round(prev * zoomFactor)))
         return newZoom
       })
     }
@@ -77,14 +77,25 @@ export default function ImageViewerModal({
     return () => container.removeEventListener('wheel', handleWheel)
   }, [allowZoom])
 
-  // Handle keyboard
+  // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        onClose()
+      } else if (e.key === '+' || e.key === '=') {
+        e.preventDefault()
+        zoomIn()
+      } else if (e.key === '-') {
+        e.preventDefault()
+        zoomOut()
+      } else if (e.key === '0' || e.key === 'r' || e.key === 'R') {
+        e.preventDefault()
+        resetZoom()
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
+  }, [onClose, zoom])
 
   if (!isOpen || !image) return null
 
@@ -207,13 +218,14 @@ export default function ImageViewerModal({
         style={{ userSelect: 'none' }}
       >
         <div
-          className="relative cursor-grab active:cursor-grabbing"
+          className="relative"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           style={{
             transform: `translate(${pan.x}px, ${pan.y}px)`,
+            cursor: zoom > 100 ? (isDragging ? 'grabbing' : 'grab') : 'zoom-in',
           }}
         >
           <div
@@ -263,28 +275,31 @@ export default function ImageViewerModal({
         <div className="flex items-center justify-center gap-4 px-6 py-4 border-t border-gray-700 flex-shrink-0 bg-gray-900/50">
           <button
             onClick={zoomOut}
-            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-            title="Zoom Out"
+            disabled={zoom <= 100}
+            className="p-2 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+            title="Zoom Out (Scroll down)"
           >
             <ZoomOut className="w-5 h-5 text-white" />
           </button>
-          <div className="text-white text-sm font-medium min-w-[80px] text-center">
+          <div className="text-white text-sm font-medium min-w-[100px] text-center font-mono">
             {zoom}%
           </div>
           <button
             onClick={zoomIn}
-            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-            title="Zoom In"
+            disabled={zoom >= 1000}
+            className="p-2 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+            title="Zoom In (Scroll up)"
           >
             <ZoomIn className="w-5 h-5 text-white" />
           </button>
           <div className="w-px h-6 bg-gray-700" />
           <button
             onClick={resetZoom}
-            className="px-3 py-2 hover:bg-gray-700 rounded-lg transition-colors text-white text-sm"
-            title="Reset Zoom"
+            disabled={zoom === 100}
+            className="px-3 py-2 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors text-white text-sm"
+            title="Reset to 100%"
           >
-            Reset
+            Reset (R)
           </button>
         </div>
       )}
