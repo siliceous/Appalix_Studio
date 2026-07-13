@@ -54,6 +54,7 @@ export default function ImageViewerModal({
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [copied, setCopied] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLDivElement>(null)
 
@@ -143,6 +144,8 @@ export default function ImageViewerModal({
   }
   const copyPrompt = () => {
     navigator.clipboard.writeText(image.prompt)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   return (
@@ -279,14 +282,17 @@ export default function ImageViewerModal({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 relative">
             <button
               onClick={copyPrompt}
-              className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+              className={`p-2 rounded-lg transition-colors ${copied ? 'bg-green-600' : 'hover:bg-gray-700'}`}
               title="Copy Prompt"
             >
               <Copy className="w-4 h-4 text-white" />
             </button>
+            {copied && (
+              <span className="text-xs text-green-400 font-medium">Copied!</span>
+            )}
             {allowDownload && onDownload && (
               <button
                 onClick={() => onDownload(image)}
