@@ -66,7 +66,12 @@ export default function ImageViewerModal({
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault()
-      setZoom(prev => Math.max(100, Math.min(1000, prev - e.deltaY * 0.5)))
+      const delta = e.deltaY > 0 ? -50 : 50
+      setZoom(prev => {
+        const newZoom = Math.max(100, Math.min(1000, prev + delta))
+        console.log('[Zoom] Updated to:', newZoom + '%')
+        return newZoom
+      })
     }
 
     container.addEventListener('wheel', handleWheel, { passive: false })
@@ -104,8 +109,16 @@ export default function ImageViewerModal({
     setIsDragging(false)
   }
 
-  const zoomIn = () => setZoom(prev => Math.min(1000, prev + 100))
-  const zoomOut = () => setZoom(prev => Math.max(100, prev - 100))
+  const zoomIn = () => {
+    setZoom(prev => Math.min(1000, prev + 100))
+  }
+  const zoomOut = () => {
+    const newZoom = Math.max(100, zoom - 100)
+    setZoom(newZoom)
+    if (newZoom === 100) {
+      setPan({ x: 0, y: 0 })
+    }
+  }
   const resetZoom = () => {
     setZoom(100)
     setPan({ x: 0, y: 0 })
@@ -187,7 +200,11 @@ export default function ImageViewerModal({
       </div>
 
       {/* Image Container */}
-      <div className="flex-1 flex items-center justify-center overflow-hidden relative" ref={containerRef}>
+      <div 
+        className="flex-1 flex items-center justify-center overflow-hidden relative bg-black" 
+        ref={containerRef}
+        style={{ userSelect: 'none' }}
+      >
         <div
           className="relative cursor-grab active:cursor-grabbing"
           onMouseDown={handleMouseDown}
@@ -209,7 +226,13 @@ export default function ImageViewerModal({
             <img
               src={image.image}
               alt="Image viewer"
-              className="max-h-[80vh] max-w-[80vw] object-contain pointer-events-none select-none"
+              className="object-contain pointer-events-none select-none"
+              style={{
+                maxHeight: '90vh',
+                maxWidth: '90vw',
+                height: 'auto',
+                width: 'auto',
+              }}
               draggable={false}
             />
           </div>
