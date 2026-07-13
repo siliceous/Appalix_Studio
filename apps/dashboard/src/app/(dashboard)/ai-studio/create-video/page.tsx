@@ -300,7 +300,20 @@ export default function CreateVideoPage() {
               <ArrowLeft className="w-4 h-4 text-white" />
               <span className="text-xs font-medium text-white">Back</span>
             </button>
-            <h2 className="text-sm font-semibold flex-1 text-center">Create Video</h2>
+            <div className="flex-1 flex items-center justify-center gap-6">
+              <button onClick={() => router.push('/ai-studio/create-image')} className="text-xs font-medium text-gray-100 hover:text-white transition-colors">
+                Create Image
+              </button>
+              <button className="text-xs font-bold text-white hover:text-blue-400 transition-colors">
+                Create Video
+              </button>
+              <button onClick={() => router.push('/ai-studio/product-ads')} className="text-xs font-medium text-gray-100 hover:text-white transition-colors">
+                Product Ads
+              </button>
+              <button onClick={() => router.push('/ai-studio/talking-ad')} className="text-xs font-medium text-gray-100 hover:text-white transition-colors">
+                Talking Ads
+              </button>
+            </div>
             <div className="text-xs font-semibold text-white">
               {credits} Credits
             </div>
