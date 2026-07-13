@@ -1545,6 +1545,7 @@ export default function CreateImagePage() {
                       <button
                         className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
                         onClick={(e) => {
+                          console.log('[Gallery Delete Click] Clicked delete for image:', image.id)
                           e.stopPropagation()
                           handleDeleteImage(image.id)
                         }}
