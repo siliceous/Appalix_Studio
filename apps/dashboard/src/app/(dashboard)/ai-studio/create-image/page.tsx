@@ -1430,8 +1430,7 @@ export default function CreateImagePage() {
                   Trash is empty
                 </div>
               ) : (
-                [...history].reverse().map((image, idx) => (
-                  !image.deletedAt ? null : (
+                [...history].filter(img => img.deletedAt).sort((a, b) => (b.deletedAt || 0) - (a.deletedAt || 0)).map((image, idx) => (
                     <div
                       key={`image-${image.id || image.timestamp}-${idx}`}
                       className="group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all opacity-60 hover:opacity-100 col-span-1"
