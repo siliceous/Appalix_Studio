@@ -343,7 +343,7 @@ export default function CreateImagePage() {
               seen.add(img.id)
               return true
             })
-            
+
             if (deduped.length < parsed.length) {
               console.log('[Load] Removed', parsed.length - deduped.length, 'duplicates from', parsed.length, 'images')
               localStorage.setItem('imageGenerationHistory', JSON.stringify(deduped))
@@ -351,6 +351,19 @@ export default function CreateImagePage() {
               console.log('[Load] Loaded', deduped.length, 'images from localStorage (no duplicates found)')
             }
             setHistory(deduped)
+          }
+        }
+
+        // Check for imported image from library
+        const importedImageStr = sessionStorage.getItem('importedImage')
+        if (importedImageStr) {
+          try {
+            const importedImage = JSON.parse(importedImageStr)
+            setSelectedImage(importedImage)
+            setPrompt(importedImage.prompt || '')
+            sessionStorage.removeItem('importedImage')
+          } catch (e) {
+            console.error('Error loading imported image:', e)
           }
         }
       } catch (error) {
