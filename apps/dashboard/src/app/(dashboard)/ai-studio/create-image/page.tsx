@@ -641,6 +641,13 @@ export default function CreateImagePage() {
         img.id === imageId ? { ...img, deletedAt: Date.now() } : img
       )
       console.log('[Delete] Updated history, marking as deleted')
+      // Persist to localStorage
+      try {
+        localStorage.setItem('imageGenerationHistory', JSON.stringify(updated))
+        console.log('[Delete] ✓ Persisted to localStorage')
+      } catch (err) {
+        console.error('[Delete] ✗ Failed to persist:', err)
+      }
       return updated
     })
     if (selectedImage?.id === imageId) {
