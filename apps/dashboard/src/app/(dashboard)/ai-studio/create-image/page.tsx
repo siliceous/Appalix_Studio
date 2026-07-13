@@ -1471,7 +1471,7 @@ export default function CreateImagePage() {
                         alt="Deleted"
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                      <div className="absolute inset-0 bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-100">
                         <button
                           className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
                           onClick={(e) => {
@@ -1521,7 +1521,7 @@ export default function CreateImagePage() {
                       alt="Generated"
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                    <div className="absolute inset-0 bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-100">
                       <button
                         className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
                         onClick={(e) => {
