@@ -57,12 +57,11 @@ export default function ImageViewerModal({
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLDivElement>(null)
 
-  if (!isOpen || !image) return null
-
   // Handle wheel zoom
   useEffect(() => {
+    if (!allowZoom) return
     const container = containerRef.current
-    if (!container || !allowZoom) return
+    if (!container) return
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault()
@@ -86,6 +85,8 @@ export default function ImageViewerModal({
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
+
+  if (!isOpen || !image) return null
 
   // Handle mouse drag for panning
   const handleMouseDown = (e: React.MouseEvent) => {
