@@ -99,9 +99,9 @@ export default function ImageViewerModal({
 
   if (!isOpen || !image) return null
 
-  // Handle mouse drag for panning
+  // Handle mouse drag for panning (works at any zoom level)
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (!allowPan || zoom <= 100) return
+    if (!allowPan) return
     setIsDragging(true)
     setDragStart({ x: e.clientX, y: e.clientY })
   }
@@ -171,7 +171,7 @@ export default function ImageViewerModal({
           onMouseLeave={handleMouseUp}
           style={{
             transform: `translate(${pan.x}px, ${pan.y}px)`,
-            cursor: zoom > 100 ? (isDragging ? 'grabbing' : 'grab') : 'zoom-in',
+            cursor: isDragging ? 'grabbing' : 'grab',
           }}
         >
           <div
