@@ -287,24 +287,6 @@ export default function ImageViewerModal({
             >
               <Copy className="w-4 h-4 text-white" />
             </button>
-            {allowSave && onSave && (
-              <button
-                onClick={() => onSave(image)}
-                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                title="Save (Heart)"
-              >
-                <Heart className="w-4 h-4 text-red-400" />
-              </button>
-            )}
-            {allowEdit && onEdit && (
-              <button
-                onClick={() => onEdit(image)}
-                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                title="Edit"
-              >
-                <Edit2 className="w-4 h-4 text-white" />
-              </button>
-            )}
             {allowDownload && onDownload && (
               <button
                 onClick={() => onDownload(image)}
