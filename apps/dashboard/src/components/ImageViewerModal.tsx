@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { X, Download, Heart, Edit2, Trash2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react'
+import { X, Download, Heart, Edit2, Trash2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Copy } from 'lucide-react'
 
 interface GeneratedImage {
   id: string
@@ -135,6 +135,9 @@ export default function ImageViewerModal({
     setZoom(100)
     setPan({ x: 0, y: 0 })
   }
+  const copyPrompt = () => {
+    navigator.clipboard.writeText(image.prompt)
+  }
 
   return (
     <div
@@ -162,6 +165,12 @@ export default function ImageViewerModal({
         className="flex-1 flex items-center justify-center overflow-hidden relative bg-black"
         ref={containerRef}
         style={{ userSelect: 'none' }}
+        onWheel={(e) => {
+          if (!allowZoom) return
+          e.preventDefault()
+          const zoomFactor = e.deltaY > 0 ? 0.98 : 1.02
+          setZoom(prev => Math.max(100, Math.min(1000, Math.round(prev * zoomFactor))))
+        }}
       >
         <div
           className="relative"
@@ -260,6 +269,13 @@ export default function ImageViewerModal({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
+            <button
+              onClick={copyPrompt}
+              className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+              title="Copy Prompt"
+            >
+              <Copy className="w-4 h-4 text-white" />
+            </button>
             {allowSave && onSave && (
               <button
                 onClick={() => onSave(image)}
