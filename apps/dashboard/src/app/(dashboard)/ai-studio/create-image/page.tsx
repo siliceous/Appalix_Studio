@@ -1464,7 +1464,6 @@ export default function CreateImagePage() {
                         </button>
                       </div>
                     </div>
-                  )
                 ))
               )
             ) : (
