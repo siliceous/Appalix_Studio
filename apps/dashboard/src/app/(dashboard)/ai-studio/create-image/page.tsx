@@ -249,6 +249,7 @@ interface GeneratedImage {
   image: string
   prompt: string
   timestamp: number
+  aspectRatio?: string
   deletedAt?: number
 }
 
