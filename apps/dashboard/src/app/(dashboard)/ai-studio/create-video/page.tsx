@@ -319,18 +319,18 @@ export default function CreateVideoPage() {
             </div>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-hidden p-3 flex flex-col items-center justify-start bg-gray-50 gap-3">
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col items-center justify-center bg-gray-50">
             {startImage ? (
               <>
-                <div className={`rounded-lg overflow-hidden border-2 border-gray-200 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 h-full ${
+                <div className={`flex-1 overflow-hidden flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 w-full ${
                   aspectRatio === '9:16' ? 'aspect-[9/16]' :
                   aspectRatio === '16:9' ? 'aspect-video' :
                   aspectRatio === '4:3' ? 'aspect-[4/3]' :
                   'aspect-square'
                 }`}>
-                  <img src={startImage} alt="Start" className="w-full h-full object-contain rounded-md" />
+                  <img src={startImage} alt="Start" className="w-full h-full object-contain" />
                 </div>
-                <div className="text-center flex-shrink-0">
+                <div className="text-center flex-shrink-0 p-3">
                   {prompt && <p className="text-sm text-gray-700 font-medium">{prompt}</p>}
                   <p className="text-xs text-gray-500 mt-2">Duration: {duration}s | Quality: {qualityMode.replace('_', ' ')} | Ratio: {aspectRatio}</p>
                 </div>
