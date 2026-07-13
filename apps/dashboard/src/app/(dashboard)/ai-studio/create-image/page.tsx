@@ -1287,7 +1287,20 @@ export default function CreateImagePage() {
               <ArrowLeft className="w-4 h-4 text-white" />
               <span className="text-xs font-medium text-white">Back</span>
             </button>
-            <h2 className="text-sm font-semibold flex-1 text-center">Create Image</h2>
+            <div className="flex-1 flex items-center justify-center gap-6">
+              <button className="text-xs font-medium text-white hover:text-blue-400 transition-colors">
+                Create Image
+              </button>
+              <button className="text-xs font-medium text-gray-400 hover:text-white transition-colors">
+                Create Video
+              </button>
+              <button className="text-xs font-medium text-gray-400 hover:text-white transition-colors">
+                Product Ads
+              </button>
+              <button className="text-xs font-medium text-gray-400 hover:text-white transition-colors">
+                Talking Ads
+              </button>
+            </div>
             <div className="text-xs font-semibold text-white">
               {credits} Credits
             </div>
