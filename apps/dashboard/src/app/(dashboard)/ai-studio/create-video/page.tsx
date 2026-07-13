@@ -319,10 +319,10 @@ export default function CreateVideoPage() {
             </div>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-hidden p-3 flex flex-col items-center justify-center bg-gray-50 gap-3">
+          <div className="flex-1 min-h-0 overflow-hidden p-3 flex flex-col items-center justify-start bg-gray-50 gap-3">
             {startImage ? (
               <>
-                <div className={`rounded-lg overflow-hidden border-2 border-gray-200 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 max-w-full max-h-[calc(100vh-300px)] ${
+                <div className={`rounded-lg overflow-hidden border-2 border-gray-200 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 h-full ${
                   aspectRatio === '9:16' ? 'aspect-[9/16]' :
                   aspectRatio === '16:9' ? 'aspect-video' :
                   aspectRatio === '4:3' ? 'aspect-[4/3]' :
