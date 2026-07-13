@@ -307,7 +307,7 @@ export default function CreateVideoPage() {
           </div>
 
           <div className="flex-1 min-h-0 overflow-hidden p-6 flex items-center justify-center bg-gray-50">
-            {prompt ? (
+            {startImage ? (
               <div className="flex flex-col items-center gap-4 text-center w-full">
                 <div className={`flex-1 rounded-lg overflow-hidden border-2 border-gray-200 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 ${
                   aspectRatio === '9:16' ? 'aspect-[9/16] w-48' :
@@ -315,17 +315,17 @@ export default function CreateVideoPage() {
                   aspectRatio === '4:3' ? 'aspect-[4/3] w-80' :
                   'aspect-square w-80'
                 }`}>
-                  <Film className="w-12 h-12 text-gray-400" />
+                  <img src={startImage} alt="Start" className="w-full h-full object-cover rounded-md" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-700 font-medium">{prompt}</p>
+                  {prompt && <p className="text-sm text-gray-700 font-medium">{prompt}</p>}
                   <p className="text-xs text-gray-500 mt-2">Duration: {duration}s | Quality: {qualityMode.replace('_', ' ')} | Ratio: {aspectRatio}</p>
                 </div>
               </div>
             ) : (
               <div className="text-center text-gray-400">
                 <Film className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p className="text-sm">Enter a prompt to preview</p>
+                <p className="text-sm">Select a start image to preview</p>
               </div>
             )}
           </div>
