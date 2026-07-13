@@ -319,7 +319,7 @@ export default function CreateVideoPage() {
             </div>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-hidden flex flex-col items-center justify-center bg-gray-50">
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col items-center justify-center bg-gray-50 px-[3px]">
             {startImage ? (
               <>
                 <div className={`flex-1 overflow-hidden flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 w-full ${
@@ -372,7 +372,7 @@ export default function CreateVideoPage() {
         </div>
 
         {/* Right Panel - Generated Videos */}
-        <div className="w-80 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden">
+        <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden">
           <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center justify-between flex-shrink-0">
             <h2 className="text-sm font-semibold">Generated Videos</h2>
             <button
