@@ -166,20 +166,20 @@ export default function CreateVideoPage() {
                 <div className="flex-1">
                   <button
                     onClick={() => setShowStartImageModal(true)}
-                    className="w-full h-16 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center text-gray-600 hover:text-blue-600"
+                    className="w-full h-16 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center text-gray-600 hover:text-blue-600 relative"
                   >
                     {startImage ? (
                       <div className="relative w-full h-full">
                         <img src={startImage} alt="Start" className="w-full h-full object-cover rounded-md" />
-                        <button
+                        <div
                           onClick={(e) => {
                             e.stopPropagation()
                             setStartImage(null)
                           }}
-                          className="absolute top-1 right-1 p-1 bg-black/50 hover:bg-black/70 rounded-full"
+                          className="absolute top-1 right-1 p-1 bg-black/50 hover:bg-black/70 rounded-full cursor-pointer"
                         >
                           <X className="w-3 h-3 text-white" />
-                        </button>
+                        </div>
                       </div>
                     ) : (
                       <div className="text-center">
@@ -193,20 +193,20 @@ export default function CreateVideoPage() {
                 <div className="flex-1">
                   <button
                     onClick={() => setShowEndImageModal(true)}
-                    className="w-full h-16 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-400 hover:bg-green-50 transition-all flex items-center justify-center text-gray-600 hover:text-green-600"
+                    className="w-full h-16 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-400 hover:bg-green-50 transition-all flex items-center justify-center text-gray-600 hover:text-green-600 relative"
                   >
                     {endImage ? (
                       <div className="relative w-full h-full">
                         <img src={endImage} alt="End" className="w-full h-full object-cover rounded-md" />
-                        <button
+                        <div
                           onClick={(e) => {
                             e.stopPropagation()
                             setEndImage(null)
                           }}
-                          className="absolute top-1 right-1 p-1 bg-black/50 hover:bg-black/70 rounded-full"
+                          className="absolute top-1 right-1 p-1 bg-black/50 hover:bg-black/70 rounded-full cursor-pointer"
                         >
                           <X className="w-3 h-3 text-white" />
-                        </button>
+                        </div>
                       </div>
                     ) : (
                       <div className="text-center">
