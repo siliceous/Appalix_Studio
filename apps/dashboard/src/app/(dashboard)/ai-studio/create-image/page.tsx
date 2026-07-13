@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Sparkles, Download, Trash2, Heart, Loader, X, Copy, Edit, ChevronLeft, ChevronRight, ChevronDown, ImagePlay } from 'lucide-react'
 
+import ImageViewerModal from '@/components/ImageViewerModal'
 const QUALITY_PRESETS = [
   { id: 'fast', label: 'Fast' },
   { id: 'balanced', label: 'Balanced' },
@@ -1512,8 +1513,10 @@ export default function CreateImagePage() {
                       selectedImage?.id === image.id ? 'ring-2 ring-blue-500 ring-offset-1' : ''
                     }`}
                     onClick={() => {
-                      setSelectedImage(image)
-                      setSelectedImageIndex(idx)
+                      setFullscreenImage(image.image)
+                      setFullscreenImageData(image)
+                      setFullscreenImageIndex(idx)
+                      setImageZoom(1)
                     }}
                   >
                     <img
@@ -1561,6 +1564,31 @@ export default function CreateImagePage() {
           </div>
         </div>
       </div>
+
+            {/* Image Viewer Modal */}
+      <ImageViewerModal
+        image={fullscreenImageData}
+        isOpen={!!fullscreenImage}
+        onClose={() => {
+          setFullscreenImage(null)
+          setFullscreenImageData(null)
+          setImageZoom(1)
+        }}
+        onDownload={handleDownloadImage}
+        onDelete={handleDeleteImage}
+        onEdit={(img) => {
+          setSelectedImage(img)
+          setFullscreenImage(null)
+          setFullscreenImageData(null)
+        }}
+        onSave={handleSaveImage}
+        allowZoom={true}
+        allowPan={true}
+        allowDownload={true}
+        allowDelete={true}
+        allowEdit={true}
+        allowSave={true}
+      />
 
       {/* Fullscreen Modal with Actions */}
       {fullscreenImage && fullscreenImageData && (
