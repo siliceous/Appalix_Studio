@@ -428,7 +428,7 @@ export default function AIStudio() {
 
             <div className="flex flex-col gap-2 pt-4 border-t border-gray-700 flex-shrink-0">
               <button onClick={() => handleDownload(fullscreenImage.id, fullscreenImage.image)} className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50" disabled={loading}><Download className="w-4 h-4" /> Download</button>
-              <button onClick={() => router.push('/ai-studio/image-to-video')} className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><ImagePlay className="w-4 h-4" /> Open in Canvas</button>
+              <button onClick={() => router.push('/ai-studio/create-image')} className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><ImagePlay className="w-4 h-4" /> Open in Canvas</button>
               <button onClick={() => { handleDelete(fullscreenImage.id); setFullscreenImage(null); setImageZoom(10) }} className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><Trash2 className="w-4 h-4" /> Delete</button>
             </div>
           </div>
