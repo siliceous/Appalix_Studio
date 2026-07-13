@@ -1546,6 +1546,24 @@ export default function CreateImagePage() {
         onDelete={handleDeleteImage}
         onEdit={handleEditImage}
         onSave={handleSaveToProject}
+        onPrevious={() => {
+          if (fullscreenImageIndex > 0) {
+            const newIdx = fullscreenImageIndex - 1
+            setFullscreenImageIndex(newIdx)
+            setFullscreenImageData(history[newIdx] || null)
+            setFullscreenImage(history[newIdx]?.image || null)
+          }
+        }}
+        onNext={() => {
+          if (fullscreenImageIndex < history.length - 1) {
+            const newIdx = fullscreenImageIndex + 1
+            setFullscreenImageIndex(newIdx)
+            setFullscreenImageData(history[newIdx] || null)
+            setFullscreenImage(history[newIdx]?.image || null)
+          }
+        }}
+        hasPrevious={fullscreenImageIndex > 0}
+        hasNext={fullscreenImageIndex < history.length - 1}
         allowZoom={true}
         allowPan={true}
         allowDownload={true}
