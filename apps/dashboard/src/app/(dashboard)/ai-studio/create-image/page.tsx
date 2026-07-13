@@ -642,7 +642,9 @@ export default function CreateImagePage() {
         img.id === imageId ? { ...img, deletedAt: Date.now() } : img
       )
       console.log('[Delete] Updated history, marking as deleted')
-      // Persist to localStorage
+      console.log('[Delete] Remaining active images:', updated.filter((img: any) => !img.deletedAt).length)
+      
+      // Persist to localStorage immediately
       try {
         localStorage.setItem('imageGenerationHistory', JSON.stringify(updated))
         console.log('[Delete] ✓ Persisted to localStorage')
@@ -651,15 +653,19 @@ export default function CreateImagePage() {
       }
       return updated
     })
+    
+    // Immediately clear UI
     if (selectedImage?.id === imageId) {
       console.log('[Delete] Clearing selectedImage')
       setSelectedImage(null)
     }
+    
     // Close fullscreen if open
     if (fullscreenImageData?.id === imageId) {
       console.log('[Delete] Closing fullscreen')
       setFullscreenImage(null)
       setFullscreenImageData(null)
+      setImageZoom(1)
     }
   }
 
@@ -745,6 +751,28 @@ export default function CreateImagePage() {
   const handlePermanentlyDeleteImage = (imageId: string) => {
     // Permanently remove from history
     setHistory(prev => prev.filter(img => img.id !== imageId))
+  }
+
+  const handleEditImage = (image: GeneratedImage) => {
+    console.log('[Edit] Opening image for editing:', image.id)
+    // Load the original generation settings
+    setOriginalPrompt(image.prompt)
+    // In a real implementation, we'd also load:
+    // - model used
+    // - style/lighting
+    // - aspect ratio
+    // - any other generation parameters
+    // For now, just load the prompt
+    setSelectedImage(image)
+    setFullscreenImage(null)
+    setFullscreenImageData(null)
+  }
+
+  const handleSaveToProject = async (image: GeneratedImage) => {
+    console.log('[Save] Saving image to project:', image.id)
+    // Open save dialog
+    setImageToSave(image)
+    setShowSaveDialog(true)
   }
 
   const handleDownloadImage = async (image: GeneratedImage | null) => {
@@ -1345,18 +1373,21 @@ export default function CreateImagePage() {
                 <p className="text-sm text-gray-600">Generating image...</p>
               </div>
             ) : selectedImage ? (
-              <img
-                src={selectedImage.image}
-                alt="Generated"
-                className="max-w-full max-h-full w-auto h-auto object-contain cursor-pointer rounded-lg shadow-lg"
-                onClick={() => {
-                  setFullscreenImage(selectedImage.image)
-                  setFullscreenImageData(selectedImage)
-                  const idx = history.findIndex(img => img.id === selectedImage.id)
-                  setFullscreenImageIndex(Math.max(0, idx))
-                  setImageZoom(1)
-                }}
-              />
+              <div className="flex items-center justify-center w-full h-full">
+                <img
+                  src={selectedImage.image}
+                  alt="Generated"
+                  className="object-contain max-h-full max-w-full cursor-pointer rounded-lg shadow-lg"
+                  onClick={() => {
+                    setFullscreenImage(selectedImage.image)
+                    setFullscreenImageData(selectedImage)
+                    const idx = history.findIndex(img => img.id === selectedImage.id)
+                    setFullscreenImageIndex(Math.max(0, idx))
+                    setImageZoom(1)
+                  }}
+                  style={{ aspectRatio: selectedImage.aspectRatio || 'auto' }}
+                />
+              </div>
             ) : (
               <div className="text-center">
                 <Sparkles className="w-16 h-16 mx-auto mb-4 opacity-30 text-gray-400" />
@@ -1576,12 +1607,8 @@ export default function CreateImagePage() {
         }}
         onDownload={handleDownloadImage}
         onDelete={handleDeleteImage}
-        onEdit={(img) => {
-          setSelectedImage(img)
-          setFullscreenImage(null)
-          setFullscreenImageData(null)
-        }}
-        onSave={handleSaveImage}
+        onEdit={handleEditImage}
+        onSave={handleSaveToProject}
         allowZoom={true}
         allowPan={true}
         allowDownload={true}
