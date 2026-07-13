@@ -41,8 +41,11 @@ export default function CreateVideoPage() {
       if (importedImageStr) {
         try {
           const importedImage = JSON.parse(importedImageStr)
+          console.log('[CreateVideo] Imported image:', importedImage)
           setStartImage(importedImage.image)
-          setPrompt(importedImage.prompt || '')
+          const promptText = importedImage.prompt || ''
+          console.log('[CreateVideo] Setting prompt:', promptText)
+          setPrompt(promptText)
           sessionStorage.removeItem('importedImage')
         } catch (e) {
           console.error('Error loading imported image:', e)
