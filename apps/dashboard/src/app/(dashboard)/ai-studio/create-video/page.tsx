@@ -35,6 +35,21 @@ export default function CreateVideoPage() {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
     setWorkspaceId(wId)
 
+    // Check for imported image from library
+    if (typeof window !== 'undefined') {
+      const importedImageStr = sessionStorage.getItem('importedImage')
+      if (importedImageStr) {
+        try {
+          const importedImage = JSON.parse(importedImageStr)
+          setStartImage(importedImage.image)
+          setPrompt(importedImage.prompt || '')
+          sessionStorage.removeItem('importedImage')
+        } catch (e) {
+          console.error('Error loading imported image:', e)
+        }
+      }
+    }
+
     if (wId) {
       const fetchCredits = async () => {
         try {
