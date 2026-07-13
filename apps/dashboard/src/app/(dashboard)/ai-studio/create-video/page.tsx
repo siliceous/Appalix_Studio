@@ -310,10 +310,10 @@ export default function CreateVideoPage() {
             {startImage ? (
               <div className="flex flex-col items-center gap-4 text-center w-full">
                 <div className={`flex-1 rounded-lg overflow-hidden border-2 border-gray-200 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 ${
-                  aspectRatio === '9:16' ? 'aspect-[9/16] w-48' :
-                  aspectRatio === '16:9' ? 'aspect-video w-96' :
-                  aspectRatio === '4:3' ? 'aspect-[4/3] w-80' :
-                  'aspect-square w-80'
+                  aspectRatio === '9:16' ? 'aspect-[9/16] w-[268px]' :
+                  aspectRatio === '16:9' ? 'aspect-video w-[538px]' :
+                  aspectRatio === '4:3' ? 'aspect-[4/3] w-[448px]' :
+                  'aspect-square w-[448px]'
                 }`}>
                   <img src={startImage} alt="Start" className="w-full h-full object-cover rounded-md" />
                 </div>
