@@ -1291,13 +1291,13 @@ export default function CreateImagePage() {
               <button className="text-xs font-medium text-white hover:text-blue-400 transition-colors">
                 Create Image
               </button>
-              <button className="text-xs font-medium text-gray-300 hover:text-white transition-colors">
+              <button className="text-xs font-medium text-gray-100 hover:text-white transition-colors">
                 Create Video
               </button>
-              <button className="text-xs font-medium text-gray-300 hover:text-white transition-colors">
+              <button className="text-xs font-medium text-gray-100 hover:text-white transition-colors">
                 Product Ads
               </button>
-              <button className="text-xs font-medium text-gray-300 hover:text-white transition-colors">
+              <button className="text-xs font-medium text-gray-100 hover:text-white transition-colors">
                 Talking Ads
               </button>
             </div>
