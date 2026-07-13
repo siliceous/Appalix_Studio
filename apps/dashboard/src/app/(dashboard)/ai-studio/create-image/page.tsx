@@ -1504,43 +1504,41 @@ export default function CreateImagePage() {
                       alt="Generated"
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
-                      {selectedImage?.id !== image.id && (
-                        <>
-                          <button
-                            className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDownloadImage(image)
-                            }}
-                            title="Download"
-                          >
-                            <Download className="w-4 h-4 text-gray-700" />
-                          </button>
-                          <button
-                            className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleSaveImage(image)
-                            }}
-                            title="Save"
-                          >
-                            <Heart className="w-4 h-4 text-gray-700" />
-                          </button>
-                        </>
-                      )}
-                      <button
-                        className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
-                        onClick={(e) => {
-                          console.log('[Gallery Delete Click] Clicked delete for image:', image.id)
-                          e.stopPropagation()
-                          handleDeleteImage(image.id)
-                        }}
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4 text-gray-700" />
-                      </button>
-                    </div>
+                    {selectedImage?.id !== image.id && (
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
+                        <button
+                          className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDownloadImage(image)
+                          }}
+                          title="Download"
+                        >
+                          <Download className="w-4 h-4 text-gray-700" />
+                        </button>
+                        <button
+                          className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleSaveImage(image)
+                          }}
+                          title="Save"
+                        >
+                          <Heart className="w-4 h-4 text-gray-700" />
+                        </button>
+                        <button
+                          className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+                          onClick={(e) => {
+                            console.log('[Gallery Delete Click] Clicked delete for image:', image.id)
+                            e.stopPropagation()
+                            handleDeleteImage(image.id)
+                          }}
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4 text-gray-700" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))
               )
