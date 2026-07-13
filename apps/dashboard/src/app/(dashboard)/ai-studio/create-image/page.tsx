@@ -823,69 +823,6 @@ export default function CreateImagePage() {
     setSelectedProjectId(projects.length > 0 ? projects[0].id : '')
   }
 
-  const handleSaveToProject = async () => {
-    if (!imageToSave || !workspaceId) return
-
-    setIsSavingProject(true)
-    try {
-      let projectId = selectedProjectId
-      let projectName = newProjectName
-
-      // Create new project if needed
-      if (newProjectName.trim()) {
-        const createResponse = await fetch('/api/projects', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-workspace-id': workspaceId,
-          },
-          body: JSON.stringify({
-            name: newProjectName,
-            description: `Generated images collection`,
-          }),
-        })
-
-        if (!createResponse.ok) throw new Error('Failed to create project')
-        const newProject = await createResponse.json()
-        projectId = newProject.id
-        projectName = newProject.name
-
-        // Add to projects list
-        setProjects([...projects, newProject])
-        setNewProjectName('')
-      }
-
-      // Save image to project as a document/file
-      if (projectId) {
-        const saveResponse = await fetch(`/api/projects/${projectId}/images`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-workspace-id': workspaceId,
-          },
-          body: JSON.stringify({
-            imageId: imageToSave.id,
-            image: imageToSave.image,
-            prompt: imageToSave.prompt,
-            timestamp: imageToSave.timestamp,
-          }),
-        })
-
-        if (!saveResponse.ok) throw new Error('Failed to save image')
-
-        // Show success feedback
-        console.log('Image saved to project successfully')
-        setShowSaveDialog(false)
-        setImageToSave(null)
-        setSelectedProjectId('')
-      }
-    } catch (error) {
-      console.error('Failed to save image:', error)
-      alert('Failed to save image to project. Please try again.')
-    } finally {
-      setIsSavingProject(false)
-    }
-  }
 
   const handleReusePrompt = (image: GeneratedImage) => {
     setPrompt(image.prompt)
