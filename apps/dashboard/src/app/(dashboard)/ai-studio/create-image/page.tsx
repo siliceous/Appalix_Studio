@@ -1548,23 +1548,35 @@ export default function CreateImagePage() {
         onEdit={handleEditImage}
         onSave={handleSaveToProject}
         onPrevious={() => {
-          if (fullscreenImageIndex > 0) {
-            const newIdx = fullscreenImageIndex - 1
-            setFullscreenImageIndex(newIdx)
-            setFullscreenImageData(history[newIdx] || null)
-            setFullscreenImage(history[newIdx]?.image || null)
+          const activeImages = history.filter(img => !img.deletedAt)
+          const currentIdx = activeImages.findIndex(img => img.id === fullscreenImageData?.id)
+          if (currentIdx > 0) {
+            const newImage = activeImages[currentIdx - 1]
+            setFullscreenImageData(newImage)
+            setFullscreenImage(newImage.image)
+            setFullscreenImageIndex(currentIdx - 1)
           }
         }}
         onNext={() => {
-          if (fullscreenImageIndex < history.length - 1) {
-            const newIdx = fullscreenImageIndex + 1
-            setFullscreenImageIndex(newIdx)
-            setFullscreenImageData(history[newIdx] || null)
-            setFullscreenImage(history[newIdx]?.image || null)
+          const activeImages = history.filter(img => !img.deletedAt)
+          const currentIdx = activeImages.findIndex(img => img.id === fullscreenImageData?.id)
+          if (currentIdx < activeImages.length - 1) {
+            const newImage = activeImages[currentIdx + 1]
+            setFullscreenImageData(newImage)
+            setFullscreenImage(newImage.image)
+            setFullscreenImageIndex(currentIdx + 1)
           }
         }}
-        hasPrevious={fullscreenImageIndex > 0}
-        hasNext={fullscreenImageIndex < history.length - 1}
+        hasPrevious={() => {
+          const activeImages = history.filter(img => !img.deletedAt)
+          const currentIdx = activeImages.findIndex(img => img.id === fullscreenImageData?.id)
+          return currentIdx > 0
+        }()}
+        hasNext={() => {
+          const activeImages = history.filter(img => !img.deletedAt)
+          const currentIdx = activeImages.findIndex(img => img.id === fullscreenImageData?.id)
+          return currentIdx >= 0 && currentIdx < activeImages.length - 1
+        }()}
         allowZoom={true}
         allowPan={true}
         allowDownload={true}
