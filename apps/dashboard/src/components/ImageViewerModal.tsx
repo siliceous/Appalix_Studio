@@ -110,9 +110,12 @@ export default function ImageViewerModal({
     if (!isDragging || !allowPan) return
     const deltaX = e.clientX - dragStart.x
     const deltaY = e.clientY - dragStart.y
+
+    // Constrain pan to reasonable bounds based on zoom level
+    const maxPan = 200 * (zoom / 100)
     setPan(prev => ({
-      x: prev.x + deltaX,
-      y: prev.y + deltaY,
+      x: Math.max(-maxPan, Math.min(maxPan, prev.x + deltaX)),
+      y: Math.max(-maxPan, Math.min(maxPan, prev.y + deltaY)),
     }))
     setDragStart({ x: e.clientX, y: e.clientY })
   }
@@ -128,6 +131,9 @@ export default function ImageViewerModal({
     const newZoom = Math.max(100, zoom - 100)
     setZoom(newZoom)
     if (newZoom === 100) {
+      setPan({ x: 0, y: 0 })
+    } else {
+      // Reset pan when zooming out to avoid off-screen issues
       setPan({ x: 0, y: 0 })
     }
   }
@@ -169,7 +175,12 @@ export default function ImageViewerModal({
           if (!allowZoom) return
           e.preventDefault()
           const increment = e.deltaY > 0 ? -50 : 50
-          setZoom(prev => Math.max(100, Math.min(1000, prev + increment)))
+          const newZoom = Math.max(100, Math.min(1000, zoom + increment))
+          setZoom(newZoom)
+          // Reset pan on wheel zoom to prevent off-screen issues
+          if (newZoom === 100) {
+            setPan({ x: 0, y: 0 })
+          }
         }}
       >
         <div
