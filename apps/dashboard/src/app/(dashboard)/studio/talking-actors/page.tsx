@@ -516,28 +516,28 @@ export default function TalkingActors() {
             <div className="flex-1 overflow-hidden bg-slate-900 rounded-b-xl border border-white/10 border-t-0 shadow-lg min-h-0">
               <div className="h-full overflow-y-auto p-6 flex flex-col">
                 {showTrash && (
-                  <div className="mb-4 flex items-center gap-3">
-                    <button
-                      onClick={() => setShowTrash(false)}
-                      className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                      title="Back to gallery"
-                    >
-                      <ChevronLeft className="w-5 h-5 text-white" />
-                    </button>
-                    <h2 className="text-lg font-semibold text-white">Trash ({deletedImages.length})</h2>
-                  </div>
+                  <>
+                    <div className="mb-4 flex items-center gap-3">
+                      <button
+                        onClick={() => setShowTrash(false)}
+                        className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                        title="Back to gallery"
+                      >
+                        <ChevronLeft className="w-5 h-5 text-white" />
+                      </button>
+                      <h2 className="text-lg font-semibold text-white">Trash ({deletedImages.length})</h2>
+                    </div>
+                    {deletedImages.length === 0 && (
+                      <div className="text-center py-8">
+                        <p className="text-gray-400 font-medium">Trash is empty</p>
+                      </div>
+                    )}
+                  </>
                 )}
                 <div className={showTrash ? 'flex-1 overflow-y-auto' : ''}>
-                  {showTrash ? (
+                  {showTrash && deletedImages.length > 0 ? (
                     // Trash view
-                    deletedImages.length === 0 ? (
-                      <div className="flex items-center justify-center h-full">
-                        <div className="text-center">
-                          <p className="text-gray-300 font-medium">Trash is empty</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-5 gap-3">
+                    <div className="grid grid-cols-5 gap-3">
                       {deletedImages.map((image, idx) => (
                         <div
                           key={image.id}
