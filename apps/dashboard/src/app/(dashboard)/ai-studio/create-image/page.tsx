@@ -724,7 +724,8 @@ export default function CreateImagePage() {
           // Remove gender and "body type:" prefix to extract just the description
           return phrase.replace(/^(?:woman|man),\s*body type:\s*/, '')
         }).join(', ')
-        enhanced = `${mergedBodyPhrase}`
+        // Append body type description to user's prompt
+        enhanced = `${enhanced}, ${mergedBodyPhrase}`
       }
     }
     if (ethnicityData && ethnicityData.phrase) {
