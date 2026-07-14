@@ -27,8 +27,8 @@ const navItems = [
     icon: ShoppingBag,
   },
   {
-    href: '/ai-studio/talking-ad',
-    label: 'Talking Ad',
+    href: '/studio/talking-actors',
+    label: 'Talking Actors',
     icon: Zap,
   },
 ]

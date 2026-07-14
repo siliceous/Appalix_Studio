@@ -310,8 +310,8 @@ export default function CreateVideoPage() {
               <button onClick={() => router.push('/ai-studio/product-ads')} className="text-xs font-medium text-gray-100 hover:text-white transition-colors">
                 Product Ads
               </button>
-              <button onClick={() => router.push('/ai-studio/talking-ad')} className="text-xs font-medium text-gray-100 hover:text-white transition-colors">
-                Talking Ads
+              <button onClick={() => router.push('/studio/talking-actors')} className="text-xs font-medium text-gray-100 hover:text-white transition-colors">
+                Talking Actors
               </button>
             </div>
             <div className="flex items-center gap-4">

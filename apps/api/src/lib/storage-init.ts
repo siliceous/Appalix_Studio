@@ -16,12 +16,12 @@ export async function initializeStorage() {
       return
     }
 
-    const imageBucketExists = buckets.some(b => b.name === 'ai-image-generations')
+    const imageBucket = buckets.find(b => b.name === 'ai-image-generations')
 
-    if (!imageBucketExists) {
+    if (!imageBucket) {
       console.log('[Storage Init] Creating ai-image-generations bucket...')
       const { data, error } = await supabase.storage.createBucket('ai-image-generations', {
-        public: false, // Private bucket - access via signed URLs
+        public: true, // Public bucket - permanent URLs that never expire
       })
 
       if (error) {
@@ -32,6 +32,23 @@ export async function initializeStorage() {
       console.log('[Storage Init] Bucket created successfully')
     } else {
       console.log('[Storage Init] ai-image-generations bucket already exists')
+
+      // Ensure the bucket is public
+      if (!imageBucket.public) {
+        console.log('[Storage Init] Bucket is private, updating to public...')
+        const { error: updateError } = await supabase.storage.updateBucket('ai-image-generations', {
+          public: true,
+        })
+
+        if (updateError) {
+          console.error('[Storage Init] Error updating bucket to public:', updateError)
+          return
+        }
+
+        console.log('[Storage Init] Bucket updated to public successfully')
+      } else {
+        console.log('[Storage Init] Bucket is already public')
+      }
     }
   } catch (error) {
     console.error('[Storage Init] Initialization failed:', error)

@@ -11,7 +11,7 @@ import { v4 as uuid } from 'uuid'
  */
 
 interface OptimizeResult {
-  url: string // Signed URL for display
+  url: string // Public URL (permanent, never expires)
   storageKey: string // Path in bucket
   sizeBytes: number
   format: 'webp'
@@ -69,23 +69,21 @@ class ImageOptimizationService {
         throw new Error(`Failed to upload image: ${error.message}`)
       }
 
-      // Get signed URL (valid for 1 year)
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-        .from(this.bucket)
-        .createSignedUrl(storageKey, 31536000) // 1 year
-
-      if (signedUrlError) {
-        console.error('[Image Optimization] Signed URL error:', signedUrlError)
-        throw new Error(`Failed to create signed URL: ${signedUrlError.message}`)
+      // Generate permanent public URL (never expires, no signing needed)
+      const supabaseUrl = process.env.SUPABASE_URL
+      if (!supabaseUrl) {
+        throw new Error('SUPABASE_URL environment variable not set')
       }
 
-      const signedUrl = signedUrlData.signedUrl
+      // Extract project ID from Supabase URL (https://projectid.supabase.co)
+      const projectId = supabaseUrl.split('//')[1].split('.')[0]
+      const publicUrl = `https://${projectId}.supabase.co/storage/v1/object/public/${this.bucket}/${storageKey}`
 
-      console.log(`[Image Optimization] Success! WebP uploaded and signed URL generated`)
-      console.log(`[Image Optimization] URL preview: ${signedUrl.substring(0, 80)}...`)
+      console.log(`[Image Optimization] Success! WebP uploaded with permanent public URL`)
+      console.log(`[Image Optimization] URL preview: ${publicUrl.substring(0, 80)}...`)
 
       return {
-        url: signedUrl,
+        url: publicUrl,
         storageKey,
         sizeBytes: webpBuffer.length,
         format: 'webp',
@@ -140,18 +138,16 @@ class ImageOptimizationService {
   }
 
   /**
-   * Get image URL from storage key
+   * Get image URL from storage key (generates public URL - no expiration)
    */
-  async getSignedUrl(storageKey: string, expiresIn: number = 31536000): Promise<string> {
-    const { data, error } = await supabase.storage
-      .from(this.bucket)
-      .createSignedUrl(storageKey, expiresIn)
-
-    if (error) {
-      throw new Error(`Failed to create signed URL: ${error.message}`)
+  getPublicUrl(storageKey: string): string {
+    const supabaseUrl = process.env.SUPABASE_URL
+    if (!supabaseUrl) {
+      throw new Error('SUPABASE_URL environment variable not set')
     }
-
-    return data.signedUrl
+    // Extract project ID from Supabase URL (https://projectid.supabase.co)
+    const projectId = supabaseUrl.split('//')[1].split('.')[0]
+    return `https://${projectId}.supabase.co/storage/v1/object/public/${this.bucket}/${storageKey}`
   }
 }
 

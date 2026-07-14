@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Download, Trash2, Search, Loader2, X, ChevronLeft, ChevronRight, Plus, ImagePlay } from 'lucide-react'
+import { Download, Trash2, Search, Loader2, X, ChevronLeft, ChevronRight, Plus, ImagePlay, Eye, Save } from 'lucide-react'
 import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 
 interface GeneratedImage {
@@ -42,6 +42,7 @@ export default function AIStudio() {
   const [imageZoom, setImageZoom] = useState(10)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [showTrash, setShowTrash] = useState(false)
 
 
   useEffect(() => {
@@ -156,7 +157,10 @@ export default function AIStudio() {
     fetchProjects()
   }, [workspaceId])
 
+  const deletedImages = images.filter((img) => img.deletedAt)
+
   const filteredImages = images.filter((img) => {
+    if (img.deletedAt) return false
     const matchesSearch = !searchQuery || img.prompt.toLowerCase().includes(searchQuery.toLowerCase())
     // Project filter: only apply if a project is selected AND image has projectId
     const matchesProject = !selectedProjectId || img.projectId === selectedProjectId || !img.projectId
@@ -237,6 +241,12 @@ export default function AIStudio() {
     localStorage.setItem('imageGenerationHistory', JSON.stringify(remaining))
   }
 
+  const handleRestore = (imageId: string) => {
+    setImages(images.map(img => img.id === imageId ? { ...img, deletedAt: undefined } : img))
+    const updated = images.map(img => img.id === imageId ? { ...img, deletedAt: undefined } : img)
+    localStorage.setItem('imageGenerationHistory', JSON.stringify(updated))
+  }
+
   const getAspectRatioPadding = (ratio?: string): string => {
     switch (ratio) {
       case '16:9': return 'aspect-video'
@@ -282,7 +292,7 @@ export default function AIStudio() {
               <button onClick={() => router.push('/ai-studio/create-image')} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white hover:bg-white/10 transition-colors">Create Image</button>
               <button onClick={() => router.push('/ai-studio/create-video')} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white hover:bg-white/10 transition-colors">Create Video</button>
               <button onClick={() => router.push('/ai-studio/product-ads')} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white hover:bg-white/10 transition-colors">Product Ads</button>
-              <button onClick={() => router.push('/ai-studio/talking-ad')} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white hover:bg-white/10 transition-colors">Talking Ads</button>
+              <button onClick={() => router.push('/studio/talking-actors')} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white hover:bg-white/10 transition-colors">Talking Actors</button>
               <button onClick={() => imageContainerRef.current?.scrollIntoView({ behavior: 'smooth' })} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white hover:bg-white/10 transition-colors">Library</button>
               <div className="flex-1" />
               <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-white/10 border border-white/20">{credits} Credits</div>
@@ -328,24 +338,89 @@ export default function AIStudio() {
                   </select>
                 </div>
                 {(selectedProjectId || selectedMediaType || selectedGender || selectedDateRange) && <button onClick={() => { setSelectedProjectId(null); setSelectedMediaType(null); setSelectedGender(null); setSelectedDateRange(null) }} className="px-3 py-2 text-sm font-medium rounded-lg border border-white/10 text-white hover:bg-white/10 transition-colors">Clear</button>}
+                <button
+                  onClick={() => setShowTrash(!showTrash)}
+                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    showTrash
+                      ? 'bg-red-600 text-white border border-red-500'
+                      : deletedImages.length > 0
+                      ? 'bg-red-900/40 text-red-200 border border-red-500/50 hover:bg-red-900/60'
+                      : 'border border-white/10 text-gray-400 hover:bg-white/10'
+                  }`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Trash ({deletedImages.length})
+                </button>
               </div>
             </div>
 
             <div className="flex-1 overflow-hidden bg-slate-900 rounded-b-xl border border-white/10 border-t-0 shadow-lg">
-              <div className="h-full overflow-y-auto p-6">
-                {loading ? (
-                  <div className="flex items-center justify-center h-full">
-                    <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+              <div className="h-full overflow-y-auto p-6 flex flex-col">
+                {showTrash && (
+                  <div className="mb-4 flex items-center gap-3">
+                    <button
+                      onClick={() => setShowTrash(false)}
+                      className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                      title="Back to gallery"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-white" />
+                    </button>
+                    <h2 className="text-lg font-semibold text-white">Trash ({deletedImages.length})</h2>
                   </div>
-                ) : filteredImages.length === 0 ? (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <p className="text-gray-300 font-medium">No assets found</p>
-                      <p className="text-gray-400 text-sm">Try adjusting your filters</p>
+                )}
+                <div className={showTrash ? 'flex-1 overflow-y-auto' : ''}>
+                  {showTrash ? (
+                    // Trash view
+                    deletedImages.length === 0 ? (
+                      <div className="flex items-center justify-center h-full">
+                        <div className="text-center">
+                          <p className="text-gray-300 font-medium">Trash is empty</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-1.5 auto-rows-max">
+                        {deletedImages.map((image) => (
+                          <div
+                            key={image.id}
+                            className="group relative rounded-lg overflow-hidden bg-gray-200 border border-gray-600 cursor-pointer hover:border-gray-500 transition-all"
+                          >
+                            <img
+                              src={image.image}
+                              alt={image.prompt}
+                              className={`w-full h-full object-cover ${getAspectRatioPadding(image.aspectRatio)} opacity-50`}
+                              onError={(e) => {
+                                ;(e.target as HTMLImageElement).style.opacity = '0'
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleRestore(image.id)
+                                }}
+                                className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+                                title="Restore"
+                              >
+                                <ChevronLeft className="w-4 h-4 text-gray-700" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  ) : loading ? (
+                    <div className="flex items-center justify-center h-full">
+                      <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
                     </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-1.5 auto-rows-max">
+                  ) : filteredImages.length === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <p className="text-gray-300 font-medium">No assets found</p>
+                        <p className="text-gray-400 text-sm">Try adjusting your filters</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-1.5 auto-rows-max">
                     {filteredImages.map((image, idx) => {
                       const getAspectRatio = (ratio?: string) => {
                         const ratios: Record<string, string> = {
@@ -361,21 +436,62 @@ export default function AIStudio() {
                       }
 
                       return (
-                        <button
+                        <div
                           key={image.id}
-                          onClick={() => { setFullscreenImage(image); setFullscreenImageIndex(idx) }}
-                          className={`relative rounded-lg overflow-hidden border-2 transition-all block w-full ${
+                          className={`group relative rounded-lg overflow-hidden border-2 transition-all block w-full cursor-pointer bg-gray-200 ${
                             image.id === fullscreenImage?.id
                               ? 'border-blue-500 shadow-lg shadow-blue-500/50'
                               : 'border-gray-600 hover:border-gray-500 shadow-md'
                           }`}
+                          onClick={() => { setFullscreenImage(image); setFullscreenImageIndex(idx) }}
                         >
-                          <img src={image.image} alt={image.prompt} className={`w-full h-full object-cover ${getAspectRatio(image.aspectRatio)}`} />
-                        </button>
+                          <img
+                            src={image.image}
+                            alt={image.prompt}
+                            className={`w-full h-full object-cover ${getAspectRatio(image.aspectRatio)}`}
+                            onError={(e) => {
+                              ;(e.target as HTMLImageElement).style.opacity = '0'
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setFullscreenImage(image)
+                                setFullscreenImageIndex(idx)
+                              }}
+                              className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+                              title="Open"
+                            >
+                              <Eye className="w-4 h-4 text-gray-700" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDownload(image.id, image.image)
+                              }}
+                              className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+                              title="Download"
+                            >
+                              <Download className="w-4 h-4 text-gray-700" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDelete(image.id)
+                              }}
+                              className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4 text-gray-700" />
+                            </button>
+                          </div>
+                        </div>
                       )
                     })}
                   </div>
                 )}
+                </div>
               </div>
             </div>
           </div>
@@ -433,7 +549,7 @@ export default function AIStudio() {
                   sessionStorage.setItem('importedImage', JSON.stringify(fullscreenImage))
                 }
                 router.push('/ai-studio/create-video')
-              }} className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><ImagePlay className="w-4 h-4" /> Open in Video</button>
+              }} className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><ImagePlay className="w-4 h-4" /> Create a Video</button>
               <button onClick={() => { handleDelete(fullscreenImage.id); setFullscreenImage(null); setImageZoom(10) }} className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><Trash2 className="w-4 h-4" /> Delete</button>
             </div>
           </div>

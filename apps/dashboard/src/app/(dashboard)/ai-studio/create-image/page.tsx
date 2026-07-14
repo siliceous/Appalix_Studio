@@ -568,8 +568,12 @@ export default function CreateImagePage() {
               firstImageSize: statusData.imageUrls?.[0]?.length || 0,
             }))
             if (statusData.imageUrls && statusData.imageUrls.length > 0) {
+              // Deduplicate imageUrls first - check for identical URLs
+              const uniqueUrls = Array.from(new Set(statusData.imageUrls))
+              console.log('Deduped URLs:', uniqueUrls.length, 'from', statusData.imageUrls.length)
+
               // Add all new images to history with aspect ratio
-              const newImages = statusData.imageUrls.map((img: string, idx: number) => ({
+              const newImages = uniqueUrls.map((img: string, idx: number) => ({
                 id: `${generationId}-${idx}`,
                 image: img,
                 prompt: getEnhancedPrompt(),
@@ -582,9 +586,10 @@ export default function CreateImagePage() {
 
               setHistory(prev => {
                 console.log('Previous history length:', prev.length)
-                // Deduplicate: don't add images that already exist by ID
+                // Deduplicate: don't add images that already exist by ID or image URL
                 const existingIds = new Set(prev.map(img => img.id))
-                const uniqueNewImages = newImages.filter((img: any) => !existingIds.has(img.id))
+                const existingUrls = new Set(prev.map(img => img.image))
+                const uniqueNewImages = newImages.filter((img: any) => !existingIds.has(img.id) && !existingUrls.has(img.image))
                 
                 console.log('Unique new images:', uniqueNewImages.length, '/', newImages.length)
                 const updated = [...prev, ...uniqueNewImages]
@@ -1313,11 +1318,11 @@ export default function CreateImagePage() {
               }} className="text-xs font-medium text-gray-100 hover:text-white transition-colors">
                 Create Video
               </button>
-              <button className="text-xs font-medium text-gray-100 hover:text-white transition-colors">
+              <button onClick={() => router.push('/ai-studio/product-ads')} className="text-xs font-medium text-gray-100 hover:text-white transition-colors">
                 Product Ads
               </button>
-              <button className="text-xs font-medium text-gray-100 hover:text-white transition-colors">
-                Talking Ads
+              <button onClick={() => router.push('/studio/talking-actors')} className="text-xs font-medium text-gray-100 hover:text-white transition-colors">
+                Talking Actors
               </button>
             </div>
             <div className="flex items-center gap-4">

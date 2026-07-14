@@ -402,22 +402,26 @@ export async function imageRoutes(app: FastifyInstance) {
             })
           } catch (optimizationError) {
             console.error('[Image Generation] Optimization failed:', optimizationError)
-            // Fallback: Store original images (less efficient but still works)
+            // Fallback: Store original base64 images directly (most reliable)
+            const originalUrls = status.imageUrls // These are base64 data URLs from the API
+
             await supabase
               .from('ai_image_generations')
               .update({
                 status: 'completed',
-                output_url: status.imageUrls[0],
-                output_urls: JSON.stringify(status.imageUrls),
+                output_url: originalUrls[0],
+                output_urls: JSON.stringify(originalUrls),
                 updated_at: new Date().toISOString(),
               })
               .eq('id', id)
 
+            console.log('[Image Generation] Stored original base64 images, count:', originalUrls.length)
+
             return reply.send({
               id: generation.id,
               status: 'completed',
-              outputUrl: status.imageUrls[0],
-              imageUrls: status.imageUrls,
+              outputUrl: originalUrls[0],
+              imageUrls: originalUrls,
               type: 'image',
               createdAt: generation.created_at,
               estimatedCredits: generation.quantity * 10,
@@ -476,11 +480,11 @@ export async function imageRoutes(app: FastifyInstance) {
       // Fetch all completed image generations
       const { data: allGenerations, error } = await supabase
         .from('ai_image_generations')
-        .select('id, prompt, created_at, output_url, output_urls, status, quantity, aspect_ratio')
+        .select('id, prompt, created_at, output_url, output_urls, storage_keys, status, quantity, aspect_ratio')
         .eq('workspace_id', workspaceId)
         .eq('status', 'completed')
         .order('created_at', { ascending: false })
-        .limit(100)
+        .limit(1000)
 
       // Deduplicate by ID - keep only first occurrence
       const seen = new Map<string, any>()
@@ -503,80 +507,68 @@ export async function imageRoutes(app: FastifyInstance) {
         console.log('[Image Generation] First generation ID:', generations[0].id, 'Created:', generations[0].created_at)
       }
 
-      // Process images: generate fresh signed URLs
-      const processedImages = await Promise.all((generations || []).map(async (img: any) => {
-        try {
-          // Extract file path from the stored URL
-          let filePath: string | null = null
+      // Return each image individually (handle multiple images per generation)
+      const images: any[] = []
 
-          if (img.output_url?.startsWith('http')) {
-            // Try to extract path from signed or public URL
-            const url = new URL(img.output_url)
-            const pathname = url.pathname
-            // Match patterns like /storage/v1/object/sign/ai-image-generations/... or /storage/v1/object/public/ai-image-generations/...
-            const match = pathname.match(/\/ai-image-generations\/(.+)$/)
-            if (match) {
-              filePath = decodeURIComponent(match[1])
-            }
-          } else if (img.output_url?.startsWith('data:')) {
-            // Base64 image, return as-is
-            return img
-          }
+      for (const gen of generations) {
+        let urls: string[] = []
 
-          if (!filePath) {
-            console.warn('[Image Generation] Could not extract file path for image:', img.id.substring(0, 8))
-            return img
-          }
-
-          // Generate a fresh signed URL (7 days)
-          const { data: signedUrl, error: signError } = await supabase.storage
-            .from('ai-image-generations')
-            .createSignedUrl(filePath, 7 * 24 * 60 * 60) // 7 days
-
-          if (signedUrl?.signedUrl) {
-            console.log('[Image Generation] Generated fresh signed URL for image:', img.id.substring(0, 8))
-            return { ...img, output_url: signedUrl.signedUrl }
-          }
-
-          if (signError) {
-            console.warn('[Image Generation] Failed to create signed URL:', signError.message)
-          }
-
-          // If signing fails, return the original URL
-          return img
-        } catch (e) {
-          console.warn('[Image Generation] Error processing image URL:', e)
-          return img
-        }
-      })).then(imgs => imgs.filter((img) => img !== null && img !== undefined))
-
-      // Return each generation as a single image (use first URL if multiple exist)
-      const images = processedImages.map((gen: any) => {
-        let outputUrl = gen.output_url
-
-        // If output_urls exists and is valid, use the first URL from it
-        if (gen.output_urls && typeof gen.output_urls === 'string') {
+        // Prefer storage_keys (permanent public URLs) over output_urls (may be expired signed URLs)
+        if (gen.storage_keys && typeof gen.storage_keys === 'string') {
           try {
-            const urls = JSON.parse(gen.output_urls)
-            if (Array.isArray(urls) && urls.length > 0) {
-              outputUrl = urls[0]
+            const storageKeysData = JSON.parse(gen.storage_keys)
+            if (Array.isArray(storageKeysData) && storageKeysData.length > 0) {
+              // Reconstruct public URLs from storage keys
+              urls = storageKeysData.map((item: any) => imageOptimization.getPublicUrl(item.key))
+              console.log('[Image Generation] Using', urls.length, 'URLs from storage_keys for generation', gen.id)
             }
           } catch (e) {
-            // If parsing fails, use the single output_url
+            console.warn('[Image Generation] Failed to parse storage_keys:', e)
           }
         }
 
-        return {
-          id: gen.id,
-          prompt: gen.prompt,
-          created_at: gen.created_at,
-          output_url: outputUrl,
-          aspect_ratio: gen.aspect_ratio,
-          status: gen.status,
+        // Fallback to output_urls if storage_keys not available
+        if (urls.length === 0 && gen.output_urls && typeof gen.output_urls === 'string') {
+          try {
+            const parsed = JSON.parse(gen.output_urls)
+            if (Array.isArray(parsed) && parsed.length > 0 && (parsed[0].startsWith('data:') || parsed[0].startsWith('http'))) {
+              urls = parsed
+              console.log('[Image Generation] Using', urls.length, 'URLs from output_urls for generation', gen.id)
+            }
+          } catch (e) {
+            // If parsing fails, try single output_url
+          }
         }
-      })
+
+        // Fallback to single output_url if it's a valid URL
+        if (urls.length === 0 && gen.output_url && (gen.output_url.startsWith('data:') || gen.output_url.startsWith('http'))) {
+          urls = [gen.output_url]
+          console.log('[Image Generation] Using single output_url for generation', gen.id)
+        }
+
+        // Only include images that have valid URLs
+        if (urls.length === 0) {
+          console.log('[Image Generation] Skipping generation', gen.id, '- no valid URLs')
+          continue
+        }
+
+        // Create a separate image entry for each URL
+        urls.forEach((url: string, idx: number) => {
+          images.push({
+            id: urls.length > 1 ? `${gen.id}-${idx}` : gen.id,
+            prompt: gen.prompt,
+            created_at: gen.created_at,
+            output_url: url,
+            aspect_ratio: gen.aspect_ratio,
+            status: gen.status,
+          })
+        })
+      }
 
       console.log('[Image Generation] Returning', images.length, 'images')
+      if (images.length > 0) {
+        console.log('[Image Generation] First image URL:', images[0].output_url)
+      }
       return reply.send({
         images: images,
         total: images.length,
