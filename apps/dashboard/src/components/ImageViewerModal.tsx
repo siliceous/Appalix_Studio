@@ -105,6 +105,11 @@ export default function ImageViewerModal({
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept if user is typing in an input/textarea
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return
+      }
+
       if (e.key === 'Escape') {
         onClose()
       } else if (e.key === '+' || e.key === '=') {
