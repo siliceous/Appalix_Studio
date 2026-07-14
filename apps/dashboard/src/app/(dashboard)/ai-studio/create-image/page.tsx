@@ -569,7 +569,7 @@ export default function CreateImagePage() {
             }))
             if (statusData.imageUrls && statusData.imageUrls.length > 0) {
               // Deduplicate imageUrls first - check for identical URLs
-              const uniqueUrls = Array.from(new Set(statusData.imageUrls))
+              const uniqueUrls = Array.from(new Set(statusData.imageUrls)) as string[]
               console.log('Deduped URLs:', uniqueUrls.length, 'from', statusData.imageUrls.length)
 
               // Add all new images to history with aspect ratio
