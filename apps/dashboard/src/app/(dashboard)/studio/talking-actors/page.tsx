@@ -514,7 +514,7 @@ export default function TalkingActors() {
             </div>
 
             <div className="flex-1 overflow-hidden bg-slate-900 rounded-b-xl border border-white/10 border-t-0 shadow-lg min-h-0">
-              <div className="h-full overflow-y-auto p-6 flex flex-col">
+              <div className="h-full overflow-y-auto p-6 flex flex-col scrollbar-hide">
                 {showTrash && (
                   <>
                     <div className="mb-4 flex items-center gap-3">

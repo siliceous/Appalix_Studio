@@ -17,6 +17,15 @@
   .marketing-site .text-gray-400 { color: rgb(156 163 175); }
   .marketing-site .text-gray-500 { color: rgb(107 114 128); }
   .marketing-site .text-gray-600 { color: rgb(75 85 99); }
+
+  /* ── Hide scrollbar while keeping scroll functionality ── */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @layer base {
