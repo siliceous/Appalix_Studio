@@ -473,10 +473,10 @@ export default function TalkingActors() {
         </div>
 
         <div className="flex-1 overflow-hidden bg-[#f5f4f1] flex flex-col mr-3">
-          <div className="px-4 pt-8 pb-0 shrink-0">
-            <div className="mb-5">
-              <h1 className="text-xl font-bold text-gray-900">Talking Actors</h1>
-              <p className="text-gray-500 text-sm mt-0.5">Create and manage your AI-generated talking actor videos</p>
+          <div className="px-4 pt-3 pb-0 shrink-0">
+            <div className="mb-2">
+              <h1 className="text-lg font-bold text-gray-900">Talking Actors</h1>
+              <p className="text-gray-500 text-xs mt-0.5">Create and manage your AI-generated talking actor videos</p>
             </div>
           </div>
 
