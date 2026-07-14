@@ -121,12 +121,10 @@ export async function imageRoutes(app: FastifyInstance) {
       }
 
       // Sanitize prompt for Stability API's strict content filter
-      // Remove terms that trigger moderation but rephrase them safely
+      // Only sanitize explicit terms, not body type descriptors
       const sanitizePrompt = (p: string): string => {
         let sanitized = p
-          // Rephrase adult/explicit terms
-          .replace(/\bfull breasts\b/gi, 'well-proportioned bust')
-          .replace(/\bbreasts\b/gi, 'chest')
+          // Only replace standalone explicit terms, not body type phrases
           .replace(/\bbikini\b/gi, 'swimwear')
           .replace(/\bg string\b/gi, 'swimwear')
           .replace(/\bno shirt\b/gi, 'shirtless')
