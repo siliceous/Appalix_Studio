@@ -1319,8 +1319,13 @@ export default function CreateImagePage() {
                 Talking Ads
               </button>
             </div>
-            <div className="text-xs font-semibold text-white">
-              {credits} Credits
+            <div className="flex items-center gap-4">
+              <button className="text-xs font-medium text-gray-100 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-white/10">
+                🤖 AI
+              </button>
+              <div className="text-xs font-semibold text-white">
+                {credits} Credits
+              </div>
             </div>
           </div>
           <div className="flex-1 flex flex-col gap-4 overflow-hidden p-4">
