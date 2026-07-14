@@ -77,9 +77,11 @@ export default function ImageViewerModal({
     setPan({ x: 0, y: 0 })
   }
   const copyPrompt = () => {
-    navigator.clipboard.writeText(image.prompt)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    if (image) {
+      navigator.clipboard.writeText(image.prompt)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
   }
 
   // Handle wheel zoom - more sensitive and natural
