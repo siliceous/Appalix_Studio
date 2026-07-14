@@ -719,12 +719,12 @@ export default function CreateImagePage() {
         .filter(bt => bt && bt.phrase)
         .map(bt => bt!.phrase)
       if (bodyPhrases.length > 0) {
-        // Remove "woman, body type: " prefix from all but first body phrase to avoid conflicts
-        const mergedBodyPhrase = bodyPhrases.map((phrase, idx) => {
-          if (idx === 0) return phrase
-          return phrase.replace(/^woman,\s*body type:\s*/, '')
+        // Extract only the body type description part without the "woman/man, body type: " prefix
+        const mergedBodyPhrase = bodyPhrases.map((phrase) => {
+          // Remove gender and "body type:" prefix to extract just the description
+          return phrase.replace(/^(?:woman|man),\s*body type:\s*/, '')
         }).join(', ')
-        enhanced = `${enhanced}, ${mergedBodyPhrase}`
+        enhanced = `${mergedBodyPhrase}`
       }
     }
     if (ethnicityData && ethnicityData.phrase) {
