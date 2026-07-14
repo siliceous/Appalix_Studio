@@ -383,7 +383,7 @@ export default function TalkingActors() {
 
       <div className="flex flex-1 overflow-hidden gap-3">
         {/* Left Panel - Create Actor Filters */}
-        <div className="w-80 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden m-3 flex-shrink-0">
+        <div className="w-80 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden m-3 mt-12 flex-shrink-0">
           <div className="bg-black text-white px-4 py-3 h-12 flex items-center flex-shrink-0">
             <h2 className="text-sm font-semibold">Create Actor</h2>
           </div>
