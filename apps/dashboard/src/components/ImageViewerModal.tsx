@@ -58,6 +58,30 @@ export default function ImageViewerModal({
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLDivElement>(null)
 
+  // Define functions before they're used in useEffect
+  const zoomIn = () => {
+    setZoom(prev => Math.min(1000, prev + 100))
+  }
+  const zoomOut = () => {
+    const newZoom = Math.max(100, zoom - 100)
+    setZoom(newZoom)
+    if (newZoom === 100) {
+      setPan({ x: 0, y: 0 })
+    } else {
+      // Reset pan when zooming out to avoid off-screen issues
+      setPan({ x: 0, y: 0 })
+    }
+  }
+  const resetZoom = () => {
+    setZoom(100)
+    setPan({ x: 0, y: 0 })
+  }
+  const copyPrompt = () => {
+    navigator.clipboard.writeText(image.prompt)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   // Handle wheel zoom - more sensitive and natural
   useEffect(() => {
     if (!allowZoom) return
@@ -96,7 +120,7 @@ export default function ImageViewerModal({
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onClose, zoom])
+  }, [onClose, zoom, zoomIn, zoomOut, resetZoom])
 
   if (!isOpen || !image) return null
 
@@ -123,29 +147,6 @@ export default function ImageViewerModal({
 
   const handleMouseUp = () => {
     setIsDragging(false)
-  }
-
-  const zoomIn = () => {
-    setZoom(prev => Math.min(1000, prev + 100))
-  }
-  const zoomOut = () => {
-    const newZoom = Math.max(100, zoom - 100)
-    setZoom(newZoom)
-    if (newZoom === 100) {
-      setPan({ x: 0, y: 0 })
-    } else {
-      // Reset pan when zooming out to avoid off-screen issues
-      setPan({ x: 0, y: 0 })
-    }
-  }
-  const resetZoom = () => {
-    setZoom(100)
-    setPan({ x: 0, y: 0 })
-  }
-  const copyPrompt = () => {
-    navigator.clipboard.writeText(image.prompt)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
   }
 
   return (
