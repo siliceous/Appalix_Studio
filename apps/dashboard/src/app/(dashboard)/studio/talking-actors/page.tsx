@@ -712,8 +712,7 @@ export default function TalkingActors() {
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
                       <p className="text-gray-300 font-medium">Your gallery is empty</p>
-
-                      <p className="text-gray-400 text-sm">Click Browse Library below to add images</p>
+                      <p className="text-gray-400 text-sm">Import images to get started</p>
                     </div>
                   </div>
                 ) : (
