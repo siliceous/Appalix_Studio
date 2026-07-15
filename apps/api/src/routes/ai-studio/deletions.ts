@@ -1,7 +1,11 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { supabase } from '../../lib/supabase.js'
+import { ensureDeletionTableExists } from '../../lib/init-deletion-table.js'
 
 export async function deletionRoutes(app: FastifyInstance) {
+  // Initialize table on startup
+  await ensureDeletionTableExists()
+
   // Mark an image as deleted/trashed
   app.post<{ Body: { image_id: string } }>('/trash-image', async (request, reply) => {
     try {
@@ -17,12 +21,18 @@ export async function deletionRoutes(app: FastifyInstance) {
       }
 
       // Check if deletion already exists for this image
-      const { data: existingDeletion } = await supabase
+      const { data: existingDeletion, error: selectError } = await supabase
         .from('ai_image_deletions')
         .select('id')
         .eq('workspace_id', workspaceId)
         .eq('image_id', image_id)
         .single()
+
+      // If table doesn't exist, return 503 to indicate feature unavailable
+      if (selectError?.code === 'PGRST205' || selectError?.message?.includes('not found')) {
+        console.warn('[Image Deletion] Table not yet created, falling back to client-side deletion tracking')
+        return reply.status(202).send({ success: true, message: 'Deletion tracked locally (cross-browser sync unavailable)', warning: 'table_not_found' })
+      }
 
       // If deletion already exists, just return success
       if (existingDeletion) {
@@ -39,6 +49,12 @@ export async function deletionRoutes(app: FastifyInstance) {
         })
 
       if (error) {
+        // If it's a table-not-found error, return success with warning
+        if (error.code === 'PGRST205' || error.message?.includes('not found')) {
+          console.warn('[Image Deletion] Deletion table not found, using client-side tracking')
+          return reply.status(202).send({ success: true, message: 'Deletion tracked locally (cross-browser sync unavailable)', warning: 'table_not_found' })
+        }
+
         console.error('[Image Deletion] Database error:', error)
         return reply.status(500).send({ error: 'Failed to trash image' })
       }
@@ -73,6 +89,12 @@ export async function deletionRoutes(app: FastifyInstance) {
         .eq('workspace_id', workspaceId)
         .eq('image_id', image_id)
 
+      // If table doesn't exist, still return success (client already removed from local)
+      if (error?.code === 'PGRST205' || error?.message?.includes('not found')) {
+        console.warn('[Image Restoration] Table not yet created, but restoration synced locally')
+        return reply.status(202).send({ success: true, message: 'Image restored locally (cross-browser sync unavailable)', warning: 'table_not_found' })
+      }
+
       if (error) {
         console.error('[Image Restoration] Database error:', error)
         return reply.status(500).send({ error: 'Failed to restore image' })
@@ -101,6 +123,16 @@ export async function deletionRoutes(app: FastifyInstance) {
         .from('ai_image_deletions')
         .select('image_id')
         .eq('workspace_id', workspaceId)
+
+      // If table doesn't exist, return empty list (client will use localStorage fallback)
+      if (error?.code === 'PGRST205' || error?.message?.includes('not found')) {
+        console.warn('[Image Deletions Fetch] Table not yet created, returning empty list')
+        return reply.send({
+          deleted_image_ids: [],
+          count: 0,
+          warning: 'table_not_found',
+        })
+      }
 
       if (error) {
         console.error('[Image Deletions Fetch] Database error:', error)

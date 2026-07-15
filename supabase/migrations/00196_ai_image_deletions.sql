@@ -25,8 +25,7 @@ CREATE POLICY ai_image_deletions_workspace_access ON ai_image_deletions
   FOR ALL
   USING (
     workspace_id IN (
-      SELECT id FROM workspaces
-      WHERE workspace_members.workspace_id = workspaces.id
-        AND workspace_members.user_id = auth.uid()
+      SELECT workspace_id FROM workspace_members
+      WHERE user_id = auth.uid()
     )
   );
