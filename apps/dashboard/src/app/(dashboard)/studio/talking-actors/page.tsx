@@ -101,6 +101,18 @@ export default function TalkingActors() {
     const fetchImages = async () => {
       try {
         setLoading(true)
+    // Check for imported images from ai-studio
+    const imported = sessionStorage.getItem("importedImages")
+    if (imported) {
+      try {
+        const images = JSON.parse(imported)
+        setImages(images)
+        sessionStorage.removeItem("importedImages")
+      } catch (e) {
+        console.error("Error loading imported images:", e)
+      }
+    }
+
         // Gallery starts empty - images added explicitly via library selector
         setImages([])
         setLoading(false)
@@ -511,7 +523,7 @@ export default function TalkingActors() {
                   Trash ({deletedImages.length})
                 </button>
                 <button
-                  onClick={() => router.push("/ai-studio")}
+                  onClick={() => router.push("/ai-studio?import=true")}
                   className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-blue-600 border border-blue-500 hover:bg-blue-700 transition-colors"
                 >
                   <Plus className="w-4 h-4" />

@@ -34,6 +34,10 @@ export default function AIStudio() {
   const [fullscreenImageIndex, setFullscreenImageIndex] = useState(0)
   const [showCreateProjectDialog, setShowCreateProjectDialog] = useState(false)
   const [createProjectName, setCreateProjectName] = useState('')
+  const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set())
+  const searchParams = useSearchParams()
+  const importMode = searchParams.get("import") === "true"
+
   const [isCreatingProject, setIsCreatingProject] = useState(false)
   const [selectedMediaType, setSelectedMediaType] = useState<string | null>(null)
   const [selectedGender, setSelectedGender] = useState<string | null>(null)
@@ -409,6 +413,25 @@ export default function AIStudio() {
                   <Trash2 className="w-4 h-4" />
                   Trash ({deletedImages.length})
                 </button>
+                {importMode && (
+                  <button
+                    onClick={() => {
+                      if (selectedImages.size === 0) {
+                        alert("Please select at least one image")
+                        return
+                      }
+                      const selectedImagesList = Array.from(selectedImages)
+                      const imagesToImport = filteredImages.filter(img => selectedImages.has(img.id))
+                      sessionStorage.setItem("importedImages", JSON.stringify(imagesToImport))
+                      window.location.href = "/studio/talking-actors"
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 border border-blue-500 text-white hover:bg-blue-700 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Import ({selectedImages.size})
+                  </button>
+                )}
+
               </div>
             </div>
 
@@ -511,6 +534,26 @@ export default function AIStudio() {
                               ;(e.target as HTMLImageElement).style.opacity = '0'
                             }}
                           />
+
+                          {importMode && (
+                            <div className="absolute top-2 right-2 z-10">
+                              <input
+                                type="checkbox"
+                                checked={selectedImages.has(image.id)}
+                                onChange={(e) => {
+                                  e.stopPropagation()
+                                  const newSelected = new Set(selectedImages)
+                                  if (newSelected.has(image.id)) {
+                                    newSelected.delete(image.id)
+                                  } else {
+                                    newSelected.add(image.id)
+                                  }
+                                  setSelectedImages(newSelected)
+                                }}
+                                className="w-5 h-5 cursor-pointer"
+                              />
+                            </div>
+                          )}
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
                             <button
                               onClick={(e) => {
