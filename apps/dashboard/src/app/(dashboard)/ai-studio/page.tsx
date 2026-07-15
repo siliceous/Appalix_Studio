@@ -132,9 +132,10 @@ export default function AIStudio() {
             const deletedImages = historyWithIds.filter((img: any) => img.deletedAt || combinedDeletedIds.has(img.id))
             console.log('Active images (not deleted):', activeImages.length, 'Deleted:', deletedImages.length)
 
-            // Merge: add localStorage images that aren't already in Supabase
+            // Merge: add localStorage images that aren't already in Supabase (deduplicate by ID and URL)
             const supabaseIds = new Set(allImages.map(img => img.id))
-            const newFromLocalStorage = activeImages.filter((img: any) => !supabaseIds.has(img.id))
+            const supabaseUrls = new Set(allImages.map(img => img.image))
+            const newFromLocalStorage = activeImages.filter((img: any) => !supabaseIds.has(img.id) && !supabaseUrls.has(img.image))
             allImages = allImages.concat(newFromLocalStorage)
             console.log('Loaded from localStorage:', newFromLocalStorage.length, 'Total:', allImages.length)
           } catch (e) {
