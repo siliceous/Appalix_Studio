@@ -1399,12 +1399,15 @@ export default function CreateImagePage() {
                 {selectedImage && (
                   <>
                     <button
-                      onClick={() => handleDownloadImage(selectedImage)}
+                      onClick={() => {
+                        sessionStorage.setItem('importedImage', JSON.stringify(selectedImage))
+                        router.push('/ai-studio/create-video')
+                      }}
                       className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded transition-colors flex items-center gap-2"
-                      title="Download image"
+                      title="Create Video with this image"
                     >
-                      <Download className="w-4 h-4" />
-                      Download
+                      <Plus className="w-4 h-4" />
+                      Create Video
                     </button>
                     <button
                       onClick={() => handleSaveImage(selectedImage)}
