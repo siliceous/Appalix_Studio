@@ -254,7 +254,7 @@ export default function TalkingActors() {
     fetchFolders()
   }, [workspaceId])
 
-  const deletedImages = images.filter((img) => img.deletedAt)
+  const deletedImages = images.filter((img) => img.deletedAt).sort((a, b) => (b.deletedAt || 0) - (a.deletedAt || 0))
 
   const filteredImages = images.filter((img) => {
     if (img.deletedAt) return false
