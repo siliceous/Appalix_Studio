@@ -71,8 +71,8 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Studio',
     items: [
       { href: '/ai-studio', label: 'AI Studio', icon: Sparkles, adminOnly: true },
-      { href: '/studio/actors', label: 'Talking Actors', icon: ActorIcon, adminOnly: true },
-      { href: '/videos', label: 'Video Generator', icon: Video, adminOnly: true },
+      { href: '/studio/talking-actors', label: 'Talking Actors', icon: ActorIcon, adminOnly: true },
+      { href: '/ai-studio/create-video', label: 'Video Generator', icon: Video, adminOnly: true },
     ],
   },
   {
