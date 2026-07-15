@@ -863,15 +863,7 @@ export default function TalkingActors() {
               <button onClick={() => { setFullscreenImage(null); setImageZoom(10) }} className="p-2 hover:bg-gray-700 rounded-lg transition-colors"><X className="w-5 h-5 text-white" /></button>
             </div>
 
-            <div className="flex flex-col gap-2 flex-shrink-0">
-              <div className="text-xs text-white bg-gray-900 rounded-lg p-2 border border-gray-700">Zoom: {Math.round(imageZoom * 100)}%</div>
-              <div className="flex gap-2">
-                <button onClick={() => setImageZoom(Math.max(0.5, imageZoom - 0.2))} className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors">- Zoom Out</button>
-                <button onClick={() => setImageZoom(1)} className="flex-1 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs font-medium transition-colors">Reset</button>
-                <button onClick={() => setImageZoom(Math.min(5, imageZoom + 0.2))} className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors">+ Zoom In</button>
-              </div>
-              <div className="text-xs text-gray-400">Scroll on image to zoom | Drag to pan</div>
-            </div>
+            <div className="text-xs text-white bg-gray-900 rounded-lg p-2 border border-gray-700 flex-shrink-0">Scroll to zoom (50% - 500%) | Current: {Math.round(imageZoom * 100)}%</div>
 
             <div className="flex flex-col gap-2 flex-1 min-h-0">
               <p className="text-xs text-white uppercase font-semibold flex-shrink-0">Prompt</p>
