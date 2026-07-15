@@ -154,21 +154,23 @@ export default function CreateVideoPage() {
     <div className="-m-8 flex flex-col h-screen overflow-hidden" suppressHydrationWarning>
       <SageToolbar pageKey="email" />
 
+      {/* Page Title - Aligned with panels */}
+      <div className="px-6 pt-5 pb-1 shrink-0 ml-3">
+        <h1 className="text-2xl font-bold text-gray-900">Video Generator</h1>
+        <p className="text-gray-600 text-sm mt-0.5">Create stunning AI-powered videos with professional settings</p>
+      </div>
+
       <div className="flex flex-1 overflow-hidden gap-3">
         {/* Left Panel - Settings */}
         <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden m-3 mt-24 flex-shrink-0">
-          {/* Page Header */}
-          <div className="px-4 py-2 shrink-0 border-b border-gray-200 flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-semibold text-gray-900">Video Generator</h2>
-              <p className="text-gray-500 text-xs mt-0.5">Create stunning AI-powered videos with professional settings</p>
-            </div>
+          <div className="bg-black text-white px-4 py-3 h-12 flex items-center justify-between flex-shrink-0">
+            <h2 className="text-sm font-semibold">Video Generator</h2>
             <button
               onClick={() => router.push("/ai-studio")}
-              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+              className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors"
               title="Back to AI Studio"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
+              <ChevronLeft className="w-5 h-5 text-white" />
             </button>
           </div>
 
