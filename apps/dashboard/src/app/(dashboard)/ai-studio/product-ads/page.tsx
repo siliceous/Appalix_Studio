@@ -1,290 +1,208 @@
 'use client'
 
-import { useState } from 'react'
-import { ShoppingBag, Zap } from 'lucide-react'
-import { AIStudioLayout } from '@/components/ai-studio/ai-studio-layout'
-import {
-  UploadBox,
-  GenerationPanel,
-  VideoPreviewCard,
-  CreditUsageCard,
-} from '@/components/ai-studio/components'
-import { aiStudioAPI } from '@/lib/api/ai-studio'
-import type { Platform, CreditUsage } from '@/lib/types/ai-studio'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { ChevronLeft, Loader2, Trash2, Search } from 'lucide-react'
+import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 
-const PLATFORMS: Platform[] = ['tiktok', 'instagram', 'facebook', 'linkedin', 'google-ads']
-const OUTPUT_TYPES = ['video', 'cinematic', 'usage', 'holding', 'lifestyle']
-const SCENE_STYLES = ['Minimalist', 'Luxury', 'Casual', 'Professional', 'Energetic']
-const BRAND_TONES = ['Professional', 'Friendly', 'Luxury', 'Educational', 'Humorous']
+interface GeneratedImage {
+  id: string
+  image: string
+  prompt: string
+  timestamp: number
+  deletedAt?: number
+  aspectRatio?: string
+}
+
+const PRODUCTS = ['Electronics', 'Fashion', 'Home & Kitchen', 'Beauty', 'Toys', 'Sports', 'Food', 'Furniture']
+const STYLES = ['Minimalist', 'Luxury', 'Professional', 'Casual', 'Vibrant', 'Elegant']
+const BACKGROUNDS = ['White', 'Gradient', 'Natural', 'Studio', 'Lifestyle', 'Abstract']
 
 export default function ProductAdsPage() {
-  const [productImage, setProductImage] = useState<File | null>(null)
-  const [productImagePreview, setProductImagePreview] = useState<string>('')
-  const [productName, setProductName] = useState('')
-  const [targetAudience, setTargetAudience] = useState('')
-  const [offer, setOffer] = useState('')
-  const [cta, setCta] = useState('Shop Now')
-  const [platform, setPlatform] = useState<Platform>('instagram')
-  const [outputType, setOutputType] = useState(OUTPUT_TYPES[0])
-  const [sceneStyle, setSceneStyle] = useState(SCENE_STYLES[0])
-  const [brandTone, setBrandTone] = useState(BRAND_TONES[0])
-  const [loading, setLoading] = useState(false)
-  const [status, setStatus] = useState<'idle' | 'queued' | 'processing' | 'completed' | 'failed'>('idle')
-  const [videoUrl, setVideoUrl] = useState<string>('')
-  const [credits, setCredits] = useState<CreditUsage | null>(null)
+  const router = useRouter()
+  const [images, setImages] = useState<GeneratedImage[]>([])
+  const [loading, setLoading] = useState(true)
+  const [workspaceId, setWorkspaceId] = useState('')
+  const [credits, setCredits] = useState(0)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([])
+  const [selectedStyles, setSelectedStyles] = useState<string[]>([])
+  const [selectedBackgrounds, setSelectedBackgrounds] = useState<string[]>([])
+  const [adTitle, setAdTitle] = useState('')
+  const [showTrash, setShowTrash] = useState(false)
 
-  const handleProductImageSelect = (file: File) => {
-    setProductImage(file)
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      setProductImagePreview(e.target?.result as string)
-    }
-    reader.readAsDataURL(file)
-  }
+  useEffect(() => {
+    const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
+    setWorkspaceId(wId)
 
-  const handleGenerate = async () => {
-    if (!productName.trim() || !targetAudience.trim() || !offer.trim()) {
-      alert('Please fill in product name, target audience, and offer')
-      return
-    }
-
-    setLoading(true)
-    try {
-      const result = await aiStudioAPI.generateProductAd({
-        productImage: productImagePreview,
-        productName,
-        targetAudience,
-        offer,
-        cta,
-        platform,
-        outputType: outputType as any,
-        sceneStyle,
-        brandTone,
-      })
-
-      setStatus(result.status)
-
-      // Poll for completion
-      const completed = await aiStudioAPI.pollGeneration(result.id)
-      setStatus(completed.status)
-      if (completed.status === 'completed' && completed.outputUrl) {
-        setVideoUrl(completed.outputUrl)
+    const fetchImages = async () => {
+      try {
+        setLoading(true)
+        setImages([])
+        setLoading(false)
+      } catch (error) {
+        console.error('Error loading images:', error)
+        setLoading(false)
       }
-    } catch (error) {
-      console.error('Generation failed:', error)
-      setStatus('failed')
-    } finally {
-      setLoading(false)
     }
-  }
+
+    fetchImages()
+
+    const fetchCredits = async () => {
+      try {
+        const response = await fetch('/api/wallet/balance', { headers: { 'x-workspace-id': wId } })
+        if (response.ok) {
+          const data = await response.json()
+          setCredits(data.credits || 0)
+        }
+      } catch (error) {
+        console.error('Error loading credits:', error)
+      }
+    }
+    if (wId) fetchCredits()
+  }, [])
+
+  const filteredImages = images.filter((img) => {
+    if (img.deletedAt) return false
+    const promptLower = img.prompt.toLowerCase()
+    const matchesSearch = !searchQuery || promptLower.includes(searchQuery.toLowerCase())
+    return matchesSearch
+  })
 
   return (
-    <AIStudioLayout>
-      <div className="flex-1 p-8">
-        <div className="max-w-6xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <ShoppingBag className="w-6 h-6 text-blue-500" />
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Product Ads</h1>
-            </div>
-            <p className="text-gray-600 dark:text-gray-400">
-              Auto-generate professional product ads optimized for different platforms
-            </p>
+    <div className="-m-8 flex flex-col h-screen overflow-hidden" suppressHydrationWarning>
+      <SageToolbar pageKey="email" />
+
+      <div className="flex flex-1 overflow-hidden gap-3">
+        {/* Left Panel - Product Ad Settings */}
+        <div className="w-80 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden m-3 mt-24 flex-shrink-0">
+          <div className="bg-black text-white px-4 py-3 h-12 flex items-center justify-between flex-shrink-0">
+            <h2 className="text-sm font-semibold">Create Ad</h2>
+            <button
+              onClick={() => router.push("/ai-studio")}
+              className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors"
+              title="Back to AI Studio"
+            >
+              <ChevronLeft className="w-5 h-5 text-white" />
+            </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-8">
-            {/* Form */}
-            <div className="col-span-2 space-y-6">
-              {/* Product Image */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                  Product Image
-                </label>
-                <UploadBox
-                  onFileSelect={handleProductImageSelect}
-                  accept="image/*"
-                  label={productImage ? productImage.name : 'Upload your product image'}
-                />
-                {productImagePreview && (
-                  <div className="mt-4">
-                    <img
-                      src={productImagePreview}
-                      alt="Product preview"
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
+          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-3 py-3 pr-2 space-y-4 text-xs">
+            {/* Ad Title */}
+            <div>
+              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">Ad Title</label>
+              <input type="text" value={adTitle} onChange={(e) => setAdTitle(e.target.value)} placeholder="Give your ad a name..." className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+
+            {/* Product Category */}
+            <div>
+              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">Product Category</label>
+              <div className="flex flex-wrap gap-2">
+                {PRODUCTS.map(p => (
+                  <button key={p} onClick={() => setSelectedProducts(selectedProducts.includes(p) ? selectedProducts.filter(x => x !== p) : [...selectedProducts, p])} className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${selectedProducts.includes(p) ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>{p}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Style */}
+            <div>
+              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">Style</label>
+              <div className="flex flex-wrap gap-2">
+                {STYLES.map(s => (
+                  <button key={s} onClick={() => setSelectedStyles(selectedStyles.includes(s) ? selectedStyles.filter(x => x !== s) : [...selectedStyles, s])} className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${selectedStyles.includes(s) ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>{s}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Background */}
+            <div>
+              <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">Background</label>
+              <div className="flex flex-wrap gap-2">
+                {BACKGROUNDS.map(b => (
+                  <button key={b} onClick={() => setSelectedBackgrounds(selectedBackgrounds.includes(b) ? selectedBackgrounds.filter(x => x !== b) : [...selectedBackgrounds, b])} className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${selectedBackgrounds.includes(b) ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>{b}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Clear All Filters Button */}
+            {(selectedProducts.length > 0 || selectedStyles.length > 0 || selectedBackgrounds.length > 0) && (
+              <button
+                onClick={() => {
+                  setSelectedProducts([])
+                  setSelectedStyles([])
+                  setSelectedBackgrounds([])
+                }}
+                className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold transition-colors mt-4"
+              >
+                Clear All Filters
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-hidden bg-[#f5f4f1] flex flex-col mr-3">
+          <div className="px-4 pt-8 pb-0 shrink-0">
+            <div className="mb-5">
+              <h1 className="text-xl font-bold text-gray-900">Product Ads</h1>
+              <p className="text-gray-500 text-sm mt-0.5">Create and manage your product advertisement images</p>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-hidden flex flex-col px-4 pb-4 min-h-0">
+            <div className="bg-[#141c2b] rounded-t-xl border border-white/10 border-b-0 shadow-lg p-4 shrink-0">
+              <div className="flex flex-wrap gap-3 items-center">
+                <div className="relative flex-1 min-w-[180px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  <input type="text" placeholder="Search…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-8 pr-3 py-2 text-sm border border-white/20 rounded-lg !bg-[#f5f4f1] !text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#15A4AE]/40" />
+                </div>
+                <button
+                  onClick={() => setShowTrash(!showTrash)}
+                  className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors text-white bg-gray-700 border border-gray-600 hover:bg-gray-600`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Trash (0)
+                </button>
+                <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-white/10 border border-white/20">{credits} Credits</div>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-hidden bg-slate-900 rounded-b-xl border border-white/10 border-t-0 shadow-lg min-h-0">
+              <div className="h-full overflow-y-auto p-6 flex flex-col scrollbar-hide">
+                {loading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                  </div>
+                ) : filteredImages.length === 0 ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <p className="text-gray-300 font-medium">Your gallery is empty</p>
+                      <p className="text-gray-400 text-sm">Generate product ads to get started</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-5 gap-3">
+                    {filteredImages.map((image) => (
+                      <div
+                        key={image.id}
+                        className="group relative rounded-lg overflow-hidden border-2 border-gray-600 hover:border-gray-500 shadow-md bg-gray-200 cursor-pointer aspect-square"
+                      >
+                        <img
+                          src={image.image}
+                          alt={image.prompt}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            ;(e.target as HTMLImageElement).style.opacity = '0'
+                          }}
+                        />
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
-
-              {/* Product Details */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                    Product Name
-                  </label>
-                  <input
-                    type="text"
-                    value={productName}
-                    onChange={(e) => setProductName(e.target.value)}
-                    placeholder="e.g., Premium Wireless Headphones"
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                    Target Audience
-                  </label>
-                  <input
-                    type="text"
-                    value={targetAudience}
-                    onChange={(e) => setTargetAudience(e.target.value)}
-                    placeholder="e.g., Tech-savvy professionals, ages 25-40"
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                    Special Offer
-                  </label>
-                  <input
-                    type="text"
-                    value={offer}
-                    onChange={(e) => setOffer(e.target.value)}
-                    placeholder="e.g., 30% off today only"
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                    Call to Action
-                  </label>
-                  <input
-                    type="text"
-                    value={cta}
-                    onChange={(e) => setCta(e.target.value)}
-                    placeholder="e.g., Shop Now"
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* Ad Settings */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                    Platform
-                  </label>
-                  <select
-                    value={platform}
-                    onChange={(e) => setPlatform(e.target.value as Platform)}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {PLATFORMS.map((p) => (
-                      <option key={p} value={p}>
-                        {p.charAt(0).toUpperCase() + p.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                    Ad Type
-                  </label>
-                  <select
-                    value={outputType}
-                    onChange={(e) => setOutputType(e.target.value)}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {OUTPUT_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {t.charAt(0).toUpperCase() + t.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                    Scene Style
-                  </label>
-                  <select
-                    value={sceneStyle}
-                    onChange={(e) => setSceneStyle(e.target.value)}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {SCENE_STYLES.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                    Brand Tone
-                  </label>
-                  <select
-                    value={brandTone}
-                    onChange={(e) => setBrandTone(e.target.value)}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {BRAND_TONES.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Status */}
-              {status !== 'idle' && (
-                <GenerationPanel
-                  status={status as any}
-                  estimatedTime={status === 'processing' ? '~5 minutes' : undefined}
-                  creditsUsed={75}
-                />
-              )}
-
-              {/* Generate Button */}
-              <button
-                onClick={handleGenerate}
-                disabled={loading || !productName.trim() || !targetAudience.trim() || !offer.trim()}
-                className="w-full py-3 px-4 bg-black dark:bg-white text-white dark:text-black rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center justify-center gap-2"
-              >
-                <ShoppingBag className="w-5 h-5" />
-                Generate Product Ad
-              </button>
-            </div>
-
-            {/* Right Column - Results and Credits */}
-            <div className="space-y-6">
-              {/* Credit Usage */}
-              {credits && <CreditUsageCard usage={credits} />}
-
-              {/* Video Result */}
-              {videoUrl && (
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Generated Ad</h3>
-                  <VideoPreviewCard
-                    videoUrl={videoUrl}
-                    title={`${productName} Ad`}
-                    duration="30s"
-                    onDownload={() => console.log('Download ad')}
-                    onSave={() => console.log('Save to project')}
-                  />
-                </div>
-              )}
             </div>
           </div>
         </div>
       </div>
-    </AIStudioLayout>
+    </div>
   )
 }
