@@ -583,37 +583,27 @@ export default function AIStudio() {
                               />
                             </div>
                           )}
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto z-10">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
-                                setFullscreenImage(image)
-                                setFullscreenImageIndex(idx)
+                                sessionStorage.setItem('importedImage', JSON.stringify(image))
+                                router.push('/ai-studio/create-video')
                               }}
-                              className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
-                              title="Open"
+                              className="p-3 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors shadow-lg"
+                              title="Create Video"
                             >
-                              <Eye className="w-4 h-4 text-gray-700" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDownload(image.id, image.image)
-                              }}
-                              className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
-                              title="Download"
-                            >
-                              <Download className="w-4 h-4 text-gray-700" />
+                              <Plus className="w-5 h-5 text-white" />
                             </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
                                 handleDelete(image.id)
                               }}
-                              className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+                              className="p-3 bg-white rounded-full hover:bg-gray-200 transition-colors shadow-lg"
                               title="Delete"
                             >
-                              <Trash2 className="w-4 h-4 text-gray-700" />
+                              <Trash2 className="w-5 h-5 text-gray-700" />
                             </button>
                           </div>
                         </div>
