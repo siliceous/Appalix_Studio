@@ -157,7 +157,7 @@ export default function CreateVideoPage() {
       {/* Page Title */}
       <div className="pt-4 pb-0 shrink-0" style={{ marginLeft: 'calc(20rem + 1.5rem + 0.75rem)' }}>
         <h1 className="text-lg font-bold text-gray-900">Video Generator</h1>
-        <p className="text-gray-600 text-xs mt-0.5">Create stunning AI-powered videos with professional settings</p>
+        <p className="text-gray-600 text-xs mt-0.5 mb-0">Create stunning AI-powered videos with professional settings</p>
       </div>
 
       <div className="flex flex-1 overflow-hidden gap-3">

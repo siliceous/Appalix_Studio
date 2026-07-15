@@ -857,7 +857,7 @@ export default function CreateImagePage() {
       {/* Page Title */}
       <div className="pt-4 pb-0 shrink-0" style={{ marginLeft: 'calc(20rem + 1.5rem + 0.75rem)' }}>
         <h1 className="text-lg font-bold text-gray-900">Create Image</h1>
-        <p className="text-gray-600 text-xs mt-0.5">Generate AI-powered images with advanced customization</p>
+        <p className="text-gray-600 text-xs mt-0.5 mb-0">Generate AI-powered images with advanced customization</p>
       </div>
 
       <div className="flex flex-1 overflow-hidden gap-3">
