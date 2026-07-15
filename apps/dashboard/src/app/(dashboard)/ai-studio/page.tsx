@@ -525,7 +525,7 @@ export default function AIStudio() {
                               ? 'border-blue-500 shadow-lg shadow-blue-500/50'
                               : 'border-gray-600 hover:border-gray-500 shadow-md'
                           }`}
-                          onClick={() => { setFullscreenImage(image); setFullscreenImageIndex(idx) }}
+                          onClick={() => { if (importMode) { const newSelected = new Set(selectedImages); newSelected.has(image.id) ? newSelected.delete(image.id) : newSelected.add(image.id); setSelectedImages(newSelected); } else { setFullscreenImage(image); setFullscreenImageIndex(idx); } }}
                         >
                           <img
                             src={image.image}
