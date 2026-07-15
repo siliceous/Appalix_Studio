@@ -154,8 +154,15 @@ export default function CreateVideoPage() {
       <div className="flex-1 flex gap-3 px-3 py-3 pb-3 overflow-hidden relative">
         {/* Left Panel - Settings */}
         <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden">
-          <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center flex-shrink-0">
-            <h2 className="text-sm font-semibold">Settings</h2>
+          <div className="bg-black text-white px-4 py-3 h-12 flex items-center justify-between flex-shrink-0">
+            <h2 className="text-sm font-semibold">AI-studio</h2>
+            <button
+              onClick={() => router.push("/ai-studio")}
+              className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors"
+              title="Back to AI Studio"
+            >
+              <ChevronLeft className="w-5 h-5 text-white" />
+            </button>
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-scroll px-3 py-3 pr-2 pb-20 space-y-3 flex flex-col text-xs">

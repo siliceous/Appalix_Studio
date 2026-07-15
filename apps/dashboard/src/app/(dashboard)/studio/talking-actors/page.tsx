@@ -14,6 +14,15 @@ interface GeneratedImage {
   aspectRatio?: string
   projectId?: string
   projectName?: string
+  parsedMetadata?: {
+    gender?: string
+    age?: string
+    type?: string
+    situation?: string[]
+    accessories?: string[]
+    emotions?: string[]
+    skinTone?: string
+  }
 }
 
 interface Project {
@@ -54,6 +63,65 @@ const ACCESSORIES = [
   'Scarf', 'Shoes', 'Suit', 'Tools', 'Trash Can', 'Tree',
 ]
 const EMOTIONS = ['Calm', 'Enthusiastic', 'Excited', 'Frustrated', 'Happy', 'Sad', 'Serious', 'Smiling']
+
+function parseImageMetadata(prompt: string) {
+  const metadata: GeneratedImage['parsedMetadata'] = {
+    situation: [],
+    accessories: [],
+    emotions: [],
+  }
+
+  const promptLower = prompt.toLowerCase()
+
+  // Parse Gender
+  if (promptLower.includes('woman') || promptLower.includes('female') || promptLower.includes('girl')) {
+    metadata.gender = 'Female'
+  } else if (promptLower.includes('man') || promptLower.includes('male') || promptLower.includes('boy')) {
+    metadata.gender = 'Male'
+  } else if (promptLower.includes('neutral') || promptLower.includes('non-binary')) {
+    metadata.gender = 'Neutral'
+  }
+
+  // Parse Age
+  if (promptLower.includes('senior') || promptLower.includes('elderly') || promptLower.includes('old')) {
+    metadata.age = 'Senior'
+  } else if (promptLower.includes('adult')) {
+    metadata.age = 'Adult'
+  } else if (promptLower.includes('young adult') || promptLower.includes('youth')) {
+    metadata.age = 'Young Adult'
+  } else if (promptLower.includes('kid') || promptLower.includes('child') || promptLower.includes('boy') || promptLower.includes('girl')) {
+    metadata.age = 'Kid'
+  }
+
+  // Parse Situations
+  SITUATIONS.forEach(situation => {
+    if (promptLower.includes(situation.toLowerCase())) {
+      metadata.situation?.push(situation)
+    }
+  })
+
+  // Parse Accessories
+  ACCESSORIES.forEach(accessory => {
+    if (promptLower.includes(accessory.toLowerCase())) {
+      metadata.accessories?.push(accessory)
+    }
+  })
+
+  // Parse Emotions
+  EMOTIONS.forEach(emotion => {
+    if (promptLower.includes(emotion.toLowerCase())) {
+      metadata.emotions?.push(emotion)
+    }
+  })
+
+  // Parse Skin Tone
+  const skinToneMatches = SKIN_TONES.filter(tone => promptLower.includes(tone.name.toLowerCase()))
+  if (skinToneMatches.length > 0) {
+    metadata.skinTone = skinToneMatches[0].name
+  }
+
+  return metadata
+}
 
 export default function TalkingActors() {
   const router = useRouter()
@@ -128,15 +196,20 @@ export default function TalkingActors() {
   }, [])
 
   useEffect(() => {
-    const imported = sessionStorage.getItem("importedImages")
-    if (imported) {
+    const pending = sessionStorage.getItem("pendingImports")
+    if (pending) {
       try {
-        const images = JSON.parse(imported)
-        setImages(images)
-        sessionStorage.removeItem("importedImages")
-        console.log("[TalkingActors] Imported", images.length, "images from ai-studio")
+        const newImages = JSON.parse(pending)
+        // Parse metadata for each imported image
+        const parsedImages = newImages.map((img: GeneratedImage) => ({
+          ...img,
+          parsedMetadata: parseImageMetadata(img.prompt)
+        }))
+        setImages(prevImages => [...prevImages, ...parsedImages])
+        sessionStorage.removeItem("pendingImports")
+        console.log("[TalkingActors] Imported", parsedImages.length, "images with parsed metadata")
       } catch (e) {
-        console.error("[TalkingActors] Error loading imported images:", e)
+        console.error("[TalkingActors] Error loading pending imports:", e)
       }
     }
   }, [])
@@ -179,19 +252,38 @@ export default function TalkingActors() {
   const filteredImages = images.filter((img) => {
     if (img.deletedAt) return false
     const promptLower = img.prompt.toLowerCase()
-    
+    const meta = img.parsedMetadata
+
     // Search query filter
     const matchesSearch = !searchQuery || promptLower.includes(searchQuery.toLowerCase())
-    
-    // Gender filter - only use this if gender is actually selected
-    const matchesGender = selectedGenders.length === 0 || 
-      selectedGenders.some(g => {
-        if (g === 'Female') return promptLower.includes('woman') || promptLower.includes('female') || promptLower.includes('girl')
-        if (g === 'Male') return promptLower.includes('man') || promptLower.includes('male') || promptLower.includes('boy')
-        if (g === 'Neutral') return !promptLower.includes('woman') && !promptLower.includes('female') && !promptLower.includes('girl') && !promptLower.includes('man') && !promptLower.includes('male') && !promptLower.includes('boy')
-        return true
-      })
-    
+
+    // Gender filter
+    const matchesGender = selectedGenders.length === 0 ||
+      selectedGenders.some(g => meta?.gender === g)
+
+    // Age filter
+    const matchesAge = selectedAges.length === 0 ||
+      selectedAges.some(a => meta?.age === a)
+
+    // Type filter
+    const matchesType = selectedTypes.length === 0 ||
+      selectedTypes.some(t => promptLower.includes(t.toLowerCase()))
+
+    // Situation filter
+    const matchesSituation = selectedSituations.length === 0 ||
+      selectedSituations.some(s => meta?.situation?.includes(s))
+
+    // Accessories filter
+    const matchesAccessories = selectedAccessories.length === 0 ||
+      selectedAccessories.some(a => meta?.accessories?.includes(a))
+
+    // Emotions filter
+    const matchesEmotions = selectedEmotions.length === 0 ||
+      selectedEmotions.some(e => meta?.emotions?.includes(e))
+
+    // Skin tone filter
+    const matchesSkinTone = !selectedSkinTone || meta?.skinTone === selectedSkinTone
+
     // Date filter
     let matchesDate = true
     if (selectedDateRange) {
@@ -202,8 +294,9 @@ export default function TalkingActors() {
       else if (selectedDateRange === 'month') matchesDate = diffDays < 30
       else if (selectedDateRange === 'year') matchesDate = diffDays < 365
     }
-    
-    return matchesSearch && matchesGender && matchesDate
+
+    return matchesSearch && matchesGender && matchesAge && matchesType && matchesSituation &&
+           matchesAccessories && matchesEmotions && matchesSkinTone && matchesDate
   })
 
   const handleDelete = async (imageId: string) => {
@@ -390,19 +483,16 @@ export default function TalkingActors() {
       <div className="flex flex-1 overflow-hidden gap-3">
         {/* Left Panel - Create Actor Filters */}
         <div className="w-80 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden m-3 mt-24 flex-shrink-0">
-          <div className="bg-black text-white px-4 py-3 h-12 flex items-center flex-shrink-0">
+          <div className="bg-black text-white px-4 py-3 h-12 flex items-center justify-between flex-shrink-0">
             <h2 className="text-sm font-semibold">Create Actor</h2>
-          </div>
-          <div className="px-3 py-3 flex-shrink-0 border-b">
             <button
-              onClick={() => router.push("/ai-studio/create-image")}
-              className="w-full px-4 py-3 bg-white border-2 border-dashed border-gray-300 hover:border-blue-400 rounded-lg text-center transition-colors"
+              onClick={() => router.push("/ai-studio")}
+              className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors"
+              title="Back to AI Studio"
             >
-              <div className="text-3xl font-light text-gray-400 mb-1">+</div>
-              <div className="text-xs font-semibold text-gray-700">Create New</div>
+              <ChevronLeft className="w-5 h-5 text-white" />
             </button>
           </div>
-
 
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-3 py-3 pr-2 space-y-4 text-xs">
             {/* Actor Name */}
@@ -481,10 +571,23 @@ export default function TalkingActors() {
               </div>
             </div>
 
-            {/* Credits */}
-            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200 mt-4">
-              <p className="text-xs text-gray-700"><span className="font-semibold">Credits: </span>{credits}</p>
-            </div>
+            {/* Clear All Filters Button */}
+            {(selectedGenders.length > 0 || selectedAges.length > 0 || selectedTypes.length > 0 || selectedSituations.length > 0 || selectedAccessories.length > 0 || selectedEmotions.length > 0 || selectedSkinTone) && (
+              <button
+                onClick={() => {
+                  setSelectedGenders([])
+                  setSelectedAges([])
+                  setSelectedTypes([])
+                  setSelectedSituations([])
+                  setSelectedAccessories([])
+                  setSelectedEmotions([])
+                  setSelectedSkinTone('')
+                }}
+                className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold transition-colors mt-4"
+              >
+                Clear All Filters
+              </button>
+            )}
           </div>
         </div>
 
@@ -616,6 +719,13 @@ export default function TalkingActors() {
                 ) : (
                   <div className="grid grid-cols-5 gap-3">
                     {filteredImages.map((image, idx) => {
+                      <button
+                        onClick={() => router.push("/ai-studio/create-image")}
+                        className="relative rounded-lg overflow-hidden border-2 border-dashed border-gray-300 hover:border-blue-400 bg-white aspect-square flex flex-col items-center justify-center transition-colors gap-2"
+                      >
+                        <div className="text-4xl font-light text-gray-400">+</div>
+                        <div className="text-xs font-semibold text-gray-600">Create New</div>
+                      </button>
                       const getAspectRatio = (ratio?: string) => {
                         const ratios: Record<string, string> = {
                           '1:1': 'aspect-square',
@@ -655,13 +765,13 @@ export default function TalkingActors() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
-                                setFullscreenImage(image)
-                                setFullscreenImageIndex(idx)
+                                sessionStorage.setItem('selectedActor', JSON.stringify(image))
+                                router.push('/ai-studio/create-video')
                               }}
-                              className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
-                              title="Open"
+                              className="p-2 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors"
+                              title="Use this Actor"
                             >
-                              <Eye className="w-4 h-4 text-gray-700" />
+                              <Plus className="w-4 h-4 text-white" />
                             </button>
                             <button
                               onClick={(e) => {

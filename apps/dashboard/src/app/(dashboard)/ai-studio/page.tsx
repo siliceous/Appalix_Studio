@@ -415,22 +415,49 @@ export default function AIStudio() {
                   Trash ({deletedImages.length})
                 </button>
                 {importMode && (
-                  <button
-                    onClick={() => {
-                      if (selectedImages.size === 0) {
-                        alert("Please select at least one image")
-                        return
-                      }
-                      const selectedImagesList = Array.from(selectedImages)
-                      const imagesToImport = filteredImages.filter(img => selectedImages.has(img.id))
-                      sessionStorage.setItem("importedImages", JSON.stringify(imagesToImport))
-                      window.location.href = "/studio/talking-actors"
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 border border-blue-500 text-white hover:bg-blue-700 transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Import ({selectedImages.size})
-                  </button>
+                  <>
+                    <button
+                      onClick={() => {
+                        if (selectedImages.size === 0) {
+                          setSelectedImages(new Set(filteredImages.map(img => img.id)))
+                        } else {
+                          setSelectedImages(new Set())
+                        }
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-gray-700 border border-gray-600 text-white hover:bg-gray-600 transition-colors"
+                    >
+                      {selectedImages.size === 0 ? 'Select All' : `Unselect All (${selectedImages.size})`}
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (selectedImages.size === 0) {
+                          alert("Please select at least one image")
+                          return
+                        }
+                        const selectedImagesList = Array.from(selectedImages)
+                        const imagesToImport = filteredImages.filter(img => selectedImages.has(img.id))
+
+                        // Get existing pending imports and append to them
+                        const existingPending = sessionStorage.getItem("pendingImports")
+                        let allImagesToImport = imagesToImport
+                        if (existingPending) {
+                          try {
+                            const existing = JSON.parse(existingPending)
+                            allImagesToImport = [...existing, ...imagesToImport]
+                          } catch (e) {
+                            console.error("Failed to parse existing pending imports:", e)
+                          }
+                        }
+
+                        sessionStorage.setItem("pendingImports", JSON.stringify(allImagesToImport))
+                        window.location.href = "/studio/talking-actors"
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 border border-blue-500 text-white hover:bg-blue-700 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Import ({selectedImages.size})
+                    </button>
+                  </>
                 )}
 
               </div>
