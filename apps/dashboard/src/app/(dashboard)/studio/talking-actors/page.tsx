@@ -199,6 +199,21 @@ export default function TalkingActors() {
 
         console.log('[TalkingActors] Total images loaded:', allImages.length)
         setImages(allImages)
+        // Check for duplicates in final array
+        const finalIds = new Set()
+        const duplicates = allImages.filter(img => {
+          if (finalIds.has(img.id)) {
+            console.warn("[TalkingActors] DUPLICATE IMAGE FOUND:", img.id, img.prompt.substring(0, 50))
+            return true
+          }
+          finalIds.add(img.id)
+          return false
+        })
+        if (duplicates.length > 0) {
+          console.error("[TalkingActors] Found", duplicates.length, "duplicates. Removing...")
+          allImages = allImages.filter(img => !duplicates.some(d => d.id === img.id))
+        }
+
         setLoading(false)
       } catch (error) {
         console.error('Error loading images:', error)
