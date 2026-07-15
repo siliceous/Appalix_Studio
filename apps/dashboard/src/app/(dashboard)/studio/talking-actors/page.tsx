@@ -828,7 +828,7 @@ export default function TalkingActors() {
 
       {fullscreenImage && (
         <div className="fixed inset-0 bg-black/90 z-50 flex" onClick={() => { setFullscreenImage(null); setImageZoom(1) }}>
-          <div className="flex-1 flex items-center justify-center overflow-hidden p-4 relative" ref={imageContainerRef} onWheel={(e) => { e.preventDefault(); setImageZoom(Math.max(0.5, Math.min(5, imageZoom + e.deltaY * 0.001))) }} onClick={(e) => e.stopPropagation()}>
+          <div className="flex-1 flex items-center justify-center overflow-hidden p-4 relative" ref={imageContainerRef} onWheel={(e) => { e.preventDefault(); setImageZoom(Math.max(0.5, Math.min(50, imageZoom + e.deltaY * 0.001))) }} onClick={(e) => e.stopPropagation()}>
             <div
               className="overflow-auto"
               style={{ userSelect: 'none', cursor: isDragging ? 'grabbing' : 'grab', width: '100%', height: '100%' }}
@@ -863,7 +863,7 @@ export default function TalkingActors() {
               <button onClick={() => { setFullscreenImage(null); setImageZoom(1) }} className="p-2 hover:bg-gray-700 rounded-lg transition-colors"><X className="w-5 h-5 text-white" /></button>
             </div>
 
-            <div className="text-xs text-white bg-gray-900 rounded-lg p-2 border border-gray-700 flex-shrink-0">Scroll to zoom (50% - 500%) | Current: {Math.round(imageZoom * 100)}%</div>
+            <div className="text-xs text-white bg-gray-900 rounded-lg p-2 border border-gray-700 flex-shrink-0">Scroll to zoom (50% - 5000%) | Current: {Math.round(imageZoom * 100)}%</div>
 
             <div className="flex flex-col gap-2 flex-1 min-h-0">
               <p className="text-xs text-white uppercase font-semibold flex-shrink-0">Prompt</p>
