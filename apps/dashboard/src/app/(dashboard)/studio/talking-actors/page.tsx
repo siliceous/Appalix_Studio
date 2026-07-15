@@ -169,9 +169,6 @@ export default function TalkingActors() {
     const fetchImages = async () => {
       try {
         setLoading(true)
-
-        // Gallery starts empty - images added explicitly via library selector
-        setImages([])
         setLoading(false)
       } catch (error) {
         console.error('Error loading images:', error)
