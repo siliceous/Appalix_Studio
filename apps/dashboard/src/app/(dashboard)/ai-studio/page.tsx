@@ -438,6 +438,7 @@ export default function AIStudio() {
                         }
                         const selectedImagesList = Array.from(selectedImages)
                         const imagesToImport = images.filter(img => selectedImages.has(img.id) && !img.deletedAt)
+                        console.log('[Import] Selected:', selectedImages.size, 'Found to import:', imagesToImport.length, 'Images:', imagesToImport)
 
                         // Get existing pending imports and append to them
                         const existingPending = sessionStorage.getItem("pendingImports")
@@ -451,7 +452,9 @@ export default function AIStudio() {
                           }
                         }
 
+                        console.log('[Import] Setting sessionStorage with', allImagesToImport.length, 'images')
                         sessionStorage.setItem("pendingImports", JSON.stringify(allImagesToImport))
+                        console.log('[Import] Navigating to talking-actors')
                         window.location.href = "/studio/talking-actors"
                       }}
                       className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 border border-blue-500 text-white hover:bg-blue-700 transition-colors"
