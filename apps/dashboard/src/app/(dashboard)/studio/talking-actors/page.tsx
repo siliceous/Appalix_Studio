@@ -266,11 +266,54 @@ export default function TalkingActors() {
     // Gender filter - check selected genders array
     const matchesGender = selectedGenders.length === 0 || 
       selectedGenders.some(g => {
-        if (g === 'Female') return promptLower.includes('woman') || promptLower.includes('female') || promptLower.includes('girl')
-        if (g === 'Male') return promptLower.includes('man') || promptLower.includes('male') || promptLower.includes('boy')
-        if (g === 'Neutral') return !promptLower.includes('man') && !promptLower.includes('woman') && !promptLower.includes('male') && !promptLower.includes('female')
+        if (g === 'Female') return promptLower.includes('woman') || promptLower.includes('female') || promptLower.includes('girl') || promptLower.includes('she')
+        if (g === 'Male') return promptLower.includes('man') || promptLower.includes('male') || promptLower.includes('boy') || promptLower.includes('he')
+        if (g === 'Neutral') return !promptLower.includes('woman') && !promptLower.includes('female') && !promptLower.includes('girl') && !promptLower.includes('man') && !promptLower.includes('male') && !promptLower.includes('boy')
         return false
       })
+    
+    // Age filter - only filter if selected
+    const matchesAge = selectedAges.length === 0 || 
+      selectedAges.some(age => promptLower.includes(age.toLowerCase()))
+    
+    // Type filter - only filter if selected
+    const matchesType = selectedTypes.length === 0 || 
+      selectedTypes.some(type => promptLower.includes(type.toLowerCase()))
+    
+    // Situation filter - only filter if selected
+    const matchesSituation = selectedSituations.length === 0 || 
+      selectedSituations.some(situation => promptLower.includes(situation.toLowerCase()))
+    
+    // Accessories filter - only filter if selected
+    const matchesAccessories = selectedAccessories.length === 0 || 
+      selectedAccessories.some(acc => promptLower.includes(acc.toLowerCase()))
+    
+    // Emotions filter - only filter if selected
+    const matchesEmotions = selectedEmotions.length === 0 || 
+      selectedEmotions.some(emotion => promptLower.includes(emotion.toLowerCase()))
+    
+    // Skin tone filter - only filter if selected
+    const matchesSkinTone = !selectedSkinTone || promptLower.includes(selectedSkinTone.toLowerCase())
+    
+    // Date filter
+    let matchesDate = true
+    if (selectedDateRange) {
+      const now = Date.now()
+      const diffDays = (now - img.timestamp) / (1000 * 60 * 60 * 24)
+      if (selectedDateRange === 'today') matchesDate = diffDays < 1
+      else if (selectedDateRange === 'week') matchesDate = diffDays < 7
+      else if (selectedDateRange === 'month') matchesDate = diffDays < 30
+      else if (selectedDateRange === 'year') matchesDate = diffDays < 365
+    }
+    
+    // Log for debugging
+    if (selectedGenders.length > 0 && selectedAges.length > 0) {
+      console.debug(`[Filter] Gender: ${matchesGender}, Age: ${matchesAge}, Prompt: ${img.prompt.substring(0, 50)}`)
+    }
+    
+    return matchesSearch && matchesGender && matchesAge && matchesType && matchesSituation && 
+           matchesAccessories && matchesEmotions && matchesSkinTone && matchesDate
+  })
     
     // Age filter
     const matchesAge = selectedAges.length === 0 || 
