@@ -571,21 +571,11 @@ export default function TalkingActors() {
                   <div className="flex items-center justify-center h-full">
                     <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
                   </div>
+                ) : filteredImages.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
-                    <div className="text-center space-y-4">
-                      <div>
-                        <p className="text-gray-300 font-medium text-lg">Your gallery is empty</p>
-                        <p className="text-gray-400 text-sm">Add images from your library to get started</p>
-                      </div>
-                      <button
-                        onClick={() => {
-                          // TODO: Open library modal with all generated images
-                          alert('Library selector coming soon')
-                        }}
-                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
-                      >
-                        Browse Library
-                      </button>
+                    <div className="text-center">
+                      <p className="text-gray-300 font-medium">No assets found</p>
+                      <p className="text-gray-400 text-sm">Try adjusting your filters</p>
                     </div>
                   </div>
                 ) : (
