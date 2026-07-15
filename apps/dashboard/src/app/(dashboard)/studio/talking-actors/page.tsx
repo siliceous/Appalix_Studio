@@ -220,13 +220,21 @@ export default function TalkingActors() {
           parsedMetadata: parseImageMetadata(img.prompt)
         }))
         setImages(prevImages => {
-          const updated = [...prevImages, ...parsedImages]
+          // Filter out duplicates by ID
+          const existingIds = new Set(prevImages.map(img => img.id))
+          const uniqueNewImages = parsedImages.filter(img => !existingIds.has(img.id))
+
+          if (uniqueNewImages.length === 0) {
+            return prevImages // No new images to add
+          }
+
+          const updated = [...prevImages, ...uniqueNewImages]
           // Persist to localStorage
           localStorage.setItem("talkingActorsImages", JSON.stringify(updated))
           return updated
         })
         sessionStorage.removeItem("pendingImports")
-        console.log("[TalkingActors] Imported", parsedImages.length, "images with parsed metadata")
+        console.log("[TalkingActors] Imported", parsedImages.length, "images (filtered duplicates)")
       } catch (e) {
         console.error("[TalkingActors] Error loading pending imports:", e)
       }
