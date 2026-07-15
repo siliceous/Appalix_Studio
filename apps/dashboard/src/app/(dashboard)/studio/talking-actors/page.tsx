@@ -377,6 +377,16 @@ export default function TalkingActors() {
           <div className="bg-black text-white px-4 py-3 h-12 flex items-center flex-shrink-0">
             <h2 className="text-sm font-semibold">Create Actor</h2>
           </div>
+          <div className="px-3 py-3 flex-shrink-0 border-b">
+            <button
+              onClick={() => router.push("/ai-studio/create-image")}
+              className="w-full px-4 py-3 bg-white border-2 border-dashed border-gray-300 hover:border-blue-400 rounded-lg text-center transition-colors"
+            >
+              <div className="text-3xl font-light text-gray-400 mb-1">+</div>
+              <div className="text-xs font-semibold text-gray-700">Create New</div>
+            </button>
+          </div>
+
 
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-3 py-3 pr-2 space-y-4 text-xs">
             {/* Actor Name */}
@@ -501,11 +511,11 @@ export default function TalkingActors() {
                   Trash ({deletedImages.length})
                 </button>
                 <button
-                  onClick={() => router.push("/ai-studio/create-image")}
+                  onClick={() => router.push("/ai-studio")}
                   className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-blue-600 border border-blue-500 hover:bg-blue-700 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
-                  Generate New
+                  Import Images
                 </button>
 
               </div>
