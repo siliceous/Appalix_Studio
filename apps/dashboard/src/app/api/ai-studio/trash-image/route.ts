@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    console.log('[Trash Image Proxy] Forwarding to:', `${API_URL}/api/ai-studio/trash-image`)
 
     const response = await fetch(`${API_URL}/api/ai-studio/trash-image`, {
       method: 'POST',
@@ -21,16 +22,20 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     })
 
-    if (!response.ok) {
+    console.log('[Trash Image Proxy] Backend response status:', response.status)
+
+    // Accept both 200 (success) and 202 (success, local-only mode) status codes
+    if (!response.ok && response.status !== 202) {
       const errorText = await response.text()
       console.error('[Trash Image Proxy] Backend error:', response.status, errorText.substring(0, 300))
       return NextResponse.json({ error: 'Failed to trash image' }, { status: response.status })
     }
 
     const data = await response.json()
-    return NextResponse.json(data)
+    console.log('[Trash Image Proxy] Returning:', data)
+    return NextResponse.json(data, { status: response.status })
   } catch (error) {
-    console.error('Trash image proxy error:', error)
+    console.error('Trash image proxy error:', error instanceof Error ? error.message : String(error))
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -21,14 +21,15 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     })
 
-    if (!response.ok) {
+    // Accept both 200 (success) and 202 (success, local-only mode) status codes
+    if (!response.ok && response.status !== 202) {
       const errorText = await response.text()
       console.error('[Restore Image Proxy] Backend error:', response.status, errorText.substring(0, 300))
       return NextResponse.json({ error: 'Failed to restore image' }, { status: response.status })
     }
 
     const data = await response.json()
-    return NextResponse.json(data)
+    return NextResponse.json(data, { status: response.status })
   } catch (error) {
     console.error('Restore image proxy error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

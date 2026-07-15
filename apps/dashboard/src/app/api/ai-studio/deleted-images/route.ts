@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text()
       console.error('[Deleted Images Proxy] Backend error:', response.status, errorText.substring(0, 300))
-      return NextResponse.json({ error: 'Failed to fetch deleted images' }, { status: response.status })
+      // Return empty list on error so client falls back to localStorage
+      return NextResponse.json({ deleted_image_ids: [], count: 0 })
     }
 
     const data = await response.json()
