@@ -101,17 +101,6 @@ export default function TalkingActors() {
     const fetchImages = async () => {
       try {
         setLoading(true)
-    // Check for imported images from ai-studio
-    const imported = sessionStorage.getItem("importedImages")
-    if (imported) {
-      try {
-        const images = JSON.parse(imported)
-        setImages(images)
-        sessionStorage.removeItem("importedImages")
-      } catch (e) {
-        console.error("Error loading imported images:", e)
-      }
-    }
 
         // Gallery starts empty - images added explicitly via library selector
         setImages([])
@@ -137,6 +126,21 @@ export default function TalkingActors() {
     }
     if (wId) fetchCredits()
   }, [])
+
+  useEffect(() => {
+    const imported = sessionStorage.getItem("importedImages")
+    if (imported) {
+      try {
+        const images = JSON.parse(imported)
+        setImages(images)
+        sessionStorage.removeItem("importedImages")
+        console.log("[TalkingActors] Imported", images.length, "images from ai-studio")
+      } catch (e) {
+        console.error("[TalkingActors] Error loading imported images:", e)
+      }
+    }
+  }, [])
+
 
   useEffect(() => {
     if (!workspaceId) return
