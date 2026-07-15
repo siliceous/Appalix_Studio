@@ -500,6 +500,14 @@ export default function TalkingActors() {
                   <Trash2 className="w-4 h-4" />
                   Trash ({deletedImages.length})
                 </button>
+                <button
+                  onClick={() => router.push("/ai-studio/create-image")}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-blue-600 border border-blue-500 hover:bg-blue-700 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Generate New
+                </button>
+
               </div>
             </div>
 
@@ -575,7 +583,6 @@ export default function TalkingActors() {
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
                       <p className="text-gray-300 font-medium">Your gallery is empty</p>
-                      <button className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors">Browse Library</button>
 
                       <p className="text-gray-400 text-sm">Click Browse Library below to add images</p>
                     </div>
