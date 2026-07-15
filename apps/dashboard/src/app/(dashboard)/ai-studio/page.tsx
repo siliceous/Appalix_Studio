@@ -340,12 +340,12 @@ export default function AIStudio() {
                 {(selectedProjectId || selectedMediaType || selectedGender || selectedDateRange) && <button onClick={() => { setSelectedProjectId(null); setSelectedMediaType(null); setSelectedGender(null); setSelectedDateRange(null) }} className="px-3 py-2 text-sm font-medium rounded-lg border border-white/10 text-white hover:bg-white/10 transition-colors">Clear</button>}
                 <button
                   onClick={() => setShowTrash(!showTrash)}
-                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors text-white ${
                     showTrash
-                      ? 'bg-red-600 text-white border border-red-500'
+                      ? 'bg-red-600 border border-red-500'
                       : deletedImages.length > 0
-                      ? 'bg-red-900/40 text-red-200 border border-red-500/50 hover:bg-red-900/60'
-                      : 'border border-white/10 text-gray-400 hover:bg-white/10'
+                      ? 'bg-red-900/40 border border-red-500/50 hover:bg-red-900/60'
+                      : 'bg-gray-700 border border-gray-600 hover:bg-gray-600'
                   }`}
                 >
                   <Trash2 className="w-4 h-4" />
