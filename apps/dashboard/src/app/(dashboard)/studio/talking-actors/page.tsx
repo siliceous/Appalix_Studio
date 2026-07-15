@@ -445,7 +445,7 @@ export default function TalkingActors() {
             <h2 className="text-sm font-semibold">Create Actor</h2>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 pr-2 space-y-4 text-xs">
+          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-3 py-3 pr-2 space-y-4 text-xs">
             {/* Actor Name */}
             <div>
               <label className="text-xs font-semibold text-black uppercase tracking-widest mb-2 block">Actor Name</label>
