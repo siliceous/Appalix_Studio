@@ -263,37 +263,14 @@ export default function TalkingActors() {
     // Search query filter
     const matchesSearch = !searchQuery || promptLower.includes(searchQuery.toLowerCase())
     
-    // Gender filter - check selected genders array
+    // Gender filter - only use this if gender is actually selected
     const matchesGender = selectedGenders.length === 0 || 
       selectedGenders.some(g => {
         if (g === 'Female') return promptLower.includes('woman') || promptLower.includes('female') || promptLower.includes('girl')
         if (g === 'Male') return promptLower.includes('man') || promptLower.includes('male') || promptLower.includes('boy')
-        if (g === 'Neutral') return !promptLower.includes('man') && !promptLower.includes('woman') && !promptLower.includes('male') && !promptLower.includes('female')
-        return false
+        if (g === 'Neutral') return !promptLower.includes('woman') && !promptLower.includes('female') && !promptLower.includes('girl') && !promptLower.includes('man') && !promptLower.includes('male') && !promptLower.includes('boy')
+        return true
       })
-    
-    // Age filter
-    const matchesAge = selectedAges.length === 0 || 
-      selectedAges.some(age => promptLower.includes(age.toLowerCase()))
-    
-    // Type filter
-    const matchesType = selectedTypes.length === 0 || 
-      selectedTypes.some(type => promptLower.includes(type.toLowerCase()))
-    
-    // Situation filter
-    const matchesSituation = selectedSituations.length === 0 || 
-      selectedSituations.some(situation => promptLower.includes(situation.toLowerCase()))
-    
-    // Accessories filter
-    const matchesAccessories = selectedAccessories.length === 0 || 
-      selectedAccessories.some(acc => promptLower.includes(acc.toLowerCase()))
-    
-    // Emotions filter
-    const matchesEmotions = selectedEmotions.length === 0 || 
-      selectedEmotions.some(emotion => promptLower.includes(emotion.toLowerCase()))
-    
-    // Skin tone filter
-    const matchesSkinTone = !selectedSkinTone || promptLower.includes(selectedSkinTone.toLowerCase())
     
     // Date filter
     let matchesDate = true
@@ -306,8 +283,7 @@ export default function TalkingActors() {
       else if (selectedDateRange === 'year') matchesDate = diffDays < 365
     }
     
-    return matchesSearch && matchesGender && matchesAge && matchesType && matchesSituation && 
-           matchesAccessories && matchesEmotions && matchesSkinTone && matchesDate
+    return matchesSearch && matchesGender && matchesDate
   })
 
   const handleDelete = async (imageId: string) => {
