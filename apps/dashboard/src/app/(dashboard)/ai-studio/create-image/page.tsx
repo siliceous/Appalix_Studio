@@ -1546,14 +1546,15 @@ export default function CreateImagePage() {
                     {selectedImage?.id !== image.id && (
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
                         <button
-                          className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+                          className="p-2 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors"
                           onClick={(e) => {
                             e.stopPropagation()
-                            handleDownloadImage(image)
+                            sessionStorage.setItem('importedImage', JSON.stringify(image))
+                            router.push('/ai-studio/create-video')
                           }}
-                          title="Download"
+                          title="Create Video"
                         >
-                          <Download className="w-4 h-4 text-gray-700" />
+                          <Plus className="w-4 h-4 text-white" />
                         </button>
                         <button
                           className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
@@ -1838,8 +1839,14 @@ export default function CreateImagePage() {
                     link.click()
                   }}
                   className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors flex items-center justify-center gap-2"
+                  onClick={() => {
+                    if (selectedImage) {
+                      sessionStorage.setItem('importedImage', JSON.stringify(selectedImage))
+                      router.push('/ai-studio/create-video')
+                    }
+                  }}
                 >
-                  <Download className="w-4 h-4" /> Download
+                  <Plus className="w-4 h-4" /> Create Video
                 </button>
                 <button
                   onClick={() => {
