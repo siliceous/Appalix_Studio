@@ -855,9 +855,9 @@ export default function CreateImagePage() {
       <SageToolbar pageKey="email" />
 
       {/* Page Header */}
-      <div className="px-6 pt-6 pb-4 shrink-0">
+      <div className="px-6 pt-6 pb-2 shrink-0">
         <h1 className="text-3xl font-bold text-gray-900">Create Image</h1>
-        <p className="text-gray-600 text-sm mt-1">Generate AI-powered images with advanced customization</p>
+        <p className="text-gray-600 text-sm mt-0.5">Generate AI-powered images with advanced customization</p>
       </div>
 
       <div className="flex flex-1 overflow-hidden gap-3">
