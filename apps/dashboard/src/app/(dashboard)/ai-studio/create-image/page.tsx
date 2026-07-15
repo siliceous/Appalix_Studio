@@ -854,8 +854,14 @@ export default function CreateImagePage() {
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
       <SageToolbar pageKey="email" />
 
+      {/* Page Title */}
+      <div className="px-4 pt-4 pb-3 shrink-0">
+        <h1 className="text-2xl font-bold text-gray-900">Create Image</h1>
+        <p className="text-gray-500 text-sm mt-1">Generate AI-powered images with advanced controls</p>
+      </div>
+
       {/* Main Layout */}
-      <div className="flex-1 flex gap-3 px-3 py-0 pb-3 overflow-hidden">
+      <div className="flex-1 flex gap-3 px-3 pb-3 overflow-hidden">
         {/* Left Panel - Controls */}
         <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden">
           <div className="bg-black text-white px-4 py-3 h-12 flex items-center justify-between flex-shrink-0">
