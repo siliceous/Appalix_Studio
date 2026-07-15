@@ -155,12 +155,12 @@ export default function CreateVideoPage() {
       <SageToolbar pageKey="email" />
 
       {/* Page Title */}
-      <div className="pt-4 pb-0 shrink-0" style={{ marginLeft: 'calc(20rem + 1.5rem + 0.75rem)' }}>
+      <div className="pt-4 pb-0 shrink-0 relative z-10" style={{ marginLeft: 'calc(20rem + 1.5rem + 0.75rem)' }}>
         <h1 className="text-lg font-bold text-gray-900">Video Generator</h1>
         <p className="text-gray-600 text-xs mt-0.5 mb-0">Create stunning AI-powered videos with professional settings</p>
       </div>
 
-      <div className="flex flex-1 overflow-hidden gap-3">
+      <div className="flex flex-1 overflow-hidden gap-3 -mt-20">
         {/* Left Panel - Settings */}
         <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden m-3 mt-24 flex-shrink-0">
           <div className="bg-black text-white px-4 py-3 h-12 flex items-center justify-between flex-shrink-0">
