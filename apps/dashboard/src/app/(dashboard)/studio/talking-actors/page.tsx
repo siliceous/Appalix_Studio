@@ -543,6 +543,34 @@ export default function TalkingActors() {
             </div>
 
             {/* Credits */}
+
+            {/* Generate Actor Button */}
+            <button
+              onClick={() => {
+                const prompt = [
+                  actorName && `Name: ${actorName}`,
+                  selectedGenders.length > 0 && `Gender: ${selectedGenders.join(', ')}`,
+                  selectedAges.length > 0 && `Age: ${selectedAges.join(', ')}`,
+                  selectedTypes.length > 0 && `Type: ${selectedTypes.join(', ')}`,
+                  selectedSituations.length > 0 && `Situation: ${selectedSituations.join(', ')}`,
+                  selectedAccessories.length > 0 && `Accessories: ${selectedAccessories.join(', ')}`,
+                  selectedEmotions.length > 0 && `Emotions: ${selectedEmotions.join(', ')}`,
+                  selectedSkinTone && `Skin Tone: ${selectedSkinTone}`,
+                ]
+                  .filter(Boolean)
+                  .join(' | ')
+
+                if (!prompt) {
+                  alert('Please select at least one filter')
+                  return
+                }
+
+                router.push(`/ai-studio/create-image?prompt=${encodeURIComponent(prompt)}`)
+              }}
+              className="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+            >
+              Generate Actor
+            </button>
             <div className="bg-blue-50 rounded-lg p-3 border border-blue-200 mt-4">
               <p className="text-xs text-gray-700"><span className="font-semibold">Credits: </span>{credits}</p>
             </div>
