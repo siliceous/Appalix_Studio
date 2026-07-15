@@ -854,12 +854,6 @@ export default function CreateImagePage() {
     <div className="-m-8 flex flex-col h-screen overflow-hidden" suppressHydrationWarning>
       <SageToolbar pageKey="email" />
 
-      {/* Page Title - Aligned with panels */}
-      <div className="px-4 pt-4 pb-0 shrink-0 ml-3">
-        <h1 className="text-lg font-bold text-gray-900">Create Image</h1>
-        <p className="text-gray-600 text-xs mt-0.5">Generate AI-powered images with advanced customization</p>
-      </div>
-
       <div className="flex flex-1 overflow-hidden gap-3">
         {/* Left Panel - Controls */}
         <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden m-3 mt-24 flex-shrink-0">
@@ -1348,6 +1342,15 @@ export default function CreateImagePage() {
               </div>
             </div>
           </div>
+
+          {/* Page Title */}
+          <div className="px-4 pt-4 pb-0 shrink-0">
+            <div className="mb-4">
+              <h1 className="text-lg font-bold text-gray-900">Create Image</h1>
+              <p className="text-gray-600 text-xs mt-0.5">Generate AI-powered images with advanced customization</p>
+            </div>
+          </div>
+
           <div className="flex-1 flex flex-col gap-4 overflow-hidden p-4">
           {/* Canvas Preview */}
           <div
