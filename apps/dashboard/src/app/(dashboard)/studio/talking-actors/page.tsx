@@ -124,38 +124,38 @@ export default function TalkingActors() {
         }
 
         // Load from Supabase API (recovered images with permanent public URLs)
-        try {
-          console.log('[TalkingActors] Fetching images from Supabase API...')
-          const response = await fetch('/api/ai-studio/all-images', {
-            headers: { 'x-workspace-id': wId },
-          })
-          if (response.ok) {
-            const data = await response.json()
-            console.log('[TalkingActors] Supabase returned', data.total, 'images')
-            if (data.images && data.images.length > 0) {
-              console.log('[TalkingActors] First Supabase image:', {
-                id: data.images[0].id,
-                prompt: data.images[0].prompt,
-                urlStart: data.images[0].output_url.substring(0, 80),
-              })
-            }
-
-            data.images.forEach((img: any) => {
-              const imgId = img.id
-              if (!seenIds.has(imgId) && !seenUrls.has(img.output_url)) {
-                seenIds.add(imgId)
-                seenUrls.add(img.output_url)
-                allImages.push({
-                  id: imgId,
-                  image: img.output_url,
-                  prompt: img.prompt,
-                  timestamp: new Date(img.created_at).getTime(),
-                  aspectRatio: img.aspect_ratio,
-                  deletedAt: serverDeletedIds.has(imgId) ? Date.now() : undefined,
-                })
-              }
-            })
-            console.log('[TalkingActors] Loaded from Supabase:', allImages.length, 'images')
+        //         try {
+        //           console.log('[TalkingActors] Fetching images from Supabase API...')
+        //           const response = await fetch('/api/ai-studio/all-images', {
+        //             headers: { 'x-workspace-id': wId },
+        //           })
+        //           if (response.ok) {
+        //             const data = await response.json()
+        //             console.log('[TalkingActors] Supabase returned', data.total, 'images')
+        //             if (data.images && data.images.length > 0) {
+        //               console.log('[TalkingActors] First Supabase image:', {
+        //                 id: data.images[0].id,
+        //                 prompt: data.images[0].prompt,
+        //                 urlStart: data.images[0].output_url.substring(0, 80),
+        //               })
+        //             }
+        // 
+        //             data.images.forEach((img: any) => {
+        //               const imgId = img.id
+        //               if (!seenIds.has(imgId) && !seenUrls.has(img.output_url)) {
+        //                 seenIds.add(imgId)
+        //                 seenUrls.add(img.output_url)
+        //                 allImages.push({
+        //                   id: imgId,
+        //                   image: img.output_url,
+        //                   prompt: img.prompt,
+        //                   timestamp: new Date(img.created_at).getTime(),
+        //                   aspectRatio: img.aspect_ratio,
+        //                   deletedAt: serverDeletedIds.has(imgId) ? Date.now() : undefined,
+        //                 })
+        //               }
+        //             })
+        //             console.log('[TalkingActors] Loaded from Supabase:', allImages.length, 'images')
           }
         } catch (e) {
           console.error('[TalkingActors] Error loading from Supabase:', e)
@@ -163,35 +163,35 @@ export default function TalkingActors() {
 
         // Also load localStorage images (for very recent ones not yet in DB)
         const savedHistory = localStorage.getItem('imageGenerationHistory')
-        if (savedHistory) {
-          try {
-            const parsed = JSON.parse(savedHistory)
-            console.log('[TalkingActors] localStorage has', parsed.length, 'items')
-
-            // Merge localStorage deletions with server deletions
-            const combinedDeletedIds = new Set(serverDeletedIds)
-            parsed.forEach((img: any) => {
-              if (img.deletedAt) {
-                combinedDeletedIds.add(img.id || `legacy-${img.timestamp || img.image.substring(0, 20)}`)
-              }
-            })
-
-            let localLoadedCount = 0
-            parsed
-              .filter((img: any) => img && img.image && typeof img.image === 'string' && img.image.length > 0)
-              .forEach((img: any) => {
-                const imgId = img.id || `legacy-${img.timestamp || img.image.substring(0, 20)}`
-                if (!img.deletedAt && !combinedDeletedIds.has(imgId) && !seenIds.has(imgId) && !seenUrls.has(img.image)) {
-                  seenIds.add(imgId)
-                  seenUrls.add(img.image)
-                  allImages.push({ ...img, id: imgId })
-                  localLoadedCount++
-                }
-              })
-            console.log('[TalkingActors] Loaded from localStorage:', localLoadedCount, 'new images')
-          } catch (e) {
-            console.error('Error loading localStorage:', e)
-          }
+        //         if (savedHistory) {
+        //           try {
+        //             const parsed = JSON.parse(savedHistory)
+        //             console.log('[TalkingActors] localStorage has', parsed.length, 'items')
+        // 
+        //             // Merge localStorage deletions with server deletions
+        //             const combinedDeletedIds = new Set(serverDeletedIds)
+        //             parsed.forEach((img: any) => {
+        //               if (img.deletedAt) {
+        //                 combinedDeletedIds.add(img.id || `legacy-${img.timestamp || img.image.substring(0, 20)}`)
+        //               }
+        //             })
+        // 
+        //             let localLoadedCount = 0
+        //             parsed
+        //               .filter((img: any) => img && img.image && typeof img.image === 'string' && img.image.length > 0)
+        //               .forEach((img: any) => {
+        //                 const imgId = img.id || `legacy-${img.timestamp || img.image.substring(0, 20)}`
+        //                 if (!img.deletedAt && !combinedDeletedIds.has(imgId) && !seenIds.has(imgId) && !seenUrls.has(img.image)) {
+        //                   seenIds.add(imgId)
+        //                   seenUrls.add(img.image)
+        //                   allImages.push({ ...img, id: imgId })
+        //                   localLoadedCount++
+        //                 }
+        //               })
+        //             console.log('[TalkingActors] Loaded from localStorage:', localLoadedCount, 'new images')
+        //           } catch (e) {
+        //             console.error('Error loading localStorage:', e)
+        //           }
         }
 
         // Sort all by timestamp (newest first)
@@ -199,7 +199,7 @@ export default function TalkingActors() {
 
         console.log('[TalkingActors] Total images loaded:', allImages.length)
         setImages(allImages)
-        // Check for duplicates in final array
+        setImages([])
         const finalIds = new Set()
         const duplicates = allImages.filter(img => {
           if (finalIds.has(img.id)) {
