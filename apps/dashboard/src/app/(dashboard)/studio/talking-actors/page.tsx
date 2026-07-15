@@ -104,6 +104,24 @@ export default function TalkingActors() {
         let allImages: GeneratedImage[] = []
         const seenIds = new Set<string>()
         const seenUrls = new Set<string>()
+        let serverDeletedIds = new Set<string>()
+
+        // Fetch server-side deleted image IDs
+        if (wId) {
+          try {
+            const response = await fetch('/api/ai-studio/deleted-images', {
+              headers: { 'x-workspace-id': wId }
+            })
+
+            if (response.ok) {
+              const data = await response.json()
+              serverDeletedIds = new Set(data.deleted_image_ids || [])
+              console.log('[TalkingActors] Loaded deleted images from server:', serverDeletedIds.size)
+            }
+          } catch (e) {
+            console.error('[TalkingActors] Error fetching deleted images from server:', e)
+          }
+        }
 
         // Load from Supabase API (recovered images with permanent public URLs)
         try {
@@ -133,6 +151,7 @@ export default function TalkingActors() {
                   prompt: img.prompt,
                   timestamp: new Date(img.created_at).getTime(),
                   aspectRatio: img.aspect_ratio,
+                  deletedAt: serverDeletedIds.has(imgId) ? Date.now() : undefined,
                 })
               }
             })
@@ -149,12 +168,20 @@ export default function TalkingActors() {
             const parsed = JSON.parse(savedHistory)
             console.log('[TalkingActors] localStorage has', parsed.length, 'items')
 
+            // Merge localStorage deletions with server deletions
+            const combinedDeletedIds = new Set(serverDeletedIds)
+            parsed.forEach((img: any) => {
+              if (img.deletedAt) {
+                combinedDeletedIds.add(img.id || `legacy-${img.timestamp || img.image.substring(0, 20)}`)
+              }
+            })
+
             let localLoadedCount = 0
             parsed
               .filter((img: any) => img && img.image && typeof img.image === 'string' && img.image.length > 0)
               .forEach((img: any) => {
                 const imgId = img.id || `legacy-${img.timestamp || img.image.substring(0, 20)}`
-                if (!img.deletedAt && !seenIds.has(imgId) && !seenUrls.has(img.image)) {
+                if (!img.deletedAt && !combinedDeletedIds.has(imgId) && !seenIds.has(imgId) && !seenUrls.has(img.image)) {
                   seenIds.add(imgId)
                   seenUrls.add(img.image)
                   allImages.push({ ...img, id: imgId })
@@ -250,7 +277,7 @@ export default function TalkingActors() {
     return matchesSearch && matchesProject && matchesGender && matchesMediaType && matchesDate
   })
 
-  const handleDelete = (imageId: string) => {
+  const handleDelete = async (imageId: string) => {
     const updated = images.map(img => img.id === imageId ? { ...img, deletedAt: Date.now() } : img)
     setImages(updated)
 
@@ -275,9 +302,24 @@ export default function TalkingActors() {
     } catch (e) {
       console.error('Error updating talking ad history:', e)
     }
+
+    // Sync deletion to server
+    try {
+      await fetch('/api/ai-studio/trash-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-workspace-id': workspaceId,
+        },
+        body: JSON.stringify({ image_id: imageId }),
+      })
+      console.log('[TalkingActors] Image deletion synced to server:', imageId)
+    } catch (e) {
+      console.error('[TalkingActors] Error syncing image deletion to server:', e)
+    }
   }
 
-  const handleRestore = (imageId: string) => {
+  const handleRestore = async (imageId: string) => {
     const updated = images.map(img => img.id === imageId ? { ...img, deletedAt: undefined } : img)
     setImages(updated)
 
@@ -290,6 +332,21 @@ export default function TalkingActors() {
       }
     } catch (e) {
       console.error('Error updating localStorage:', e)
+    }
+
+    // Sync restoration to server
+    try {
+      await fetch('/api/ai-studio/restore-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-workspace-id': workspaceId,
+        },
+        body: JSON.stringify({ image_id: imageId }),
+      })
+      console.log('[TalkingActors] Image restoration synced to server:', imageId)
+    } catch (e) {
+      console.error('[TalkingActors] Error syncing image restoration to server:', e)
     }
   }
 

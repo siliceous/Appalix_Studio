@@ -55,6 +55,7 @@ import { talkingActorsRoutes }                     from './routes/talking-actors
 import { imageRoutes }                             from './routes/ai-studio/images.js'
 import { videoRoutes as aiStudioVideoRoutes }      from './routes/ai-studio/videos.js'
 import { cleanupRoutes }                           from './routes/ai-studio/cleanup.js'
+import { deletionRoutes }                          from './routes/ai-studio/deletions.js'
 
 const server = Fastify({
   logger: {
@@ -190,6 +191,7 @@ await server.register(talkingActorsRoutes, { prefix: '/api/talking-actors' })
 await server.register(imageRoutes, { prefix: '/api/ai-studio' })
 await server.register(aiStudioVideoRoutes, { prefix: '/api/ai-studio' })
 await server.register(cleanupRoutes, { prefix: '/api/ai-studio' })
+await server.register(deletionRoutes, { prefix: '/api/ai-studio' })
 
 // Outbound voice calls — initiate campaigns and single calls
 await server.register(outboundCallRoutes)

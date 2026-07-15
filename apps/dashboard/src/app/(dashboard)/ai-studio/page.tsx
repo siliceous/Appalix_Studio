@@ -53,6 +53,24 @@ export default function AIStudio() {
       try {
         setLoading(true)
         let allImages: GeneratedImage[] = []
+        let serverDeletedIds = new Set<string>()
+
+        // Fetch server-side deleted image IDs
+        if (wId) {
+          try {
+            const response = await fetch('/api/ai-studio/deleted-images', {
+              headers: { 'x-workspace-id': wId }
+            })
+
+            if (response.ok) {
+              const data = await response.json()
+              serverDeletedIds = new Set(data.deleted_image_ids || [])
+              console.log('Loaded deleted images from server:', serverDeletedIds.size)
+            }
+          } catch (e) {
+            console.error('Error fetching deleted images from server:', e)
+          }
+        }
 
         // Get Supabase images
         if (wId) {
@@ -69,6 +87,7 @@ export default function AIStudio() {
                 prompt: img.prompt || '',
                 timestamp: new Date(img.created_at).getTime(),
                 aspectRatio: img.aspect_ratio,
+                deletedAt: serverDeletedIds.has(img.id) ? Date.now() : undefined,
               })).filter((img: any) => img.image)
 
               allImages = allImages.concat(supabaseImages)
@@ -96,8 +115,17 @@ export default function AIStudio() {
               }))
             console.log('After filtering by image:', historyWithIds.length, 'items')
 
-            const activeImages = historyWithIds.filter((img: any) => !img.deletedAt)
-            console.log('Active images (not deleted):', activeImages.length)
+            // Merge localStorage deletions with server deletions
+            const combinedDeletedIds = new Set(serverDeletedIds)
+            historyWithIds.forEach((img: any) => {
+              if (img.deletedAt) {
+                combinedDeletedIds.add(img.id)
+              }
+            })
+
+            const activeImages = historyWithIds.filter((img: any) => !img.deletedAt && !combinedDeletedIds.has(img.id))
+            const deletedImages = historyWithIds.filter((img: any) => img.deletedAt || combinedDeletedIds.has(img.id))
+            console.log('Active images (not deleted):', activeImages.length, 'Deleted:', deletedImages.length)
 
             // Merge: add localStorage images that aren't already in Supabase
             const supabaseIds = new Set(allImages.map(img => img.id))
@@ -235,16 +263,46 @@ export default function AIStudio() {
     }
   }
 
-  const handleDelete = (imageId: string) => {
+  const handleDelete = async (imageId: string) => {
     setImages(images.map(img => img.id === imageId ? { ...img, deletedAt: Date.now() } : img))
     const remaining = images.filter(img => img.id !== imageId)
     localStorage.setItem('imageGenerationHistory', JSON.stringify(remaining))
+
+    // Sync deletion to server
+    try {
+      await fetch('/api/ai-studio/trash-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-workspace-id': workspaceId,
+        },
+        body: JSON.stringify({ image_id: imageId }),
+      })
+      console.log('Image deletion synced to server:', imageId)
+    } catch (e) {
+      console.error('Error syncing image deletion to server:', e)
+    }
   }
 
-  const handleRestore = (imageId: string) => {
+  const handleRestore = async (imageId: string) => {
     setImages(images.map(img => img.id === imageId ? { ...img, deletedAt: undefined } : img))
     const updated = images.map(img => img.id === imageId ? { ...img, deletedAt: undefined } : img)
     localStorage.setItem('imageGenerationHistory', JSON.stringify(updated))
+
+    // Sync restoration to server
+    try {
+      await fetch('/api/ai-studio/restore-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-workspace-id': workspaceId,
+        },
+        body: JSON.stringify({ image_id: imageId }),
+      })
+      console.log('Image restoration synced to server:', imageId)
+    } catch (e) {
+      console.error('Error syncing image restoration to server:', e)
+    }
   }
 
   const getAspectRatioPadding = (ratio?: string): string => {
