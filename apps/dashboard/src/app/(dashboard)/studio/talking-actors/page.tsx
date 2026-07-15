@@ -799,19 +799,9 @@ export default function TalkingActors() {
                                 router.push('/ai-studio/create-video')
                               }}
                               className="p-2 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors"
-                              title="Use this Actor"
+                              title="Use this Actor - Create Video"
                             >
                               <Plus className="w-4 h-4 text-white" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleSaveToFolder(image)
-                              }}
-                              className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
-                              title="Save to Folder"
-                            >
-                              <Save className="w-4 h-4 text-gray-700" />
                             </button>
                             <button
                               onClick={(e) => {
