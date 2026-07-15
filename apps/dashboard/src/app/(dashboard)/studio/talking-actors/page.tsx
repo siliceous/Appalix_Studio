@@ -830,7 +830,7 @@ export default function TalkingActors() {
         <div className="fixed inset-0 bg-black/90 z-50 flex" onClick={() => { setFullscreenImage(null); setImageZoom(1) }}>
           <div className="flex-1 flex items-center justify-center overflow-hidden p-4 relative" ref={imageContainerRef} onWheel={(e) => { e.preventDefault(); setImageZoom(Math.max(0.5, Math.min(50, imageZoom + e.deltaY * 0.001))) }} onClick={(e) => e.stopPropagation()}>
             <div
-              className="overflow-auto"
+              className="overflow-auto scrollbar-hide"
               style={{ userSelect: 'none', cursor: isDragging ? 'grabbing' : 'grab', width: '100%', height: '100%' }}
               onMouseDown={(e) => {
                 setIsDragging(true)
