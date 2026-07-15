@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Plus, Download, Trash2, Film, X, ArrowLeft } from 'lucide-react'
+import { Loader2, Plus, Download, Trash2, Film, X, ArrowLeft, ChevronLeft } from 'lucide-react'
 
 const QUALITY_MODES = [
   { value: 'fast', label: 'Fast', description: '720p - 6 credits/sec', creditsPerSecond: 6 },
