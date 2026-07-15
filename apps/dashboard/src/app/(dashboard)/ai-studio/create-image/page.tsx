@@ -851,19 +851,12 @@ export default function CreateImagePage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
+    <div className="-m-8 flex flex-col h-screen overflow-hidden" suppressHydrationWarning>
       <SageToolbar pageKey="email" />
 
-      {/* Page Title */}
-      <div className="px-4 pt-4 pb-3 shrink-0">
-        <h1 className="text-2xl font-bold text-gray-900">Create Image</h1>
-        <p className="text-gray-500 text-sm mt-1">Generate AI-powered images with advanced controls</p>
-      </div>
-
-      {/* Main Layout */}
-      <div className="flex-1 flex gap-3 px-3 pb-3 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden gap-3">
         {/* Left Panel - Controls */}
-        <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden">
+        <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden m-3 mt-24 flex-shrink-0">
           <div className="bg-black text-white px-4 py-3 h-12 flex items-center justify-between flex-shrink-0">
             <h2 className="text-sm font-semibold">AI-studio</h2>
             <button
@@ -1312,7 +1305,7 @@ export default function CreateImagePage() {
         </div>
 
         {/* Center Panel - Canvas */}
-        <div className="flex-1 flex flex-col overflow-hidden rounded-2xl shadow-lg bg-white">
+        <div className="flex-1 flex flex-col overflow-hidden rounded-2xl shadow-lg bg-white m-3 mt-24 mb-3">
           <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center justify-between">
             <button
               onClick={() => router.back()}
@@ -1450,7 +1443,7 @@ export default function CreateImagePage() {
         </div>
 
         {/* Right Panel - History */}
-        <div className="w-64 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden">
+        <div className="w-64 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden m-3 mt-24 flex-shrink-0">
           <div className="px-4 py-3 bg-black text-white rounded-t-2xl h-12 flex items-center justify-between">
             <div className="flex items-center justify-between w-full">
               <h2 className="text-sm font-semibold">Generated Images</h2>

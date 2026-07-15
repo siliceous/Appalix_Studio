@@ -151,18 +151,12 @@ export default function CreateVideoPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
+    <div className="-m-8 flex flex-col h-screen overflow-hidden" suppressHydrationWarning>
       <SageToolbar pageKey="email" />
 
-      {/* Page Title */}
-      <div className="px-4 pt-4 pb-3 shrink-0">
-        <h1 className="text-2xl font-bold text-gray-900">Video Generator</h1>
-        <p className="text-gray-500 text-sm mt-1">Create stunning AI-powered videos with flexible settings</p>
-      </div>
-
-      <div className="flex-1 flex gap-3 px-3 pb-3 overflow-hidden relative">
+      <div className="flex flex-1 overflow-hidden gap-3">
         {/* Left Panel - Settings */}
-        <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden">
+        <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden m-3 mt-24 flex-shrink-0">
           <div className="bg-black text-white px-4 py-3 h-12 flex items-center justify-between flex-shrink-0">
             <h2 className="text-sm font-semibold">AI-studio</h2>
             <button
@@ -307,7 +301,7 @@ export default function CreateVideoPage() {
         </div>
 
         {/* Middle - Canvas Preview */}
-        <div className="flex-1 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden relative">
+        <div className="flex-1 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden relative m-3 mt-24 mb-3">
           <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center justify-between flex-shrink-0">
             <button
               onClick={() => router.back()}
@@ -393,7 +387,7 @@ export default function CreateVideoPage() {
         </div>
 
         {/* Right Panel - Generated Videos */}
-        <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden">
+        <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden m-3 mt-24 flex-shrink-0">
           <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center justify-between flex-shrink-0">
             <h2 className="text-sm font-semibold">Generated Videos</h2>
             <button
