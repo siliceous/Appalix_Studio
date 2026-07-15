@@ -668,13 +668,8 @@ export default function TalkingActors() {
                               console.log('[TalkingActors] Image loaded:', image.id)
                             }}
                             onError={(e) => {
-                              console.error('[TalkingActors] Image failed to load:', {
-                                id: image.id,
-                                urlLength: image.image.length,
-                                isSignedUrl: image.image.includes('token='),
-                                urlStart: image.image.substring(0, 80),
-                              })
                               ;(e.target as HTMLImageElement).style.opacity = '0'
+
                             }}
                           />
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
