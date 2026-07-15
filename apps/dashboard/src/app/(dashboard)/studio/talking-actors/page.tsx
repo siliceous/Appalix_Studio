@@ -869,7 +869,7 @@ export default function TalkingActors() {
 
             <div className="flex flex-col gap-2 flex-1 min-h-0">
               <p className="text-xs text-white uppercase font-semibold flex-shrink-0">Prompt</p>
-              <p className="text-white text-sm break-words bg-gray-900 rounded-lg p-3 border border-gray-700 overflow-y-auto flex-1">{fullscreenImage?.prompt && fullscreenImage.prompt.trim().length > 0 ? fullscreenImage.prompt : '(No prompt saved for this image)'}</p>
+              <div className="text-white text-sm break-words bg-gray-900 rounded-lg p-3 border border-gray-700 overflow-y-auto flex-1 whitespace-pre-wrap">{fullscreenImage?.prompt && fullscreenImage.prompt.trim().length > 0 ? fullscreenImage.prompt : '(No prompt saved for this image)'}</div>
             </div>
 
             <div className="flex flex-col gap-2 pt-4 border-t border-gray-700 flex-shrink-0">
