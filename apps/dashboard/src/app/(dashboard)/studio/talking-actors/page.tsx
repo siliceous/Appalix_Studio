@@ -499,12 +499,12 @@ export default function TalkingActors() {
                 <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-white/10 border border-white/20">{credits} Credits</div>
                 <button
                   onClick={() => setShowTrash(!showTrash)}
-                  className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                  className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors text-white ${
                     showTrash
-                      ? 'bg-red-600 text-white border border-red-500'
+                      ? 'bg-red-600 border border-red-500'
                       : deletedImages.length > 0
-                      ? 'bg-red-900/40 text-red-200 border border-red-500/50 hover:bg-red-900/60'
-                      : 'bg-gray-700 text-gray-400 border border-gray-600 hover:bg-gray-600'
+                      ? 'bg-red-900/40 border border-red-500/50 hover:bg-red-900/60'
+                      : 'bg-gray-700 border border-gray-600 hover:bg-gray-600'
                   }`}
                 >
                   <Trash2 className="w-4 h-4" />
