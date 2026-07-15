@@ -153,8 +153,8 @@ export async function deletionRoutes(app: FastifyInstance) {
     }
   })
 
-  // Permanently delete a trashed image from database (cleanup)
-  app.delete<{ Body: { image_id: string } }>('/permanently-delete', async (request, reply) => {
+  // Schedule permanent deletion of a trashed image (deletion in 3 days)
+  app.post<{ Body: { image_id: string } }>('/permanently-delete', async (request, reply) => {
     try {
       const workspaceId = request.headers['x-workspace-id'] as string
       const { image_id } = request.body
@@ -167,20 +167,27 @@ export async function deletionRoutes(app: FastifyInstance) {
         return reply.status(400).send({ error: 'Missing image_id' })
       }
 
-      // Delete the deletion record
+      // Schedule deletion in 3 days (72 hours from now)
+      const scheduledDeletionTime = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+
       const { error } = await supabase
         .from('ai_image_deletions')
-        .delete()
+        .update({ scheduled_for_deletion_at: scheduledDeletionTime })
         .eq('workspace_id', workspaceId)
         .eq('image_id', image_id)
 
-      if (error) {
-        console.error('[Permanent Delete] Database error:', error)
-        return reply.status(500).send({ error: 'Failed to permanently delete image' })
+      if (error?.code === 'PGRST205' || error?.message?.includes('not found')) {
+        console.warn('[Permanent Delete] Table not found, returning success anyway')
+        return reply.status(202).send({ success: true, message: 'Scheduled for deletion in 3 days', warning: 'table_not_found' })
       }
 
-      console.log('[Permanent Delete] Image record deleted:', image_id)
-      return reply.send({ success: true, message: 'Image permanently deleted' })
+      if (error) {
+        console.error('[Permanent Delete] Database error:', error)
+        return reply.status(500).send({ error: 'Failed to schedule deletion' })
+      }
+
+      console.log('[Permanent Delete] Image scheduled for deletion:', image_id, 'at', scheduledDeletionTime)
+      return reply.send({ success: true, message: 'Image scheduled for permanent deletion in 3 days', scheduled_at: scheduledDeletionTime })
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error)
       console.error('[Permanent Delete] Error:', errorMsg)

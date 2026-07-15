@@ -350,6 +350,26 @@ export default function TalkingActors() {
     }
   }
 
+  const handlePermanentDelete = async (imageId: string) => {
+    try {
+      const response = await fetch('/api/ai-studio/permanently-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-workspace-id': workspaceId,
+        },
+        body: JSON.stringify({ image_id: imageId }),
+      })
+      if (response.ok) {
+        console.log('[TalkingActors] Image scheduled for permanent deletion:', imageId)
+      } else {
+        console.warn('[TalkingActors] Failed to schedule permanent deletion:', response.status)
+      }
+    } catch (e) {
+      console.error('[TalkingActors] Error scheduling permanent deletion:', e)
+    }
+  }
+
   const handleSaveToFolder = (image: GeneratedImage) => {
     setImageToSave(image)
     setShowSaveDialog(true)
@@ -620,6 +640,17 @@ export default function TalkingActors() {
                               <ChevronLeft className="w-4 h-4 text-gray-700" />
                             </button>
                           </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handlePermanentDelete(image.id)
+                              }}
+                              className="p-2 bg-red-500 rounded-full hover:bg-red-600 transition-colors"
+                              title="Permanently delete in 3 days"
+                            >
+                              <Trash2 className="w-4 h-4 text-white" />
+                            </button>
+
                         </div>
                       ))}
                     </div>
