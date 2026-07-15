@@ -196,6 +196,20 @@ export default function TalkingActors() {
   }, [])
 
   useEffect(() => {
+    // Load persisted images from localStorage
+    const saved = localStorage.getItem("talkingActorsImages")
+    if (saved) {
+      try {
+        const savedImages = JSON.parse(saved)
+        setImages(savedImages)
+        console.log("[TalkingActors] Loaded", savedImages.length, "images from localStorage")
+      } catch (e) {
+        console.error("[TalkingActors] Error loading saved images:", e)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
     const pending = sessionStorage.getItem("pendingImports")
     if (pending) {
       try {
@@ -205,7 +219,12 @@ export default function TalkingActors() {
           ...img,
           parsedMetadata: parseImageMetadata(img.prompt)
         }))
-        setImages(prevImages => [...prevImages, ...parsedImages])
+        setImages(prevImages => {
+          const updated = [...prevImages, ...parsedImages]
+          // Persist to localStorage
+          localStorage.setItem("talkingActorsImages", JSON.stringify(updated))
+          return updated
+        })
         sessionStorage.removeItem("pendingImports")
         console.log("[TalkingActors] Imported", parsedImages.length, "images with parsed metadata")
       } catch (e) {
@@ -302,6 +321,7 @@ export default function TalkingActors() {
   const handleDelete = async (imageId: string) => {
     const updated = images.map(img => img.id === imageId ? { ...img, deletedAt: Date.now() } : img)
     setImages(updated)
+    localStorage.setItem("talkingActorsImages", JSON.stringify(updated))
 
     try {
       const savedHistory = localStorage.getItem('imageGenerationHistory')
@@ -344,6 +364,7 @@ export default function TalkingActors() {
   const handleRestore = async (imageId: string) => {
     const updated = images.map(img => img.id === imageId ? { ...img, deletedAt: undefined } : img)
     setImages(updated)
+    localStorage.setItem("talkingActorsImages", JSON.stringify(updated))
 
     try {
       const savedHistory = localStorage.getItem('imageGenerationHistory')
