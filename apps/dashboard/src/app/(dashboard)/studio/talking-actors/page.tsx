@@ -487,10 +487,12 @@ export default function TalkingActors() {
         const newIdx = fullscreenImageIndex - 1
         setFullscreenImageIndex(newIdx)
         setFullscreenImage(filteredImages[newIdx])
+        setImageZoom(1)
       } else if (e.key === 'ArrowRight' && fullscreenImageIndex < filteredImages.length - 1) {
         const newIdx = fullscreenImageIndex + 1
         setFullscreenImageIndex(newIdx)
         setFullscreenImage(filteredImages[newIdx])
+        setImageZoom(1)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -767,7 +769,7 @@ export default function TalkingActors() {
                               ? 'border-blue-500 shadow-lg shadow-blue-500/50'
                               : 'border-gray-600 hover:border-gray-500 shadow-md'
                           }`}
-                          onClick={() => { setFullscreenImage(image); setFullscreenImageIndex(idx) }}
+                          onClick={() => { setFullscreenImage(image); setFullscreenImageIndex(idx); setImageZoom(1) }}
                         >
                           <img
                             src={image.image}
