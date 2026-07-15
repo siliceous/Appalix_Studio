@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Plus, Download, Trash2, Film, X, ArrowLeft, ChevronLeft } from 'lucide-react'
+import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 
 const QUALITY_MODES = [
   { value: 'fast', label: 'Fast', description: '720p - 6 credits/sec', creditsPerSecond: 6 },
@@ -151,6 +152,7 @@ export default function CreateVideoPage() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
+      <SageToolbar pageKey="email" />
       <div className="flex-1 flex gap-3 px-3 py-3 pb-3 overflow-hidden relative">
         {/* Left Panel - Settings */}
         <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden">

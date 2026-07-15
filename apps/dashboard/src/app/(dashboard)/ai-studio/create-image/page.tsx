@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Sparkles, Download, Trash2, Heart, Loader, X, Copy, Edit, ChevronLeft, ChevronRight, ChevronDown, ImagePlay, Plus } from 'lucide-react'
 
 import ImageViewerModal from '@/components/ImageViewerModal'
+import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 const QUALITY_PRESETS = [
   { id: 'fast', label: 'Fast' },
   { id: 'balanced', label: 'Balanced' },
@@ -851,6 +852,7 @@ export default function CreateImagePage() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
+      <SageToolbar pageKey="email" />
 
       {/* Main Layout */}
       <div className="flex-1 flex gap-3 px-3 py-0 pb-3 overflow-hidden">
