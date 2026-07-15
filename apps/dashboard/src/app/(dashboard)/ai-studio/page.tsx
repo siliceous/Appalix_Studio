@@ -437,7 +437,7 @@ export default function AIStudio() {
                           return
                         }
                         const selectedImagesList = Array.from(selectedImages)
-                        const imagesToImport = filteredImages.filter(img => selectedImages.has(img.id))
+                        const imagesToImport = images.filter(img => selectedImages.has(img.id) && !img.deletedAt)
 
                         // Get existing pending imports and append to them
                         const existingPending = sessionStorage.getItem("pendingImports")
