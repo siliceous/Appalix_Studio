@@ -574,8 +574,10 @@ export default function TalkingActors() {
                 ) : filteredImages.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
-                      <p className="text-gray-300 font-medium">No assets found</p>
-                      <p className="text-gray-400 text-sm">Try adjusting your filters</p>
+                      <p className="text-gray-300 font-medium">Your gallery is empty</p>
+                      <button className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors">Browse Library</button>
+
+                      <p className="text-gray-400 text-sm">Click Browse Library below to add images</p>
                     </div>
                   </div>
                 ) : (
