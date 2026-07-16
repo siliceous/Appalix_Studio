@@ -1349,7 +1349,8 @@ export default function CreateImagePage() {
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col gap-4 overflow-hidden p-4 items-center justify-between pt-8">
+          <div className="flex flex-col overflow-hidden p-4 items-center justify-center gap-4">
+            <div className="flex-1 flex items-center justify-center">
           {/* Canvas Preview */}
           <div
             className={`bg-gray-50 rounded-lg p-8 flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-lg transition-shadow relative group ${
@@ -1398,6 +1399,7 @@ export default function CreateImagePage() {
                 <p className="text-sm text-gray-500">{aspectRatioLabels[aspectRatio]}</p>
               </div>
             )}
+            </div>
           </div>
 
           {/* Prompt Bar */}

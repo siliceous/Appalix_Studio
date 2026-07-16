@@ -340,7 +340,8 @@ export default function CreateVideoPage() {
             </div>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-hidden flex flex-col items-center justify-between bg-gray-50 px-[3px] py-4 pt-8">
+          <div className="flex flex-col overflow-hidden p-4 items-center gap-4">
+            <div className="flex-1 flex items-center justify-center bg-gray-50">
             <div className={`overflow-hidden flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300 ${
               aspectRatio === '9:16' ? 'aspect-[9/16] h-[600px]' :
               aspectRatio === '16:9' ? 'aspect-video h-96' :
@@ -362,6 +363,7 @@ export default function CreateVideoPage() {
                 <p className="text-xs text-gray-500 mt-2">Duration: {duration}s | Quality: {qualityMode.replace('_', ' ')} | Ratio: {aspectRatio}</p>
               </div>
             )}
+            </div>
           </div>
 
           {/* Prompt Bar */}
