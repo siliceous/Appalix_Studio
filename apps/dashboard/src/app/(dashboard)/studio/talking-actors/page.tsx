@@ -222,7 +222,7 @@ export default function TalkingActors() {
           console.log("[TalkingActors] Current images:", prevImages.length, "New images:", parsedImages.length)
           // Filter out duplicates by ID
           const existingIds = new Set(prevImages.map(img => img.id))
-          const uniqueNewImages = parsedImages.filter(img => !existingIds.has(img.id))
+          const uniqueNewImages = parsedImages.filter((img: GeneratedImage) => !existingIds.has(img.id))
           console.log("[TalkingActors] After dedup:", uniqueNewImages.length, "unique new images")
 
           if (uniqueNewImages.length === 0) {
@@ -753,13 +753,6 @@ export default function TalkingActors() {
                 ) : (
                   <div className="grid grid-cols-5 gap-3">
                     {filteredImages.map((image, idx) => {
-                      <button
-                        onClick={() => router.push("/ai-studio/create-image")}
-                        className="relative rounded-lg overflow-hidden border-2 border-dashed border-gray-300 hover:border-blue-400 bg-white aspect-square flex flex-col items-center justify-center transition-colors gap-2"
-                      >
-                        <div className="text-4xl font-light text-gray-400">+</div>
-                        <div className="text-xs font-semibold text-gray-600">Create New</div>
-                      </button>
                       const getAspectRatio = (ratio?: string) => {
                         const ratios: Record<string, string> = {
                           '1:1': 'aspect-square',
