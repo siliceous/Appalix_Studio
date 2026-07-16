@@ -1443,7 +1443,7 @@ export default function CreateImagePage() {
               <button
                 onClick={handleGenerate}
                 disabled={!prompt.trim() || isGenerating || credits < calculateCost()}
-                className="px-4 py-8 bg-black text-white text-xs font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors whitespace-nowrap flex-shrink-0 h-[180px] flex items-center justify-center"
+                className="px-4 py-8 bg-blue-600 text-white text-sm font-bold rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors whitespace-nowrap flex-shrink-0 h-[180px] flex items-center justify-center"
               >
                 {isGenerating ? 'Generating...' : `${selectedImage && prompt === originalPrompt ? 'Regenerate' : 'Generate'}`}
               </button>
