@@ -367,18 +367,16 @@ export default function CreateVideoPage() {
             )}
 
             {/* Prompt Bar - Fixed at bottom */}
-            <div className="flex flex-col gap-3 w-full mt-[25px]">
-              <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative flex-1 h-[140px] flex-shrink-0">
-                <textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Describe what you want to create..."
-                  rows={6}
-                  maxLength={10000}
-                  className="flex-1 w-full px-4 py-3 text-black placeholder-gray-500 bg-white border-none resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                />
-              </div>
-              <div className="flex justify-end">
+            <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative w-full mt-[25px] flex-shrink-0">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Describe what you want to create..."
+                rows={6}
+                maxLength={10000}
+                className="flex-1 w-full px-4 py-3 text-black placeholder-gray-500 bg-white border-none resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+              <div className="flex gap-2 items-center justify-end px-3 py-3 bg-gray-50 border-t border-gray-300">
                 <button
                   onClick={handleGenerate}
                   disabled={!prompt.trim() || !startImage || isGenerating}
