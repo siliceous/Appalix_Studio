@@ -1403,14 +1403,14 @@ export default function CreateImagePage() {
           </div>
 
           {/* Prompt Bar */}
-          <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative w-[70%] mt-[50px]">
+          <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative w-[70%] mt-[50px] h-[140px]">
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Describe what you want to create..."
               rows={6}
               maxLength={10000}
-              className="w-full px-4 py-3 pr-32 text-black placeholder-gray-500 bg-white border-none resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="flex-1 w-full px-4 py-3 pr-32 text-black placeholder-gray-500 bg-white border-none resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             />
             <div className="absolute bottom-3 right-3 flex gap-2 items-center">
               {selectedImage && (
