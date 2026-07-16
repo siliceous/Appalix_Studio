@@ -1402,8 +1402,8 @@ export default function CreateImagePage() {
             </div>
 
             {/* Prompt Bar - Fixed at bottom */}
-            <div className="flex items-end gap-3 w-full mt-[50px]">
-              <div className="bg-white rounded-lg border border-gray-300 flex items-end overflow-hidden relative flex-1 h-[180px] flex-shrink-0">
+            <div className="flex flex-col gap-3 w-full mt-[50px]">
+              <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative flex-1 h-[140px] flex-shrink-0">
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
@@ -1412,7 +1412,7 @@ export default function CreateImagePage() {
                   maxLength={10000}
                   className="flex-1 w-full px-4 py-3 text-black placeholder-gray-500 bg-white border-none resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
-                <div className="flex gap-2 items-center px-3 pb-3">
+                <div className="flex gap-2 items-center px-3 py-3">
                   {selectedImage && (
                     <>
                       <button
@@ -1441,7 +1441,7 @@ export default function CreateImagePage() {
               <button
                 onClick={handleGenerate}
                 disabled={!prompt.trim() || isGenerating || credits < calculateCost()}
-                className="px-6 py-3 bg-blue-600 text-white text-sm font-bold rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors whitespace-nowrap flex-shrink-0"
+                className="px-6 py-3 bg-blue-600 text-white text-sm font-bold rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors whitespace-nowrap flex-shrink-0 w-full"
               >
                 {isGenerating ? 'Generating...' : `${selectedImage && prompt === originalPrompt ? 'Regenerate' : 'Generate'}`}
               </button>
