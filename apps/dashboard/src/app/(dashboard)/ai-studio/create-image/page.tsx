@@ -1349,10 +1349,10 @@ export default function CreateImagePage() {
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col gap-4 overflow-hidden p-4">
+          <div className="flex-1 flex flex-col gap-4 overflow-hidden p-4 items-center justify-center">
           {/* Canvas Preview */}
           <div
-            className="flex-1 bg-gray-50 rounded-lg p-8 flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-lg transition-shadow relative group"
+            className="bg-gray-50 rounded-lg p-8 flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-lg transition-shadow relative group aspect-video h-72"
             onClick={() => {
               if (selectedImage) {
                 setFullscreenImageData(selectedImage)
