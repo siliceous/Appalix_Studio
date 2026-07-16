@@ -341,25 +341,25 @@ export default function CreateVideoPage() {
           </div>
 
           <div className="flex-1 min-h-0 overflow-hidden flex flex-col items-center justify-center bg-gray-50 px-[3px]">
-            {startImage ? (
-              <>
-                <div className={`flex-1 overflow-hidden flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 w-full ${
-                  aspectRatio === '9:16' ? 'aspect-[9/16]' :
-                  aspectRatio === '16:9' ? 'aspect-video' :
-                  aspectRatio === '4:3' ? 'aspect-[4/3]' :
-                  'aspect-square'
-                }`}>
-                  <img src={startImage} alt="Start" className="w-full h-full object-contain" />
+            <div className={`overflow-hidden flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300 ${
+              aspectRatio === '9:16' ? 'aspect-[9/16] w-24' :
+              aspectRatio === '16:9' ? 'aspect-video w-full' :
+              aspectRatio === '4:3' ? 'aspect-[4/3] w-96' :
+              'aspect-square w-64'
+            }`}>
+              {startImage ? (
+                <img src={startImage} alt="Start" className="w-full h-full object-contain" />
+              ) : (
+                <div className="text-center text-gray-400 flex flex-col items-center justify-center h-full">
+                  <Film className="w-8 h-8 mb-2 opacity-50" />
+                  <p className="text-xs">Select image</p>
                 </div>
-                <div className="text-center flex-shrink-0 p-3">
-                  {prompt && <p className="text-sm text-gray-700 font-medium">{prompt}</p>}
-                  <p className="text-xs text-gray-500 mt-2">Duration: {duration}s | Quality: {qualityMode.replace('_', ' ')} | Ratio: {aspectRatio}</p>
-                </div>
-              </>
-            ) : (
-              <div className="text-center text-gray-400">
-                <Film className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p className="text-sm">Select a start image to preview</p>
+              )}
+            </div>
+            {startImage && (
+              <div className="text-center flex-shrink-0 p-3">
+                {prompt && <p className="text-sm text-gray-700 font-medium">{prompt}</p>}
+                <p className="text-xs text-gray-500 mt-2">Duration: {duration}s | Quality: {qualityMode.replace('_', ' ')} | Ratio: {aspectRatio}</p>
               </div>
             )}
           </div>
