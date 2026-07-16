@@ -1353,9 +1353,13 @@ export default function CreateImagePage() {
           {/* Canvas Preview */}
           <div
             className={`bg-gray-50 rounded-lg p-8 flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-lg transition-shadow relative group ${
-              aspectRatio === '1:1' ? 'aspect-square h-64' :
-              aspectRatio === '3:2' ? 'aspect-[3/2] h-72' :
+              aspectRatio === '9:16' ? 'aspect-[9/16] h-96' :
+              aspectRatio === '16:9' ? 'aspect-video h-72' :
+              aspectRatio === '3:4' ? 'aspect-[3/4] h-80' :
+              aspectRatio === '4:3' ? 'aspect-[4/3] h-72' :
+              aspectRatio === '1:1' ? 'aspect-square h-72' :
               aspectRatio === '2:3' ? 'aspect-[2/3] h-80' :
+              aspectRatio === '21:9' ? 'aspect-[21/9] h-48' :
               'aspect-video h-72'
             }`}
             onClick={() => {
