@@ -1438,13 +1438,15 @@ export default function CreateImagePage() {
                   )}
                 </div>
               </div>
-              <button
-                onClick={handleGenerate}
-                disabled={!prompt.trim() || isGenerating || credits < calculateCost()}
-                className="px-6 py-3 bg-blue-600 text-white text-sm font-bold rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors whitespace-nowrap flex-shrink-0 w-full"
-              >
-                {isGenerating ? 'Generating...' : `${selectedImage && prompt === originalPrompt ? 'Regenerate' : 'Generate'}`}
-              </button>
+              <div className="flex justify-end">
+                <button
+                  onClick={handleGenerate}
+                  disabled={!prompt.trim() || isGenerating || credits < calculateCost()}
+                  className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors whitespace-nowrap flex-shrink-0"
+                >
+                  {isGenerating ? 'Generating...' : `${selectedImage && prompt === originalPrompt ? 'Regenerate' : 'Generate'}`}
+                </button>
+              </div>
             </div>
           </div>
         </div>

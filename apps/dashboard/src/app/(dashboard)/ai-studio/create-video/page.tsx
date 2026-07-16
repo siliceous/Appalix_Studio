@@ -378,13 +378,15 @@ export default function CreateVideoPage() {
                   className="flex-1 w-full px-4 py-3 text-black placeholder-gray-500 bg-white border-none resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
               </div>
-              <button
-                onClick={handleGenerate}
-                disabled={!prompt.trim() || !startImage || isGenerating}
-                className="px-6 py-3 bg-blue-600 text-white text-sm font-bold rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors whitespace-nowrap flex-shrink-0 w-full"
-              >
-                {isGenerating ? 'Generating...' : 'Generate'}
-              </button>
+              <div className="flex justify-end">
+                <button
+                  onClick={handleGenerate}
+                  disabled={!prompt.trim() || !startImage || isGenerating}
+                  className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors whitespace-nowrap flex-shrink-0"
+                >
+                  {isGenerating ? 'Generating...' : 'Generate'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
