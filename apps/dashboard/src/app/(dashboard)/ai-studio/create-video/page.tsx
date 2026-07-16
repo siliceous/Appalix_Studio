@@ -340,7 +340,7 @@ export default function CreateVideoPage() {
             </div>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-hidden flex items-center justify-center bg-gray-50 px-[3px]">
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col items-center justify-between bg-gray-50 px-[3px] py-4">
             <div className={`overflow-hidden flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300 ${
               aspectRatio === '9:16' ? 'aspect-[9/16] max-h-full' :
               aspectRatio === '16:9' ? 'aspect-video max-h-full' :
@@ -365,7 +365,7 @@ export default function CreateVideoPage() {
           </div>
 
           {/* Prompt Bar */}
-          <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative">
+          <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative w-[70%]">
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}

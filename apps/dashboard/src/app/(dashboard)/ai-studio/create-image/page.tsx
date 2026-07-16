@@ -1349,7 +1349,7 @@ export default function CreateImagePage() {
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col gap-4 overflow-hidden p-4 items-center justify-center">
+          <div className="flex-1 flex flex-col gap-4 overflow-hidden p-4 items-center justify-between">
           {/* Canvas Preview */}
           <div
             className={`bg-gray-50 rounded-lg p-8 flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-lg transition-shadow relative group ${
@@ -1401,7 +1401,7 @@ export default function CreateImagePage() {
           </div>
 
           {/* Prompt Bar */}
-          <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative">
+          <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative w-[70%]">
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
