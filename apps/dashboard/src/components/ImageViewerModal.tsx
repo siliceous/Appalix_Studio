@@ -164,7 +164,7 @@ export default function ImageViewerModal({
       }}
     >
       {/* Top Bar - Just close button */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-gray-700 flex-shrink-0">
+      <div className="flex items-center justify-between px-6 py-3 border-b border-gray-700 flex-shrink-0 bg-gray-900">
         <div className="text-white text-sm font-medium">
           Image {image.id.substring(0, 8)} {image.aspectRatio && `• ${image.aspectRatio}`}
         </div>
@@ -177,151 +177,150 @@ export default function ImageViewerModal({
         </button>
       </div>
 
-      {/* Image Container */}
-      <div
-        className="flex-1 flex items-center justify-center overflow-hidden relative bg-black"
-        ref={containerRef}
-        style={{ userSelect: 'none' }}
-        onWheel={(e) => {
-          if (!allowZoom) return
-          e.preventDefault()
-          const increment = e.deltaY > 0 ? -50 : 50
-          const newZoom = Math.max(100, Math.min(1000, zoom + increment))
-          setZoom(newZoom)
-          // Reset pan on wheel zoom to prevent off-screen issues
-          if (newZoom === 100) {
-            setPan({ x: 0, y: 0 })
-          }
-        }}
-      >
+      {/* Main Content - Two Column Layout */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Side - Image */}
         <div
-          className="relative"
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          style={{
-            transform: `translate(${pan.x}px, ${pan.y}px)`,
-            cursor: isDragging ? 'grabbing' : 'grab',
+          className="flex-1 flex items-center justify-center overflow-hidden relative bg-black"
+          ref={containerRef}
+          style={{ userSelect: 'none' }}
+          onWheel={(e) => {
+            if (!allowZoom) return
+            e.preventDefault()
+            const increment = e.deltaY > 0 ? -50 : 50
+            const newZoom = Math.max(100, Math.min(1000, zoom + increment))
+            setZoom(newZoom)
+            if (newZoom === 100) {
+              setPan({ x: 0, y: 0 })
+            }
           }}
         >
           <div
-            ref={imageRef}
+            className="relative"
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
             style={{
-              transform: `scale(${zoom / 100})`,
-              transformOrigin: 'center',
-              transition: isDragging ? 'none' : 'transform 0.2s ease-out',
+              transform: `translate(${pan.x}px, ${pan.y}px)`,
+              cursor: isDragging ? 'grabbing' : 'grab',
             }}
           >
-            <img
-              src={image.image}
-              alt="Image viewer"
-              className="object-contain pointer-events-none select-none"
+            <div
+              ref={imageRef}
               style={{
-                maxHeight: '90vh',
-                maxWidth: '90vw',
-                height: 'auto',
-                width: 'auto',
+                transform: `scale(${zoom / 100})`,
+                transformOrigin: 'center',
+                transition: isDragging ? 'none' : 'transform 0.2s ease-out',
               }}
-              draggable={false}
-            />
+            >
+              <img
+                src={image.image}
+                alt="Image viewer"
+                className="object-contain pointer-events-none select-none"
+                style={{
+                  maxHeight: '85vh',
+                  maxWidth: '65vw',
+                  height: 'auto',
+                  width: 'auto',
+                }}
+                draggable={false}
+              />
+            </div>
           </div>
+
+          {/* Navigation Buttons */}
+          {hasPrevious && onPrevious && (
+            <button
+              onClick={onPrevious}
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full shadow-lg transition-all z-10"
+            >
+              <ChevronLeft className="w-8 h-8 text-white" />
+            </button>
+          )}
+          {hasNext && onNext && (
+            <button
+              onClick={onNext}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full shadow-lg transition-all z-10"
+            >
+              <ChevronRight className="w-8 h-8 text-white" />
+            </button>
+          )}
         </div>
 
-        {/* Navigation Buttons */}
-        {hasPrevious && onPrevious && (
-          <button
-            onClick={onPrevious}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full shadow-lg transition-all z-10"
-          >
-            <ChevronLeft className="w-8 h-8 text-white" />
-          </button>
-        )}
-        {hasNext && onNext && (
-          <button
-            onClick={onNext}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full shadow-lg transition-all z-10"
-          >
-            <ChevronRight className="w-8 h-8 text-white" />
-          </button>
-        )}
-      </div>
-
-      {/* Bottom Controls - Prompt + Zoom + Action Buttons */}
-      <div className="flex flex-col gap-3 px-6 py-4 border-t border-gray-700 flex-shrink-0 bg-gray-900/80">
-        {/* Prompt */}
-        {image.prompt && (
-          <div className="bg-gray-800 rounded-lg p-3 max-h-24 overflow-y-auto">
-            <p className="text-white text-sm">{image.prompt}</p>
+        {/* Right Side - Controls and Prompt */}
+        <div className="w-80 flex flex-col border-l border-gray-700 bg-gray-900">
+          {/* Scrollable Prompt Area */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {image.prompt && (
+              <div>
+                <p className="text-xs text-gray-400 font-semibold mb-2">Prompt:</p>
+                <div className="bg-gray-800 rounded-lg p-3">
+                  <p className="text-sm text-white">{image.prompt}</p>
+                </div>
+              </div>
+            )}
           </div>
-        )}
 
-        {/* Zoom Controls and Action Buttons */}
-        <div className="flex items-center justify-between gap-3">
-          {/* Zoom Controls */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={zoomOut}
-              disabled={zoom <= 100}
-              className="p-2 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
-              title="Zoom Out (Scroll down)"
-            >
-              <ZoomOut className="w-4 h-4 text-white" />
-            </button>
-            <div className="text-white text-xs font-medium min-w-[45px] text-center font-mono bg-gray-700 px-2 py-1 rounded">
-              {zoom}%
+          {/* Zoom Controls and Action Buttons */}
+          <div className="border-t border-gray-700 p-4 space-y-3 flex-shrink-0">
+            {/* Zoom Controls */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={zoomOut}
+                disabled={zoom <= 100}
+                className="p-2 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+                title="Zoom Out"
+              >
+                <ZoomOut className="w-4 h-4 text-white" />
+              </button>
+              <div className="text-white text-xs font-medium flex-1 text-center font-mono bg-gray-700 px-2 py-1 rounded">
+                {zoom}%
+              </div>
+              <button
+                onClick={zoomIn}
+                disabled={zoom >= 1000}
+                className="p-2 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+                title="Zoom In"
+              >
+                <ZoomIn className="w-4 h-4 text-white" />
+              </button>
             </div>
-            <button
-              onClick={zoomIn}
-              disabled={zoom >= 1000}
-              className="p-2 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
-              title="Zoom In (Scroll up)"
-            >
-              <ZoomIn className="w-4 h-4 text-white" />
-            </button>
-            <button
-              onClick={resetZoom}
-              disabled={zoom === 100}
-              className="px-2 py-1 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded text-white text-xs"
-              title="Reset (R)"
-            >
-              Reset
-            </button>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2 relative">
-            <button
-              onClick={copyPrompt}
-              className={`p-2 rounded-lg transition-colors ${copied ? 'bg-green-600' : 'hover:bg-gray-700'}`}
-              title="Copy Prompt"
-            >
-              <Copy className="w-4 h-4 text-white" />
-            </button>
-            {copied && (
-              <span className="text-xs text-green-400 font-medium">Copied!</span>
-            )}
-            {allowDownload && onDownload && (
+            {/* Action Buttons */}
+            <div className="space-y-2">
               <button
-                onClick={() => onDownload(image)}
-                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                title="Download"
+                onClick={copyPrompt}
+                className={`w-full p-2 rounded-lg transition-colors flex items-center justify-center gap-2 ${copied ? 'bg-green-600' : 'bg-gray-700 hover:bg-gray-600'}`}
+                title="Copy Prompt"
               >
-                <Download className="w-4 h-4 text-white" />
+                <Copy className="w-4 h-4 text-white" />
+                <span className="text-sm text-white">{copied ? 'Copied!' : 'Copy Prompt'}</span>
               </button>
-            )}
-            {allowDelete && onDelete && (
-              <button
-                onClick={() => {
-                  onDelete(image.id)
-                  onClose()
-                }}
-                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                title="Delete"
-              >
-                <Trash2 className="w-4 h-4 text-red-400" />
-              </button>
-            )}
+              {allowDownload && onDownload && (
+                <button
+                  onClick={() => onDownload(image)}
+                  className="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  title="Download"
+                >
+                  <Download className="w-4 h-4 text-white" />
+                  <span className="text-sm text-white">Download</span>
+                </button>
+              )}
+              {allowDelete && onDelete && (
+                <button
+                  onClick={() => {
+                    onDelete(image.id)
+                    onClose()
+                  }}
+                  className="w-full p-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  title="Delete"
+                >
+                  <Trash2 className="w-4 h-4 text-white" />
+                  <span className="text-sm text-white">Delete</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
