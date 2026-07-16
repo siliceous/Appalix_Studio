@@ -1522,9 +1522,12 @@ export default function CreateImagePage() {
                   <div
                     key={`image-${image.id || image.timestamp}-${idx}`}
                     className={`group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all col-span-1 ${
-                      selectedImage?.id === image.id ? 'ring-2 ring-blue-500 ring-offset-1' : ''
+                      canvasImage?.id === image.id ? 'ring-2 ring-blue-500 ring-offset-1' : ''
                     }`}
                     onClick={() => {
+                      setCanvasImage(image)
+                    }}
+                    onDoubleClick={() => {
                       setFullscreenImage(image.image)
                       setFullscreenImageData(image)
                       setFullscreenImageIndex(idx)
@@ -1536,16 +1539,15 @@ export default function CreateImagePage() {
                       alt="Generated"
                       className="w-full h-full object-cover"
                     />
-                    {selectedImage?.id !== image.id && (
+                    {canvasImage?.id !== image.id && (
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
                         <button
                           className="p-2 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors"
                           onClick={(e) => {
                             e.stopPropagation()
-                            sessionStorage.setItem('importedImage', JSON.stringify(image))
-                            router.push('/ai-studio/create-video')
+                            setCanvasImage(image)
                           }}
-                          title="Create Video"
+                          title="Create Video (Single Click)"
                         >
                           <Plus className="w-4 h-4 text-white" />
                         </button>
