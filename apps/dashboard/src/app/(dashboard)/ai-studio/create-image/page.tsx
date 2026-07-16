@@ -1746,8 +1746,8 @@ export default function CreateImagePage() {
         </div>
       )}
 
-      {/* Image Overlay Modal - Disabled, using canvas display instead */}
-      {selectedImage && false && (
+      {/* Image Overlay Modal - Shows when user selects from history */}
+      {selectedImage && (
         <div
           className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
           onClick={() => setSelectedImage(null)}
