@@ -1354,14 +1354,14 @@ export default function CreateImagePage() {
           {/* Canvas Preview */}
           <div
             className={`bg-gray-50 rounded-lg p-8 flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-lg transition-shadow relative group ${
-              aspectRatio === '9:16' ? 'aspect-[9/16] h-[600px]' :
-              aspectRatio === '16:9' ? 'aspect-video h-96' :
-              aspectRatio === '3:4' ? 'aspect-[3/4] h-[480px]' :
-              aspectRatio === '4:3' ? 'aspect-[4/3] h-96' :
-              aspectRatio === '1:1' ? 'aspect-square h-96' :
-              aspectRatio === '2:3' ? 'aspect-[2/3] h-[480px]' :
+              aspectRatio === '9:16' ? 'aspect-[9/16] h-[1800px]' :
+              aspectRatio === '16:9' ? 'aspect-video h-96 max-w-4xl' :
+              aspectRatio === '3:4' ? 'aspect-[3/4] h-[1440px]' :
+              aspectRatio === '4:3' ? 'aspect-[4/3] h-96 max-w-4xl' :
+              aspectRatio === '1:1' ? 'aspect-square h-96 w-96' :
+              aspectRatio === '2:3' ? 'aspect-[2/3] h-[1440px]' :
               aspectRatio === '21:9' ? 'aspect-[21/9] h-48' :
-              'aspect-video h-96'
+              'aspect-video h-96 max-w-4xl'
             }`}
             onClick={() => {
               if (selectedImage) {
