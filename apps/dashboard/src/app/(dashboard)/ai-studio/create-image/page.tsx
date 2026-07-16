@@ -1352,7 +1352,12 @@ export default function CreateImagePage() {
           <div className="flex-1 flex flex-col gap-4 overflow-hidden p-4 items-center justify-center">
           {/* Canvas Preview */}
           <div
-            className="bg-gray-50 rounded-lg p-8 flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-lg transition-shadow relative group aspect-video h-72"
+            className={`bg-gray-50 rounded-lg p-8 flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-lg transition-shadow relative group ${
+              aspectRatio === '1:1' ? 'aspect-square h-64' :
+              aspectRatio === '3:2' ? 'aspect-[3/2] h-72' :
+              aspectRatio === '2:3' ? 'aspect-[2/3] h-80' :
+              'aspect-video h-72'
+            }`}
             onClick={() => {
               if (selectedImage) {
                 setFullscreenImageData(selectedImage)
