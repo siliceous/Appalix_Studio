@@ -1399,7 +1399,8 @@ export default function CreateImagePage() {
                 className="flex-1 w-full px-4 py-3 text-black placeholder-gray-500 bg-white border-none resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               />
               <div className="flex gap-2 items-center justify-between px-3 py-3 bg-gray-50 border-t border-gray-300">
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
+                  <span className="text-xs text-gray-500">{prompt.length} / 10000</span>
                   {canvasImage && (
                     <>
                       <button
