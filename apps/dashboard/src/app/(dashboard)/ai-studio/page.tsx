@@ -403,25 +403,11 @@ export default function AIStudio() {
                   </select>
                 </div>
                 {(selectedProjectId || selectedMediaType || selectedGender || selectedDateRange) && <button onClick={() => { setSelectedProjectId(null); setSelectedMediaType(null); setSelectedGender(null); setSelectedDateRange(null) }} className="px-3 py-2 text-sm font-medium rounded-lg border border-white/10 text-white hover:bg-white/10 transition-colors">Clear</button>}
-                <button
-                  onClick={() => {
-                    if (selectedImages.size === 0) {
-                      setSelectedImages(new Set(images.map(img => img.id)))
-                    } else {
-                      setSelectedImages(new Set())
-                    }
-                  }}
-                  disabled={loading || images.length === 0}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    selectedImages.size > 0
-                      ? 'bg-blue-600 border border-blue-500 text-white hover:bg-blue-700'
-                      : loading || images.length === 0
-                      ? 'bg-gray-600 border border-gray-500 text-gray-400 cursor-not-allowed'
-                      : 'bg-gray-700 border border-gray-600 text-white hover:bg-gray-600'
-                  }`}
-                >
-                  {selectedImages.size === 0 ? 'Select to Import' : `Import (${selectedImages.size})`}
-                </button>
+                {selectedImages.size > 0 && (
+                  <div className="text-sm font-medium text-blue-400">
+                    {selectedImages.size} selected to import
+                  </div>
+                )}
                 {selectedImages.size > 0 && (
                   <button
                     onClick={() => {

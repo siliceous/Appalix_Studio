@@ -207,40 +207,43 @@ export default function TalkingActors() {
   }, [])
 
   useEffect(() => {
+    console.log("[TalkingActors] Component mounted, checking for pending imports...")
     const pending = sessionStorage.getItem("pendingImports")
-    console.log("[TalkingActors] Checking pending imports:", pending ? "Found" : "Not found")
+    console.log("[TalkingActors] sessionStorage.pendingImports:", pending ? `${pending.length} bytes` : "NOT FOUND")
     if (pending) {
       try {
         const newImages = JSON.parse(pending)
-        console.log("[TalkingActors] Parsed", newImages.length, "images from sessionStorage")
+        console.log("[TalkingActors] ✓ Parsed", newImages.length, "images from sessionStorage", newImages)
         // Parse metadata for each imported image
         const parsedImages = newImages.map((img: GeneratedImage) => ({
           ...img,
           parsedMetadata: parseImageMetadata(img.prompt)
         }))
         setImages(prevImages => {
-          console.log("[TalkingActors] Current images:", prevImages.length, "New images:", parsedImages.length)
+          console.log("[TalkingActors] Merging - Current:", prevImages.length, "New:", parsedImages.length)
           // Filter out duplicates by ID
           const existingIds = new Set(prevImages.map(img => img.id))
           const uniqueNewImages = parsedImages.filter((img: GeneratedImage) => !existingIds.has(img.id))
           console.log("[TalkingActors] After dedup:", uniqueNewImages.length, "unique new images")
 
           if (uniqueNewImages.length === 0) {
-            console.log("[TalkingActors] No new unique images to add")
+            console.log("[TalkingActors] ⚠ No new unique images to add")
             return prevImages // No new images to add
           }
 
           const updated = [...prevImages, ...uniqueNewImages]
           // Persist to localStorage
           localStorage.setItem("talkingActorsImages", JSON.stringify(updated))
-          console.log("[TalkingActors] Saved", updated.length, "total images to localStorage")
+          console.log("[TalkingActors] ✓ Saved", updated.length, "total images to localStorage")
           return updated
         })
         sessionStorage.removeItem("pendingImports")
-        console.log("[TalkingActors] Imported", parsedImages.length, "images (filtered duplicates)")
+        console.log("[TalkingActors] ✓ Import complete and sessionStorage cleared")
       } catch (e) {
-        console.error("[TalkingActors] Error loading pending imports:", e)
+        console.error("[TalkingActors] ✗ Error loading pending imports:", e, pending)
       }
+    } else {
+      console.log("[TalkingActors] ℹ No pending imports in sessionStorage")
     }
   }, [])
 
