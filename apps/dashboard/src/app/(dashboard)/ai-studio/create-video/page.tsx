@@ -344,7 +344,7 @@ export default function CreateVideoPage() {
             {/* Preview Area - Grows/shrinks with aspect ratio */}
             <div className="flex-1 flex items-center justify-center w-full">
               <div className={`overflow-hidden flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300 ${
-                aspectRatio === '9:16' ? 'aspect-[9/16] h-[600px]' :
+                aspectRatio === '9:16' ? 'aspect-[9/16] h-[480px]' :
                 aspectRatio === '16:9' ? 'aspect-video h-96' :
                 aspectRatio === '4:3' ? 'aspect-[4/3] h-96' :
                 'aspect-square h-96'
