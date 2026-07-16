@@ -624,11 +624,9 @@ export default function CreateImagePage() {
                 return updated
               })
 
-              // Display the last generated image in the main canvas
+              // Display the last generated image in the canvas area (not fullscreen)
               const lastImage = newImages[newImages.length - 1]
-              setFullscreenImage(lastImage.image)
-              setFullscreenImageData(lastImage)
-              setFullscreenImageIndex(history.length - 1)
+              setSelectedImage(lastImage)
               setOriginalPrompt(prompt)
               console.log('Images received and processed:', statusData.imageUrls.length)
             } else {
