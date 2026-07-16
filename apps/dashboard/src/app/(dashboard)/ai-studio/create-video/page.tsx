@@ -367,24 +367,24 @@ export default function CreateVideoPage() {
             )}
 
             {/* Prompt Bar - Fixed at bottom */}
-            <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative w-[70%] mt-[50px] h-[180px] flex-shrink-0">
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Describe what you want to create..."
-                rows={6}
-                maxLength={10000}
-                className="flex-1 w-full px-4 py-3 pr-32 text-black placeholder-gray-500 bg-white border-none resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-              />
-              <div className="absolute bottom-3 right-3 flex gap-2 items-center">
-                <button
-                  onClick={handleGenerate}
-                  disabled={!prompt.trim() || !startImage || isGenerating}
-                  className="px-3 py-1.5 bg-black text-white text-xs font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors whitespace-nowrap"
-                >
-                  {isGenerating ? 'Generating...' : 'Generate'}
-                </button>
+            <div className="flex items-end gap-3 w-full">
+              <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative flex-1 mt-[50px] h-[180px] flex-shrink-0">
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Describe what you want to create..."
+                  rows={6}
+                  maxLength={10000}
+                  className="flex-1 w-full px-4 py-3 text-black placeholder-gray-500 bg-white border-none resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
               </div>
+              <button
+                onClick={handleGenerate}
+                disabled={!prompt.trim() || !startImage || isGenerating}
+                className="px-4 py-8 bg-black text-white text-xs font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors whitespace-nowrap flex-shrink-0 h-[180px] flex items-center justify-center"
+              >
+                {isGenerating ? 'Generating...' : 'Generate'}
+              </button>
             </div>
           </div>
         </div>
