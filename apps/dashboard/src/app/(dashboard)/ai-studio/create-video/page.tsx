@@ -367,8 +367,8 @@ export default function CreateVideoPage() {
             )}
 
             {/* Prompt Bar - Fixed at bottom */}
-            <div className="flex items-end gap-3 w-full">
-              <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative flex-1 mt-[50px] h-[180px] flex-shrink-0">
+            <div className="flex items-end gap-3 w-full mt-[50px]">
+              <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative flex-1 h-[180px] flex-shrink-0">
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
@@ -381,7 +381,7 @@ export default function CreateVideoPage() {
               <button
                 onClick={handleGenerate}
                 disabled={!prompt.trim() || !startImage || isGenerating}
-                className="px-4 py-8 bg-blue-600 text-white text-sm font-bold rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors whitespace-nowrap flex-shrink-0 h-[180px] flex items-center justify-center"
+                className="px-6 py-3 bg-blue-600 text-white text-sm font-bold rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors whitespace-nowrap flex-shrink-0"
               >
                 {isGenerating ? 'Generating...' : 'Generate'}
               </button>
