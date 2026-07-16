@@ -405,22 +405,54 @@ export default function AIStudio() {
                 {(selectedProjectId || selectedMediaType || selectedGender || selectedDateRange) && <button onClick={() => { setSelectedProjectId(null); setSelectedMediaType(null); setSelectedGender(null); setSelectedDateRange(null) }} className="px-3 py-2 text-sm font-medium rounded-lg border border-white/10 text-white hover:bg-white/10 transition-colors">Clear</button>}
                 <button
                   onClick={() => {
-                    const params = new URLSearchParams(window.location.search)
-                    if (importMode) {
-                      params.delete('import')
+                    if (selectedImages.size === 0) {
+                      setSelectedImages(new Set(images.map(img => img.id)))
                     } else {
-                      params.set('import', 'true')
+                      setSelectedImages(new Set())
                     }
-                    router.push(`?${params.toString()}`)
                   }}
-                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors text-white ${
-                    importMode
-                      ? 'bg-blue-600 border border-blue-500'
-                      : 'bg-gray-700 border border-gray-600 hover:bg-gray-600'
+                  disabled={loading || images.length === 0}
+                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    selectedImages.size > 0
+                      ? 'bg-blue-600 border border-blue-500 text-white hover:bg-blue-700'
+                      : loading || images.length === 0
+                      ? 'bg-gray-600 border border-gray-500 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-700 border border-gray-600 text-white hover:bg-gray-600'
                   }`}
                 >
-                  {importMode ? '✓ Select Mode' : 'Import Mode'}
+                  {selectedImages.size === 0 ? 'Select to Import' : `Import (${selectedImages.size})`}
                 </button>
+                {selectedImages.size > 0 && (
+                  <button
+                    onClick={() => {
+                      const imagesToImport = images.filter(img => selectedImages.has(img.id) && !img.deletedAt)
+                      console.log('[Import] Selected:', selectedImages.size, 'Found to import:', imagesToImport.length)
+
+                      // Get existing pending imports and append to them
+                      const existingPending = sessionStorage.getItem("pendingImports")
+                      let allImagesToImport = imagesToImport
+                      if (existingPending) {
+                        try {
+                          const existing = JSON.parse(existingPending)
+                          allImagesToImport = [...existing, ...imagesToImport]
+                        } catch (e) {
+                          console.error("[Import] Failed to parse existing pending imports:", e)
+                        }
+                      }
+
+                      console.log('[Import] Setting sessionStorage with', allImagesToImport.length, 'images')
+                      sessionStorage.setItem("pendingImports", JSON.stringify(allImagesToImport))
+                      const verify = sessionStorage.getItem("pendingImports")
+                      console.log('[Import] Verified sessionStorage set:', verify ? 'SUCCESS' : 'FAILED')
+                      console.log('[Import] Navigating to talking-actors via router.push')
+                      router.push("/studio/talking-actors")
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-green-600 border border-green-500 text-white hover:bg-green-700 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Go to Talking Actors
+                  </button>
+                )}
                 <button
                   onClick={() => setShowTrash(!showTrash)}
                   className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors text-white ${
@@ -434,55 +466,6 @@ export default function AIStudio() {
                   <Trash2 className="w-4 h-4" />
                   Trash ({deletedImages.length})
                 </button>
-                {importMode && (
-                  <>
-                    <button
-                      onClick={() => {
-                        if (selectedImages.size === 0) {
-                          setSelectedImages(new Set(images.map(img => img.id)))
-                        } else {
-                          setSelectedImages(new Set())
-                        }
-                      }}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-gray-700 border border-gray-600 text-white hover:bg-gray-600 transition-colors"
-                    >
-                      {selectedImages.size === 0 ? 'Select All' : `Unselect All (${selectedImages.size})`}
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (selectedImages.size === 0) {
-                          alert("Please select at least one image")
-                          return
-                        }
-                        const imagesToImport = images.filter(img => selectedImages.has(img.id) && !img.deletedAt)
-                        console.log('[Import] Selected:', selectedImages.size, 'Found to import:', imagesToImport.length)
-
-                        // Get existing pending imports and append to them
-                        const existingPending = sessionStorage.getItem("pendingImports")
-                        let allImagesToImport = imagesToImport
-                        if (existingPending) {
-                          try {
-                            const existing = JSON.parse(existingPending)
-                            allImagesToImport = [...existing, ...imagesToImport]
-                          } catch (e) {
-                            console.error("[Import] Failed to parse existing pending imports:", e)
-                          }
-                        }
-
-                        console.log('[Import] Setting sessionStorage with', allImagesToImport.length, 'images')
-                        sessionStorage.setItem("pendingImports", JSON.stringify(allImagesToImport))
-                        const verify = sessionStorage.getItem("pendingImports")
-                        console.log('[Import] Verified sessionStorage set:', verify ? 'SUCCESS' : 'FAILED')
-                        console.log('[Import] Navigating to talking-actors via router.push')
-                        router.push("/studio/talking-actors")
-                      }}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 border border-blue-500 text-white hover:bg-blue-700 transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Import ({selectedImages.size})
-                    </button>
-                  </>
-                )}
 
               </div>
             </div>
