@@ -516,7 +516,7 @@ export default function TalkingActors() {
 
       <div className="flex flex-1 overflow-hidden gap-3">
         {/* Left Panel - Create Actor Filters */}
-        <div className="w-80 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden m-3 mt-24 flex-shrink-0">
+        <div className="w-80 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden m-3 flex-shrink-0" style={{ marginTop: 'calc(1.5rem - 20px)' }}>
           <div className="bg-black text-white px-4 py-3 h-12 flex items-center justify-between flex-shrink-0">
             <h2 className="text-sm font-semibold">Create Actor</h2>
             <button
@@ -626,7 +626,7 @@ export default function TalkingActors() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-hidden bg-[#f5f4f1] flex flex-col mr-3 mt-24">
+        <div className="flex-1 overflow-hidden bg-[#f5f4f1] flex flex-col mr-3" style={{ marginTop: 'calc(1.5rem - 20px)' }}>
           <div className="px-4 pt-8 pb-0 shrink-0">
             <div className="mb-5">
               <h1 className="text-xl font-bold text-gray-900">Talking Actors</h1>
