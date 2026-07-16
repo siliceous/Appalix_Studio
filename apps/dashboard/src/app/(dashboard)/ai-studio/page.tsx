@@ -558,6 +558,13 @@ export default function AIStudio() {
                               ? 'border-purple-500 shadow-lg shadow-purple-500/50'
                               : 'border-gray-600 hover:border-gray-500 shadow-md'
                           }`}
+                          onClick={() => {
+                            if (!selectionMode) {
+                              setFullscreenImage(image)
+                              setFullscreenImageIndex(idx)
+                              setImageZoom(1)
+                            }
+                          }}
                         >
                           <img
                             src={image.image}
@@ -586,18 +593,6 @@ export default function AIStudio() {
                             </div>
                           )}
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto z-10">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setFullscreenImage(image)
-                                setFullscreenImageIndex(idx)
-                                setImageZoom(1)
-                              }}
-                              className="p-3 bg-white rounded-full hover:bg-gray-200 transition-colors shadow-lg"
-                              title="View"
-                            >
-                              <Eye className="w-5 h-5 text-gray-700" />
-                            </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
