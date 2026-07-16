@@ -1392,58 +1392,46 @@ export default function CreateImagePage() {
           </div>
 
           {/* Prompt Bar */}
-          <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden">
+          <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative">
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Describe what you want to create..."
               rows={6}
-              maxLength={2000}
-              className="w-full px-4 py-3 text-black placeholder-gray-500 bg-white border-none resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              maxLength={10000}
+              className="w-full px-4 py-3 pr-32 text-black placeholder-gray-500 bg-white border-none resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             />
-            <div className="border-t border-gray-300 p-3 bg-gray-50 flex justify-between items-center gap-2">
-              <div className="flex gap-2 flex-1">
-                {/* Action buttons - appear when image is selected */}
-                {selectedImage && (
-                  <>
-                    <button
-                      onClick={() => {
-                        sessionStorage.setItem('importedImage', JSON.stringify(selectedImage))
-                        router.push('/ai-studio/create-video')
-                      }}
-                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors flex items-center gap-1"
-                      title="Create Video with this image"
-                    >
-                      <Plus className="w-3 h-3" />
-                      Create Video
-                    </button>
-                    <button
-                      onClick={() => handleSaveImage(selectedImage)}
-                      className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-colors flex items-center gap-1"
-                      title="Save to project"
-                    >
-                      <Heart className="w-3 h-3" />
-                      Save
-                    </button>
-                  </>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-600">{prompt.length}/2000</span>
-                <button
-                  title="Add reference image"
-                  className="px-2 py-1.5 bg-gray-300 hover:bg-gray-400 text-gray-700 text-xs font-semibold rounded transition-colors flex items-center justify-center"
-                >
-                  <span>+</span>
-                </button>
-                <button
-                  onClick={handleGenerate}
-                  disabled={!prompt.trim() || isGenerating || credits < calculateCost()}
-                  className="px-3 py-1.5 bg-black text-white text-xs font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors whitespace-nowrap"
-                >
-                  {isGenerating ? 'Generating...' : `${selectedImage && prompt === originalPrompt ? 'Regenerate' : 'Generate'}`}
-                </button>
-              </div>
+            <div className="absolute bottom-3 right-3 flex gap-2 items-center">
+              {selectedImage && (
+                <>
+                  <button
+                    onClick={() => {
+                      sessionStorage.setItem('importedImage', JSON.stringify(selectedImage))
+                      router.push('/ai-studio/create-video')
+                    }}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors flex items-center gap-1"
+                    title="Create Video with this image"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Create Video
+                  </button>
+                  <button
+                    onClick={() => handleSaveImage(selectedImage)}
+                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-colors flex items-center gap-1"
+                    title="Save to project"
+                  >
+                    <Heart className="w-3 h-3" />
+                    Save
+                  </button>
+                </>
+              )}
+              <button
+                onClick={handleGenerate}
+                disabled={!prompt.trim() || isGenerating || credits < calculateCost()}
+                className="px-3 py-1.5 bg-black text-white text-xs font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors whitespace-nowrap"
+              >
+                {isGenerating ? 'Generating...' : `${selectedImage && prompt === originalPrompt ? 'Regenerate' : 'Generate'}`}
+              </button>
             </div>
           </div>
           </div>
