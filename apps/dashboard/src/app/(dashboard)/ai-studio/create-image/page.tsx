@@ -1374,7 +1374,7 @@ export default function CreateImagePage() {
                   <img
                     src={canvasImage.image}
                     alt="Generated"
-                    className="max-w-full max-h-full object-contain rounded-lg"
+                    className="w-full h-full object-cover rounded-lg"
                   />
                 ) : (
                   <div className="text-center">
