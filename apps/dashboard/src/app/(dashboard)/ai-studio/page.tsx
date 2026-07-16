@@ -419,8 +419,7 @@ export default function AIStudio() {
                       : 'bg-gray-700 border border-gray-600 hover:bg-gray-600'
                   }`}
                 >
-                  <Plus className="w-4 h-4" />
-                  Import
+                  {importMode ? '✓ Select Mode' : 'Import Mode'}
                 </button>
                 <button
                   onClick={() => setShowTrash(!showTrash)}
@@ -440,7 +439,7 @@ export default function AIStudio() {
                     <button
                       onClick={() => {
                         if (selectedImages.size === 0) {
-                          setSelectedImages(new Set(filteredImages.map(img => img.id)))
+                          setSelectedImages(new Set(images.map(img => img.id)))
                         } else {
                           setSelectedImages(new Set())
                         }
@@ -455,9 +454,8 @@ export default function AIStudio() {
                           alert("Please select at least one image")
                           return
                         }
-                        const selectedImagesList = Array.from(selectedImages)
                         const imagesToImport = images.filter(img => selectedImages.has(img.id) && !img.deletedAt)
-                        console.log('[Import] Selected:', selectedImages.size, 'Found to import:', imagesToImport.length, 'Images:', imagesToImport)
+                        console.log('[Import] Selected:', selectedImages.size, 'Found to import:', imagesToImport.length)
 
                         // Get existing pending imports and append to them
                         const existingPending = sessionStorage.getItem("pendingImports")
@@ -467,14 +465,16 @@ export default function AIStudio() {
                             const existing = JSON.parse(existingPending)
                             allImagesToImport = [...existing, ...imagesToImport]
                           } catch (e) {
-                            console.error("Failed to parse existing pending imports:", e)
+                            console.error("[Import] Failed to parse existing pending imports:", e)
                           }
                         }
 
                         console.log('[Import] Setting sessionStorage with', allImagesToImport.length, 'images')
                         sessionStorage.setItem("pendingImports", JSON.stringify(allImagesToImport))
-                        console.log('[Import] Navigating to talking-actors')
-                        window.location.href = "/studio/talking-actors"
+                        const verify = sessionStorage.getItem("pendingImports")
+                        console.log('[Import] Verified sessionStorage set:', verify ? 'SUCCESS' : 'FAILED')
+                        console.log('[Import] Navigating to talking-actors via router.push')
+                        router.push("/studio/talking-actors")
                       }}
                       className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 border border-blue-500 text-white hover:bg-blue-700 transition-colors"
                     >
