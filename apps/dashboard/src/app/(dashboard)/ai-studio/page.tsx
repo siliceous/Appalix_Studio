@@ -555,11 +555,10 @@ export default function AIStudio() {
                         <div
                           key={image.id}
                           className={`group relative rounded-lg overflow-hidden border-2 transition-all block w-full cursor-pointer bg-gray-200 ${
-                            image.id === fullscreenImage?.id
+                            selectedImages.has(image.id)
                               ? 'border-blue-500 shadow-lg shadow-blue-500/50'
                               : 'border-gray-600 hover:border-gray-500 shadow-md'
                           }`}
-                          onClick={() => { if (importMode) { const newSelected = new Set(selectedImages); newSelected.has(image.id) ? newSelected.delete(image.id) : newSelected.add(image.id); setSelectedImages(newSelected); } else { setFullscreenImage(image); setFullscreenImageIndex(idx); setImageZoom(1); } }}
                         >
                           <img
                             src={image.image}
@@ -570,26 +569,36 @@ export default function AIStudio() {
                             }}
                           />
 
-                          {importMode && (
-                            <div className="absolute top-2 right-2 z-10">
-                              <input
-                                type="checkbox"
-                                checked={selectedImages.has(image.id)}
-                                onChange={(e) => {
-                                  e.stopPropagation()
-                                  const newSelected = new Set(selectedImages)
-                                  if (newSelected.has(image.id)) {
-                                    newSelected.delete(image.id)
-                                  } else {
-                                    newSelected.add(image.id)
-                                  }
-                                  setSelectedImages(newSelected)
-                                }}
-                                className="w-5 h-5 cursor-pointer"
-                              />
-                            </div>
-                          )}
+                          <div className="absolute top-2 right-2 z-10">
+                            <input
+                              type="checkbox"
+                              checked={selectedImages.has(image.id)}
+                              onChange={(e) => {
+                                e.stopPropagation()
+                                const newSelected = new Set(selectedImages)
+                                if (newSelected.has(image.id)) {
+                                  newSelected.delete(image.id)
+                                } else {
+                                  newSelected.add(image.id)
+                                }
+                                setSelectedImages(newSelected)
+                              }}
+                              className="w-5 h-5 cursor-pointer"
+                            />
+                          </div>
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto z-10">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setFullscreenImage(image)
+                                setFullscreenImageIndex(idx)
+                                setImageZoom(1)
+                              }}
+                              className="p-3 bg-white rounded-full hover:bg-gray-200 transition-colors shadow-lg"
+                              title="View"
+                            >
+                              <Eye className="w-5 h-5 text-gray-700" />
+                            </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
