@@ -1353,7 +1353,7 @@ export default function CreateImagePage() {
             <div className="flex-1 flex items-center justify-center w-full">
               {/* Canvas Preview */}
               <div
-                className={`bg-gray-50 rounded-lg p-8 flex items-center justify-center overflow-hidden shadow-md hover:shadow-lg transition-shadow relative group ${
+                className={`bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden shadow-md hover:shadow-lg transition-shadow relative group ${
                   aspectRatio === '9:16' ? 'aspect-[9/16] h-[480px]' :
                   aspectRatio === '16:9' ? 'aspect-video h-96' :
                   aspectRatio === '3:4' ? 'aspect-[3/4] h-[480px]' :
