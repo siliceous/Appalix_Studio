@@ -35,9 +35,9 @@ export default function AIStudio() {
   const [fullscreenImageIndex, setFullscreenImageIndex] = useState(0)
   const [showCreateProjectDialog, setShowCreateProjectDialog] = useState(false)
   const [createProjectName, setCreateProjectName] = useState('')
-  const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set())
+  const [selectedImageIds, setSelectedImageIds] = useState<string[]>([])
   const searchParams = useSearchParams()
-  const importMode = searchParams.get("import") === "true"
+  const selectionMode = searchParams.get("mode") === "select-actors"
 
   const [isCreatingProject, setIsCreatingProject] = useState(false)
   const [selectedMediaType, setSelectedMediaType] = useState<string | null>(null)
@@ -403,55 +403,68 @@ export default function AIStudio() {
                   </select>
                 </div>
                 {(selectedProjectId || selectedMediaType || selectedGender || selectedDateRange) && <button onClick={() => { setSelectedProjectId(null); setSelectedMediaType(null); setSelectedGender(null); setSelectedDateRange(null) }} className="px-3 py-2 text-sm font-medium rounded-lg border border-white/10 text-white hover:bg-white/10 transition-colors">Clear</button>}
-                {selectedImages.size > 0 && (
-                  <div className="text-sm font-medium text-blue-400">
-                    {selectedImages.size} selected to import
-                  </div>
-                )}
-                {selectedImages.size > 0 && (
-                  <button
-                    onClick={() => {
-                      const imagesToImport = images.filter(img => selectedImages.has(img.id) && !img.deletedAt)
-                      console.log('[Import] Selected:', selectedImages.size, 'Found to import:', imagesToImport.length)
 
-                      // Get existing pending imports and append to them
-                      const existingPending = sessionStorage.getItem("pendingImports")
-                      let allImagesToImport = imagesToImport
-                      if (existingPending) {
-                        try {
-                          const existing = JSON.parse(existingPending)
-                          allImagesToImport = [...existing, ...imagesToImport]
-                        } catch (e) {
-                          console.error("[Import] Failed to parse existing pending imports:", e)
+                {selectionMode && (
+                  <>
+                    <button
+                      onClick={() => router.push("/studio/talking-actors")}
+                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg text-white border border-white/20 hover:bg-white/10 transition-colors"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      Back to Talking Actors
+                    </button>
+                    <button
+                      onClick={() => {
+                        const allImages = images.filter(img => !img.deletedAt)
+                        if (selectedImageIds.length === allImages.length) {
+                          setSelectedImageIds([])
+                        } else {
+                          setSelectedImageIds(allImages.map(img => img.id))
                         }
-                      }
+                      }}
+                      disabled={images.filter(img => !img.deletedAt).length === 0}
+                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg text-white border border-white/20 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {selectedImageIds.length === images.filter(img => !img.deletedAt).length && selectedImageIds.length > 0
+                        ? 'Deselect All'
+                        : 'Select All'}
+                    </button>
+                    <div className="text-sm font-medium text-blue-400">
+                      {selectedImageIds.length} selected
+                    </div>
+                    <button
+                      onClick={() => {
+                        const imagesToImport = images.filter(img => selectedImageIds.includes(img.id) && !img.deletedAt)
+                        console.log('[SelectActors] Importing', imagesToImport.length, 'images')
 
-                      console.log('[Import] Setting sessionStorage with', allImagesToImport.length, 'images')
-                      sessionStorage.setItem("pendingImports", JSON.stringify(allImagesToImport))
-                      const verify = sessionStorage.getItem("pendingImports")
-                      console.log('[Import] Verified sessionStorage set:', verify ? 'SUCCESS' : 'FAILED')
-                      console.log('[Import] Navigating to talking-actors via router.push')
-                      router.push("/studio/talking-actors")
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-green-600 border border-green-500 text-white hover:bg-green-700 transition-colors"
+                        // Store for talking-actors to import
+                        sessionStorage.setItem("selectedActorImages", JSON.stringify(imagesToImport))
+                        router.push("/studio/talking-actors")
+                      }}
+                      disabled={selectedImageIds.length === 0}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-green-600 border border-green-500 text-white hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Import Selected ({selectedImageIds.length})
+                    </button>
+                  </>
+                )}
+
+                {!selectionMode && (
+                  <button
+                    onClick={() => setShowTrash(!showTrash)}
+                    className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors text-white ${
+                      showTrash
+                        ? 'bg-red-600 border border-red-500'
+                        : deletedImages.length > 0
+                        ? 'bg-red-900/40 border border-red-500/50 hover:bg-red-900/60'
+                        : 'bg-gray-700 border border-gray-600 hover:bg-gray-600'
+                    }`}
                   >
-                    <Plus className="w-4 h-4" />
-                    Go to Talking Actors
+                    <Trash2 className="w-4 h-4" />
+                    Trash ({deletedImages.length})
                   </button>
                 )}
-                <button
-                  onClick={() => setShowTrash(!showTrash)}
-                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors text-white ${
-                    showTrash
-                      ? 'bg-red-600 border border-red-500'
-                      : deletedImages.length > 0
-                      ? 'bg-red-900/40 border border-red-500/50 hover:bg-red-900/60'
-                      : 'bg-gray-700 border border-gray-600 hover:bg-gray-600'
-                  }`}
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Trash ({deletedImages.length})
-                </button>
 
               </div>
             </div>
@@ -541,8 +554,8 @@ export default function AIStudio() {
                         <div
                           key={image.id}
                           className={`group relative rounded-lg overflow-hidden border-2 transition-all block w-full cursor-pointer bg-gray-200 ${
-                            selectedImages.has(image.id)
-                              ? 'border-blue-500 shadow-lg shadow-blue-500/50'
+                            selectionMode && selectedImageIds.includes(image.id)
+                              ? 'border-purple-500 shadow-lg shadow-purple-500/50'
                               : 'border-gray-600 hover:border-gray-500 shadow-md'
                           }`}
                         >
@@ -555,23 +568,23 @@ export default function AIStudio() {
                             }}
                           />
 
-                          <div className="absolute top-2 right-2 z-50 bg-white rounded-md p-1 shadow-lg">
-                            <input
-                              type="checkbox"
-                              checked={selectedImages.has(image.id)}
-                              onChange={(e) => {
-                                e.stopPropagation()
-                                const newSelected = new Set(selectedImages)
-                                if (newSelected.has(image.id)) {
-                                  newSelected.delete(image.id)
-                                } else {
-                                  newSelected.add(image.id)
-                                }
-                                setSelectedImages(newSelected)
-                              }}
-                              className="w-6 h-6 cursor-pointer accent-blue-600"
-                            />
-                          </div>
+                          {selectionMode && (
+                            <div className="absolute top-2 right-2 z-50 bg-white rounded-md p-1 shadow-lg">
+                              <input
+                                type="checkbox"
+                                checked={selectedImageIds.includes(image.id)}
+                                onChange={(e) => {
+                                  e.stopPropagation()
+                                  setSelectedImageIds(prev =>
+                                    prev.includes(image.id)
+                                      ? prev.filter(id => id !== image.id)
+                                      : [...prev, image.id]
+                                  )
+                                }}
+                                className="w-6 h-6 cursor-pointer accent-purple-600"
+                              />
+                            </div>
+                          )}
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto z-10">
                             <button
                               onClick={(e) => {

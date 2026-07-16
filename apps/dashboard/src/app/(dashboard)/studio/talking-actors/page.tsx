@@ -207,28 +207,28 @@ export default function TalkingActors() {
   }, [])
 
   useEffect(() => {
-    console.log("[TalkingActors] Component mounted, checking for pending imports...")
-    const pending = sessionStorage.getItem("pendingImports")
-    console.log("[TalkingActors] sessionStorage.pendingImports:", pending ? `${pending.length} bytes` : "NOT FOUND")
-    if (pending) {
+    console.log("[TalkingActors] Checking for actor image imports...")
+    const selectedActors = sessionStorage.getItem("selectedActorImages")
+    if (selectedActors) {
       try {
-        const newImages = JSON.parse(pending)
-        console.log("[TalkingActors] ✓ Parsed", newImages.length, "images from sessionStorage", newImages)
+        const importedImages = JSON.parse(selectedActors)
+        console.log("[TalkingActors] ✓ Found", importedImages.length, "selected actor images to import")
+
         // Parse metadata for each imported image
-        const parsedImages = newImages.map((img: GeneratedImage) => ({
+        const parsedImages = importedImages.map((img: GeneratedImage) => ({
           ...img,
           parsedMetadata: parseImageMetadata(img.prompt)
         }))
+
         setImages(prevImages => {
-          console.log("[TalkingActors] Merging - Current:", prevImages.length, "New:", parsedImages.length)
           // Filter out duplicates by ID
           const existingIds = new Set(prevImages.map(img => img.id))
           const uniqueNewImages = parsedImages.filter((img: GeneratedImage) => !existingIds.has(img.id))
-          console.log("[TalkingActors] After dedup:", uniqueNewImages.length, "unique new images")
+          console.log("[TalkingActors] Adding", uniqueNewImages.length, "new unique images")
 
           if (uniqueNewImages.length === 0) {
-            console.log("[TalkingActors] ⚠ No new unique images to add")
-            return prevImages // No new images to add
+            console.log("[TalkingActors] ℹ All images already exist, no duplicates added")
+            return prevImages
           }
 
           const updated = [...prevImages, ...uniqueNewImages]
@@ -237,13 +237,12 @@ export default function TalkingActors() {
           console.log("[TalkingActors] ✓ Saved", updated.length, "total images to localStorage")
           return updated
         })
-        sessionStorage.removeItem("pendingImports")
-        console.log("[TalkingActors] ✓ Import complete and sessionStorage cleared")
+
+        sessionStorage.removeItem("selectedActorImages")
+        console.log("[TalkingActors] ✓ Import complete -", importedImages.length, "images imported")
       } catch (e) {
-        console.error("[TalkingActors] ✗ Error loading pending imports:", e, pending)
+        console.error("[TalkingActors] ✗ Error importing actor images:", e)
       }
-    } else {
-      console.log("[TalkingActors] ℹ No pending imports in sessionStorage")
     }
   }, [])
 
@@ -668,11 +667,11 @@ export default function TalkingActors() {
                   Trash ({deletedImages.length})
                 </button>
                 <button
-                  onClick={() => router.push("/ai-studio?import=true")}
+                  onClick={() => router.push("/ai-studio?mode=select-actors")}
                   className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-blue-600 border border-blue-500 hover:bg-blue-700 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
-                  Import Images
+                  Select to Import
                 </button>
 
               </div>
