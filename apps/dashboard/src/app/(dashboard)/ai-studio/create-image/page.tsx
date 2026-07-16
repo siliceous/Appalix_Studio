@@ -287,6 +287,7 @@ export default function CreateImagePage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [history, setHistory] = useState<GeneratedImage[]>([])
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null)
+  const [canvasImage, setCanvasImage] = useState<GeneratedImage | null>(null)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [credits, setCredits] = useState(100)
   const [workspaceId, setWorkspaceId] = useState<string>('')
@@ -626,7 +627,7 @@ export default function CreateImagePage() {
 
               // Display the last generated image in the canvas area (not fullscreen)
               const lastImage = newImages[newImages.length - 1]
-              setSelectedImage(lastImage)
+              setCanvasImage(lastImage)
               setOriginalPrompt(prompt)
               console.log('Images received and processed:', statusData.imageUrls.length)
             } else {
@@ -1369,20 +1370,13 @@ export default function CreateImagePage() {
                     <Loader className="w-16 h-16 mx-auto mb-4 animate-spin text-blue-600" />
                     <p className="text-sm text-gray-600">Generating image...</p>
                   </div>
-                ) : selectedImage ? (
+                ) : canvasImage ? (
                   <div className="flex items-center justify-center w-full h-full">
                     <img
-                      src={selectedImage.image}
+                      src={canvasImage.image}
                       alt="Generated"
-                      className="object-contain max-h-full max-w-full cursor-pointer rounded-lg shadow-lg"
-                      onClick={() => {
-                        setFullscreenImage(selectedImage.image)
-                        setFullscreenImageData(selectedImage)
-                        const idx = history.findIndex(img => img.id === selectedImage.id)
-                        setFullscreenImageIndex(Math.max(0, idx))
-                        setImageZoom(1)
-                      }}
-                      style={{ aspectRatio: selectedImage.aspectRatio || 'auto' }}
+                      className="object-contain max-h-full max-w-full rounded-lg shadow-lg"
+                      style={{ aspectRatio: canvasImage.aspectRatio || 'auto' }}
                     />
                   </div>
                 ) : (
@@ -1406,11 +1400,11 @@ export default function CreateImagePage() {
                   className="flex-1 w-full px-4 py-3 text-black placeholder-gray-500 bg-white border-none resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
                 <div className="flex gap-2 items-center px-3 py-3">
-                  {selectedImage && (
+                  {canvasImage && (
                     <>
                       <button
                         onClick={() => {
-                          sessionStorage.setItem('importedImage', JSON.stringify(selectedImage))
+                          sessionStorage.setItem('importedImage', JSON.stringify(canvasImage))
                           router.push('/ai-studio/create-video')
                         }}
                         className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors flex items-center gap-1"
@@ -1420,7 +1414,7 @@ export default function CreateImagePage() {
                         Create Video
                       </button>
                       <button
-                        onClick={() => handleSaveImage(selectedImage)}
+                        onClick={() => handleSaveImage(canvasImage)}
                         className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-colors flex items-center gap-1"
                         title="Save to project"
                       >
@@ -1437,7 +1431,7 @@ export default function CreateImagePage() {
                   disabled={!prompt.trim() || isGenerating || credits < calculateCost()}
                   className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors whitespace-nowrap flex-shrink-0"
                 >
-                  {isGenerating ? 'Generating...' : `${selectedImage && prompt === originalPrompt ? 'Regenerate' : 'Generate'}`}
+                  {isGenerating ? 'Generating...' : `${canvasImage && prompt === originalPrompt ? 'Regenerate' : 'Generate'}`}
                 </button>
               </div>
             </div>
