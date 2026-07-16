@@ -368,7 +368,7 @@ export default function CreateVideoPage() {
 
             {/* Prompt Bar - Fixed at bottom */}
             <div className="flex items-end gap-3 w-full mt-[50px]">
-              <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative flex-1 h-[180px] flex-shrink-0">
+              <div className="bg-white rounded-lg border border-gray-300 flex items-end overflow-hidden relative flex-1 h-[180px] flex-shrink-0">
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}

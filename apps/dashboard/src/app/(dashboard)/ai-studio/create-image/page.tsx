@@ -1405,7 +1405,7 @@ export default function CreateImagePage() {
 
             {/* Prompt Bar - Fixed at bottom */}
             <div className="flex items-end gap-3 w-full mt-[50px]">
-              <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative flex-1 h-[180px] flex-shrink-0">
+              <div className="bg-white rounded-lg border border-gray-300 flex items-end overflow-hidden relative flex-1 h-[180px] flex-shrink-0">
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
@@ -1414,7 +1414,7 @@ export default function CreateImagePage() {
                   maxLength={10000}
                   className="flex-1 w-full px-4 py-3 text-black placeholder-gray-500 bg-white border-none resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
-                <div className="px-4 py-3 flex gap-2 items-center bg-white border-t border-gray-300">
+                <div className="flex gap-2 items-center px-3 pb-3">
                   {selectedImage && (
                     <>
                       <button
