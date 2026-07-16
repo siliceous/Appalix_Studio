@@ -340,7 +340,7 @@ export default function CreateVideoPage() {
             </div>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-hidden flex flex-col items-center justify-between bg-gray-50 px-[3px] py-4">
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col items-center justify-center bg-gray-50 px-[3px] py-4">
             <div className={`overflow-hidden flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300 ${
               aspectRatio === '9:16' ? 'aspect-[9/16] h-[600px]' :
               aspectRatio === '16:9' ? 'aspect-video h-96' :
