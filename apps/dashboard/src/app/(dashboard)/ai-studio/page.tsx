@@ -555,7 +555,7 @@ export default function AIStudio() {
                             }}
                           />
 
-                          <div className="absolute top-2 right-2 z-10">
+                          <div className="absolute top-2 right-2 z-50 bg-white rounded-md p-1 shadow-lg">
                             <input
                               type="checkbox"
                               checked={selectedImages.has(image.id)}
@@ -569,7 +569,7 @@ export default function AIStudio() {
                                 }
                                 setSelectedImages(newSelected)
                               }}
-                              className="w-5 h-5 cursor-pointer"
+                              className="w-6 h-6 cursor-pointer accent-blue-600"
                             />
                           </div>
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto z-10">
