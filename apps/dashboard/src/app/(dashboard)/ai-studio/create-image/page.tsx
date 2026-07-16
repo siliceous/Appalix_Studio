@@ -1349,102 +1349,103 @@ export default function CreateImagePage() {
             </div>
           </div>
 
-          <div className="flex flex-col overflow-hidden p-4 pt-[50px] pb-[100px] items-center justify-center gap-4">
-            <div className="flex-1 flex items-center justify-center">
-          {/* Canvas Preview */}
-          <div
-            className={`bg-gray-50 rounded-lg p-8 flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-lg transition-shadow relative group ${
-              aspectRatio === '9:16' ? 'aspect-[9/16] h-[600px]' :
-              aspectRatio === '16:9' ? 'aspect-video h-96' :
-              aspectRatio === '3:4' ? 'aspect-[3/4] h-[480px]' :
-              aspectRatio === '4:3' ? 'aspect-[4/3] h-96' :
-              aspectRatio === '1:1' ? 'aspect-square h-96' :
-              aspectRatio === '2:3' ? 'aspect-[2/3] h-[480px]' :
-              aspectRatio === '21:9' ? 'aspect-[21/9] h-48' :
-              'aspect-video h-96'
-            }`}
-            onClick={() => {
-              if (selectedImage) {
-                setFullscreenImageData(selectedImage)
-                setFullscreenImage(selectedImage.image)
-                setImageZoom(1)
-              }
-            }}
-            data-canvas
-          >
-            {isGenerating ? (
-              <div className="text-center">
-                <Loader className="w-16 h-16 mx-auto mb-4 animate-spin text-blue-600" />
-                <p className="text-sm text-gray-600">Generating image...</p>
-              </div>
-            ) : selectedImage ? (
-              <div className="flex items-center justify-center w-full h-full">
-                <img
-                  src={selectedImage.image}
-                  alt="Generated"
-                  className="object-contain max-h-full max-w-full cursor-pointer rounded-lg shadow-lg"
-                  onClick={() => {
-                    setFullscreenImage(selectedImage.image)
+          <div className="flex flex-col overflow-hidden h-full items-center p-4">
+            {/* Preview Area - Grows/shrinks with aspect ratio */}
+            <div className="flex-1 flex items-center justify-center w-full">
+              {/* Canvas Preview */}
+              <div
+                className={`bg-gray-50 rounded-lg p-8 flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-lg transition-shadow relative group ${
+                  aspectRatio === '9:16' ? 'aspect-[9/16] h-[600px]' :
+                  aspectRatio === '16:9' ? 'aspect-video h-96' :
+                  aspectRatio === '3:4' ? 'aspect-[3/4] h-[480px]' :
+                  aspectRatio === '4:3' ? 'aspect-[4/3] h-96' :
+                  aspectRatio === '1:1' ? 'aspect-square h-96' :
+                  aspectRatio === '2:3' ? 'aspect-[2/3] h-[480px]' :
+                  aspectRatio === '21:9' ? 'aspect-[21/9] h-48' :
+                  'aspect-video h-96'
+                }`}
+                onClick={() => {
+                  if (selectedImage) {
                     setFullscreenImageData(selectedImage)
-                    const idx = history.findIndex(img => img.id === selectedImage.id)
-                    setFullscreenImageIndex(Math.max(0, idx))
+                    setFullscreenImage(selectedImage.image)
                     setImageZoom(1)
-                  }}
-                  style={{ aspectRatio: selectedImage.aspectRatio || 'auto' }}
-                />
-              </div>
-            ) : (
-              <div className="text-center">
-                <Sparkles className="w-16 h-16 mx-auto mb-4 opacity-30 text-gray-400" />
-                <p className="text-sm text-gray-500">{aspectRatioLabels[aspectRatio]}</p>
-              </div>
-            )}
-            </div>
-          </div>
-
-          {/* Prompt Bar */}
-          <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative w-[70%] mt-[50px] h-[180px]">
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe what you want to create..."
-              rows={6}
-              maxLength={10000}
-              className="flex-1 w-full px-4 py-3 pr-32 text-black placeholder-gray-500 bg-white border-none resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            />
-            <div className="absolute bottom-3 right-3 flex gap-2 items-center">
-              {selectedImage && (
-                <>
-                  <button
-                    onClick={() => {
-                      sessionStorage.setItem('importedImage', JSON.stringify(selectedImage))
-                      router.push('/ai-studio/create-video')
-                    }}
-                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors flex items-center gap-1"
-                    title="Create Video with this image"
-                  >
-                    <Plus className="w-3 h-3" />
-                    Create Video
-                  </button>
-                  <button
-                    onClick={() => handleSaveImage(selectedImage)}
-                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-colors flex items-center gap-1"
-                    title="Save to project"
-                  >
-                    <Heart className="w-3 h-3" />
-                    Save
-                  </button>
-                </>
-              )}
-              <button
-                onClick={handleGenerate}
-                disabled={!prompt.trim() || isGenerating || credits < calculateCost()}
-                className="px-3 py-1.5 bg-black text-white text-xs font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors whitespace-nowrap"
+                  }
+                }}
+                data-canvas
               >
-                {isGenerating ? 'Generating...' : `${selectedImage && prompt === originalPrompt ? 'Regenerate' : 'Generate'}`}
-              </button>
+                {isGenerating ? (
+                  <div className="text-center">
+                    <Loader className="w-16 h-16 mx-auto mb-4 animate-spin text-blue-600" />
+                    <p className="text-sm text-gray-600">Generating image...</p>
+                  </div>
+                ) : selectedImage ? (
+                  <div className="flex items-center justify-center w-full h-full">
+                    <img
+                      src={selectedImage.image}
+                      alt="Generated"
+                      className="object-contain max-h-full max-w-full cursor-pointer rounded-lg shadow-lg"
+                      onClick={() => {
+                        setFullscreenImage(selectedImage.image)
+                        setFullscreenImageData(selectedImage)
+                        const idx = history.findIndex(img => img.id === selectedImage.id)
+                        setFullscreenImageIndex(Math.max(0, idx))
+                        setImageZoom(1)
+                      }}
+                      style={{ aspectRatio: selectedImage.aspectRatio || 'auto' }}
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <Sparkles className="w-16 h-16 mx-auto mb-4 opacity-30 text-gray-400" />
+                    <p className="text-sm text-gray-500">{aspectRatioLabels[aspectRatio]}</p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+
+            {/* Prompt Bar - Fixed at bottom */}
+            <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative w-[70%] mt-[50px] h-[180px] flex-shrink-0">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Describe what you want to create..."
+                rows={6}
+                maxLength={10000}
+                className="flex-1 w-full px-4 py-3 pr-32 text-black placeholder-gray-500 bg-white border-none resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+              <div className="absolute bottom-3 right-3 flex gap-2 items-center">
+                {selectedImage && (
+                  <>
+                    <button
+                      onClick={() => {
+                        sessionStorage.setItem('importedImage', JSON.stringify(selectedImage))
+                        router.push('/ai-studio/create-video')
+                      }}
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors flex items-center gap-1"
+                      title="Create Video with this image"
+                    >
+                      <Plus className="w-3 h-3" />
+                      Create Video
+                    </button>
+                    <button
+                      onClick={() => handleSaveImage(selectedImage)}
+                      className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-colors flex items-center gap-1"
+                      title="Save to project"
+                    >
+                      <Heart className="w-3 h-3" />
+                      Save
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={handleGenerate}
+                  disabled={!prompt.trim() || isGenerating || credits < calculateCost()}
+                  className="px-3 py-1.5 bg-black text-white text-xs font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors whitespace-nowrap"
+                >
+                  {isGenerating ? 'Generating...' : `${selectedImage && prompt === originalPrompt ? 'Regenerate' : 'Generate'}`}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
