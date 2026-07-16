@@ -1526,6 +1526,7 @@ export default function CreateImagePage() {
                     }`}
                     onClick={() => {
                       setCanvasImage(image)
+                      setPrompt(image.prompt)
                     }}
                     onDoubleClick={() => {
                       setFullscreenImage(image.image)
@@ -1546,6 +1547,7 @@ export default function CreateImagePage() {
                           onClick={(e) => {
                             e.stopPropagation()
                             setCanvasImage(image)
+                            setPrompt(image.prompt)
                           }}
                           title="Create Video (Single Click)"
                         >
