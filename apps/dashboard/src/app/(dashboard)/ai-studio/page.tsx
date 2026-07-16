@@ -404,6 +404,25 @@ export default function AIStudio() {
                 </div>
                 {(selectedProjectId || selectedMediaType || selectedGender || selectedDateRange) && <button onClick={() => { setSelectedProjectId(null); setSelectedMediaType(null); setSelectedGender(null); setSelectedDateRange(null) }} className="px-3 py-2 text-sm font-medium rounded-lg border border-white/10 text-white hover:bg-white/10 transition-colors">Clear</button>}
                 <button
+                  onClick={() => {
+                    const params = new URLSearchParams(window.location.search)
+                    if (importMode) {
+                      params.delete('import')
+                    } else {
+                      params.set('import', 'true')
+                    }
+                    router.push(`?${params.toString()}`)
+                  }}
+                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors text-white ${
+                    importMode
+                      ? 'bg-blue-600 border border-blue-500'
+                      : 'bg-gray-700 border border-gray-600 hover:bg-gray-600'
+                  }`}
+                >
+                  <Plus className="w-4 h-4" />
+                  Import
+                </button>
+                <button
                   onClick={() => setShowTrash(!showTrash)}
                   className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors text-white ${
                     showTrash
