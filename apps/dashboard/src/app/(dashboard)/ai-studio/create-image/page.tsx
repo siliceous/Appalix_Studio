@@ -1371,14 +1371,11 @@ export default function CreateImagePage() {
                     <p className="text-sm text-gray-600">Generating image...</p>
                   </div>
                 ) : canvasImage ? (
-                  <div className="flex items-center justify-center w-full h-full">
-                    <img
-                      src={canvasImage.image}
-                      alt="Generated"
-                      className="object-contain max-h-full max-w-full rounded-lg shadow-lg"
-                      style={{ aspectRatio: canvasImage.aspectRatio || 'auto' }}
-                    />
-                  </div>
+                  <img
+                    src={canvasImage.image}
+                    alt="Generated"
+                    className="w-full h-full object-cover rounded-lg"
+                  />
                 ) : (
                   <div className="text-center">
                     <Sparkles className="w-16 h-16 mx-auto mb-4 opacity-30 text-gray-400" />
