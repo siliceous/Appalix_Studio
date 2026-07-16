@@ -1355,7 +1355,7 @@ export default function CreateImagePage() {
               {/* Canvas Preview */}
               <div
                 className={`bg-gray-50 rounded-lg p-8 flex items-center justify-center overflow-hidden cursor-pointer hover:shadow-lg transition-shadow relative group ${
-                  aspectRatio === '9:16' ? 'aspect-[9/16] h-[400px]' :
+                  aspectRatio === '9:16' ? 'aspect-[9/16] h-[600px]' :
                   aspectRatio === '16:9' ? 'aspect-video h-96' :
                   aspectRatio === '3:4' ? 'aspect-[3/4] h-[480px]' :
                   aspectRatio === '4:3' ? 'aspect-[4/3] h-96' :
