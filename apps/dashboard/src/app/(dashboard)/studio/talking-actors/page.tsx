@@ -272,8 +272,9 @@ export default function TalkingActors() {
           const data = await response.json()
           setFolders(data.folders || [])
         }
+        // Silently ignore 404 - folders feature not yet implemented
       } catch (error) {
-        console.error('Error loading folders:', error)
+        // Silently ignore - folders API not available
       }
     }
     fetchFolders()
