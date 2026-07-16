@@ -365,25 +365,25 @@ export default function CreateVideoPage() {
           </div>
 
           {/* Prompt Bar */}
-          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex flex-col gap-2">
+          <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden">
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Describe what you want to create..."
               rows={6}
               maxLength={2000}
-              className="w-full px-4 py-3 text-black placeholder-gray-500 bg-white border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-4 py-3 text-black placeholder-gray-500 bg-white border-none resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             />
-            <div className="flex justify-between items-center gap-2">
+            <div className="border-t border-gray-300 p-3 bg-gray-50 flex justify-between items-center gap-2">
               <div className="flex gap-2 flex-1">
                 {/* Placeholder for future action buttons */}
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">{prompt.length}/2000</span>
+                <span className="text-xs text-gray-600">{prompt.length}/2000</span>
                 <button
                   onClick={handleGenerate}
                   disabled={!prompt.trim() || !startImage || isGenerating}
-                  className="px-4 py-2 bg-black text-white text-sm font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors whitespace-nowrap"
+                  className="px-3 py-1.5 bg-black text-white text-xs font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors whitespace-nowrap"
                 >
                   {isGenerating ? 'Generating...' : 'Generate'}
                 </button>

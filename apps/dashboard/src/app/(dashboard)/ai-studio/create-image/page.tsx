@@ -1392,16 +1392,16 @@ export default function CreateImagePage() {
           </div>
 
           {/* Prompt Bar */}
-          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex flex-col gap-2">
+          <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden">
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Describe what you want to create..."
               rows={6}
               maxLength={2000}
-              className="w-full px-4 py-3 text-black placeholder-gray-500 bg-white border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-4 py-3 text-black placeholder-gray-500 bg-white border-none resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             />
-            <div className="flex justify-between items-center gap-2">
+            <div className="border-t border-gray-300 p-3 bg-gray-50 flex justify-between items-center gap-2">
               <div className="flex gap-2 flex-1">
                 {/* Action buttons - appear when image is selected */}
                 {selectedImage && (
@@ -1411,35 +1411,35 @@ export default function CreateImagePage() {
                         sessionStorage.setItem('importedImage', JSON.stringify(selectedImage))
                         router.push('/ai-studio/create-video')
                       }}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded transition-colors flex items-center gap-2"
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors flex items-center gap-1"
                       title="Create Video with this image"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-3 h-3" />
                       Create Video
                     </button>
                     <button
                       onClick={() => handleSaveImage(selectedImage)}
-                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded transition-colors flex items-center gap-2"
+                      className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-colors flex items-center gap-1"
                       title="Save to project"
                     >
-                      <Heart className="w-4 h-4" />
+                      <Heart className="w-3 h-3" />
                       Save
                     </button>
                   </>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">{prompt.length}/2000</span>
+                <span className="text-xs text-gray-600">{prompt.length}/2000</span>
                 <button
                   title="Add reference image"
-                  className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center"
+                  className="px-2 py-1.5 bg-gray-300 hover:bg-gray-400 text-gray-700 text-xs font-semibold rounded transition-colors flex items-center justify-center"
                 >
-                  <span className="text-lg">+</span>
+                  <span>+</span>
                 </button>
                 <button
                   onClick={handleGenerate}
                   disabled={!prompt.trim() || isGenerating || credits < calculateCost()}
-                  className="px-4 py-2 bg-black text-white text-sm font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors whitespace-nowrap"
+                  className="px-3 py-1.5 bg-black text-white text-xs font-medium rounded hover:bg-gray-800 disabled:bg-gray-400 transition-colors whitespace-nowrap"
                 >
                   {isGenerating ? 'Generating...' : `${selectedImage && prompt === originalPrompt ? 'Regenerate' : 'Generate'}`}
                 </button>
