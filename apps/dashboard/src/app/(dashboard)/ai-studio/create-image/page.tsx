@@ -1349,7 +1349,7 @@ export default function CreateImagePage() {
             </div>
           </div>
 
-          <div className="flex flex-col overflow-hidden p-4 pt-[100px] pb-[100px] items-center justify-center gap-4">
+          <div className="flex flex-col overflow-hidden p-4 pt-[50px] pb-[100px] items-center justify-center gap-4">
             <div className="flex-1 flex items-center justify-center">
           {/* Canvas Preview */}
           <div
