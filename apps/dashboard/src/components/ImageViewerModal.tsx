@@ -230,18 +230,20 @@ export default function ImageViewerModal({
           </div>
 
           {/* Navigation Buttons */}
-          {hasPrevious && onPrevious && (
+          {hasNext && onNext && (
             <button
-              onClick={onPrevious}
+              onClick={onNext}
               className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full shadow-lg transition-all z-10"
+              title="Next (Newer)"
             >
               <ChevronLeft className="w-8 h-8 text-white" />
             </button>
           )}
-          {hasNext && onNext && (
+          {hasPrevious && onPrevious && (
             <button
-              onClick={onNext}
+              onClick={onPrevious}
               className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full shadow-lg transition-all z-10"
+              title="Previous (Older)"
             >
               <ChevronRight className="w-8 h-8 text-white" />
             </button>
