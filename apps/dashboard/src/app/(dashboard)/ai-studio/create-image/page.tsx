@@ -1525,10 +1525,6 @@ export default function CreateImagePage() {
                       canvasImage?.id === image.id ? 'ring-2 ring-blue-500 ring-offset-1' : ''
                     }`}
                     onClick={() => {
-                      setCanvasImage(image)
-                      setPrompt(image.prompt)
-                    }}
-                    onDoubleClick={() => {
                       setFullscreenImage(image.image)
                       setFullscreenImageData(image)
                       setFullscreenImageIndex(idx)

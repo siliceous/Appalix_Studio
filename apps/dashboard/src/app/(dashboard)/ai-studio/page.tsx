@@ -71,6 +71,8 @@ export default function AIStudio() {
               const data = await response.json()
               serverDeletedIds = new Set(data.deleted_image_ids || [])
               console.log('Loaded deleted images from server:', serverDeletedIds.size)
+            } else {
+              console.warn('Server returned status', response.status, '- using localStorage only')
             }
           } catch (e) {
             console.error('Error fetching deleted images from server:', e)
@@ -97,9 +99,12 @@ export default function AIStudio() {
 
               allImages = allImages.concat(supabaseImages)
               console.log('Loaded from Supabase:', supabaseImages.length)
+            } else {
+              console.warn('Supabase API unavailable (status', response.status, ') - using localStorage only')
             }
           } catch (e) {
             console.error('Error fetching from Supabase:', e)
+            console.warn('Falling back to localStorage only')
           }
         }
 
@@ -567,7 +572,14 @@ export default function AIStudio() {
                               : 'border-gray-600 hover:border-gray-500 shadow-md'
                           }`}
                           onClick={() => {
-                            if (!selectionMode) {
+                            if (selectionMode) {
+                              setSelectedImageIds(prev => {
+                                const isSelected = prev.includes(image.id)
+                                return isSelected
+                                  ? prev.filter(id => id !== image.id)
+                                  : [...prev, image.id]
+                              })
+                            } else {
                               setFullscreenImage(image)
                               setFullscreenImageIndex(idx)
                               setImageZoom(1)
@@ -584,8 +596,10 @@ export default function AIStudio() {
                           />
 
                           {selectionMode && (
-                            <div
-                              className="absolute top-2 right-2 z-50 bg-white rounded-md p-1 shadow-lg cursor-pointer"
+                            <input
+                              type="checkbox"
+                              checked={selectedImageIds.includes(image.id)}
+                              onChange={() => {}}
                               onClick={(e) => {
                                 e.stopPropagation()
                                 console.log('[SelectActors] Checkbox clicked for image:', image.id)
@@ -598,48 +612,44 @@ export default function AIStudio() {
                                   return newSelection
                                 })
                               }}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={selectedImageIds.includes(image.id)}
-                                onChange={() => {}}
-                                className="w-6 h-6 cursor-pointer accent-purple-600 pointer-events-none"
-                              />
+                              className="absolute top-1.5 right-1.5 z-50 w-4 h-4 cursor-pointer accent-purple-600"
+                            />
+                          )}
+                          {!selectionMode && (
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto z-10">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  sessionStorage.setItem('importedImage', JSON.stringify(image))
+                                  router.push('/ai-studio/create-video')
+                                }}
+                                className="p-2 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors shadow-lg"
+                                title="Create Video"
+                              >
+                                <Plus className="w-4 h-4 text-white" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDownload(image.id, image.image)
+                                }}
+                                className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors shadow-lg"
+                                title="Download"
+                              >
+                                <Download className="w-4 h-4 text-gray-700" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDelete(image.id)
+                                }}
+                                className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors shadow-lg"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-4 h-4 text-gray-700" />
+                              </button>
                             </div>
                           )}
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto z-10">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                sessionStorage.setItem('importedImage', JSON.stringify(image))
-                                router.push('/ai-studio/create-video')
-                              }}
-                              className="p-3 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors shadow-lg"
-                              title="Create Video"
-                            >
-                              <Plus className="w-5 h-5 text-white" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDownload(image.id, image.image)
-                              }}
-                              className="p-3 bg-white rounded-full hover:bg-gray-200 transition-colors shadow-lg"
-                              title="Download"
-                            >
-                              <Download className="w-5 h-5 text-gray-700" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDelete(image.id)
-                              }}
-                              className="p-3 bg-white rounded-full hover:bg-gray-200 transition-colors shadow-lg"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-5 h-5 text-gray-700" />
-                            </button>
-                          </div>
                         </div>
                       )
                     })}
