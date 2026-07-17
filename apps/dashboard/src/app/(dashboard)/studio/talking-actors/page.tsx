@@ -193,21 +193,21 @@ export default function TalkingActors() {
   }, [])
 
   useEffect(() => {
-    // Load persisted images from localStorage
+    console.log("[TalkingActors] Initializing - loading saved images and checking for imports...")
+
+    // Step 1: Load persisted images from localStorage
+    let savedImages: GeneratedImage[] = []
     const saved = localStorage.getItem("talkingActorsImages")
     if (saved) {
       try {
-        const savedImages = JSON.parse(saved)
-        setImages(savedImages)
-        console.log("[TalkingActors] Loaded", savedImages.length, "images from localStorage")
+        savedImages = JSON.parse(saved)
+        console.log("[TalkingActors] ✓ Loaded", savedImages.length, "images from localStorage")
       } catch (e) {
         console.error("[TalkingActors] Error loading saved images:", e)
       }
     }
-  }, [])
 
-  useEffect(() => {
-    console.log("[TalkingActors] Checking for actor image imports...")
+    // Step 2: Check for imported images from sessionStorage
     const selectedActors = sessionStorage.getItem("selectedActorImages")
     if (selectedActors) {
       try {
@@ -220,29 +220,31 @@ export default function TalkingActors() {
           parsedMetadata: parseImageMetadata(img.prompt)
         }))
 
-        setImages(prevImages => {
-          // Filter out duplicates by ID
-          const existingIds = new Set(prevImages.map(img => img.id))
-          const uniqueNewImages = parsedImages.filter((img: GeneratedImage) => !existingIds.has(img.id))
-          console.log("[TalkingActors] Adding", uniqueNewImages.length, "new unique images")
+        // Filter out duplicates by ID
+        const existingIds = new Set(savedImages.map(img => img.id))
+        const uniqueNewImages = parsedImages.filter((img: GeneratedImage) => !existingIds.has(img.id))
+        console.log("[TalkingActors] Adding", uniqueNewImages.length, "new unique images")
 
-          if (uniqueNewImages.length === 0) {
-            console.log("[TalkingActors] ℹ All images already exist, no duplicates added")
-            return prevImages
-          }
+        // Merge saved + imported
+        const merged = [...savedImages, ...uniqueNewImages]
 
-          const updated = [...prevImages, ...uniqueNewImages]
-          // Persist to localStorage
-          localStorage.setItem("talkingActorsImages", JSON.stringify(updated))
-          console.log("[TalkingActors] ✓ Saved", updated.length, "total images to localStorage")
-          return updated
-        })
+        // Persist to localStorage
+        localStorage.setItem("talkingActorsImages", JSON.stringify(merged))
+        console.log("[TalkingActors] ✓ Saved", merged.length, "total images to localStorage")
+
+        // Update state with merged data (this is the only setImages call)
+        setImages(merged)
 
         sessionStorage.removeItem("selectedActorImages")
-        console.log("[TalkingActors] ✓ Import complete -", importedImages.length, "images imported")
+        console.log("[TalkingActors] ✓ Import complete -", uniqueNewImages.length, "images imported")
       } catch (e) {
         console.error("[TalkingActors] ✗ Error importing actor images:", e)
+        // If import fails, just load saved images
+        setImages(savedImages)
       }
+    } else {
+      // No imports, just load saved images
+      setImages(savedImages)
     }
   }, [])
 
