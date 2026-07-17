@@ -1,0 +1,272 @@
+import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { redirect }     from 'next/navigation'
+import type { Metadata } from 'next'
+import type { WorkspaceMember, WorkspaceMemberRole, SageEmail, SageMeeting } from '@/lib/types'
+import { ROLE_RANK } from '@/lib/types'
+import { EmailTriageDashboard, type TriageEmail, type TriageRecommendation } from '@/components/dashboard/email-triage-dashboard'
+import { SageToolbar, type TriagePreset } from '@/components/dashboard/sage-toolbar'
+import { getAutoSettings } from '@/app/actions/sage-auto-settings'
+import { getActivityFeed, resolveViewingAs } from '@/app/actions/activity-feed'
+import { ActivitySidebar }    from '@/components/team/activity-sidebar'
+import type { DeliveryStats }  from '@/components/dashboard/sage-toolbar'
+
+export const metadata: Metadata = { title: 'Email Triage' }
+
+function getDateRange(preset: TriagePreset, customFrom?: string, customTo?: string): { from: string | null; to: string | null } {
+  if (preset === 'custom') {
+    return {
+      from: customFrom ? new Date(customFrom).toISOString() : null,
+      to:   customTo   ? new Date(customTo + 'T23:59:59').toISOString() : null,
+    }
+  }
+  const now = new Date()
+  if (preset === 'today') {
+    const from = new Date(now); from.setHours(0, 0, 0, 0)
+    return { from: from.toISOString(), to: null }
+  }
+  if (preset === 'yesterday') {
+    const from = new Date(now); from.setDate(from.getDate() - 1); from.setHours(0, 0, 0, 0)
+    const to   = new Date(now); to.setHours(0, 0, 0, 0)
+    return { from: from.toISOString(), to: to.toISOString() }
+  }
+  if (preset === '7d') {
+    const from = new Date(now); from.setDate(from.getDate() - 7)
+    return { from: from.toISOString(), to: null }
+  }
+  if (preset === '30d') {
+    const from = new Date(now); from.setDate(from.getDate() - 30)
+    return { from: from.toISOString(), to: null }
+  }
+  return { from: null, to: null }
+}
+
+const CONSUMER_DOMAINS = new Set([
+  'gmail.com','yahoo.com','outlook.com','hotmail.com','icloud.com',
+  'live.com','msn.com','me.com','aol.com','protonmail.com',
+  'pm.me','fastmail.com','zoho.com','ymail.com','googlemail.com',
+])
+
+function emailDomain(address: string): string | null {
+  const parts = address.toLowerCase().split('@')
+  if (parts.length !== 2) return null
+  return CONSUMER_DOMAINS.has(parts[1]) ? null : parts[1]
+}
+
+function deriveRecommendation(
+  email:          SageEmail,
+  matchedContact: { id: string } | null,
+  openDeal:       { id: string } | null,
+  closedDeal:     { id: string; title: string } | null,
+): TriageRecommendation {
+  if (email.ai_priority === 'low') return 'ignore'
+  const action = email.ai_action
+  if (action === 'create_ticket') return 'create_ticket'
+  if (action === 'ignore')        return 'ignore'
+  if (matchedContact) {
+    if (openDeal)   return 'update_lead'
+    if (closedDeal) return 'reopen_account'
+    return 'reopen_account'
+  }
+  if (action === 'create_lead')  return 'create_lead'
+  if (action === 'reply_draft')  return 'create_lead'
+  return 'create_lead'
+}
+
+export default async function EmailTriagePage({ searchParams }: { searchParams: Promise<{ preset?: string; from?: string; to?: string; viewAs?: string; syncing?: string; activityDate?: string; emailId?: string; action?: string }> }) {
+  const [params, autoSettings] = await Promise.all([searchParams, getAutoSettings()])
+  const preset = (['today','yesterday','7d','30d','custom'].includes(params.preset ?? '') ? params.preset : 'all') as TriagePreset
+  const { from: dateFrom, to: dateTo } = getDateRange(preset, params.from, params.to)
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: membershipRaw } = await supabase
+    .from('workspace_members')
+    .select('workspace_id, role')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single()
+  const membership = membershipRaw as Pick<WorkspaceMember, 'workspace_id' | 'role'> | null
+  if (!membership) redirect('/login')
+  const workspaceId = membership.workspace_id
+
+  // viewAs: manager+ can browse a team member's emails
+  const callerRank  = ROLE_RANK[(membership.role ?? 'viewer') as WorkspaceMemberRole] ?? 1
+  const viewAsUserId = (params.viewAs && callerRank >= ROLE_RANK.manager) ? params.viewAs : null
+  const effectiveUserId = viewAsUserId ?? user.id
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: emailIntegration } = await (supabase as any)
+    .from('sage_integrations')
+    .select('provider, config')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', effectiveUserId)
+    .in('provider', ['gmail', 'microsoft'])
+    .eq('status', 'connected')
+    .limit(1)
+    .maybeSingle()
+  const emailProvider    = ((emailIntegration as { provider?: string } | null)?.provider ?? null) as 'gmail' | 'microsoft' | null
+  const connectedEmail   = ((emailIntegration as { config?: { from_email?: string } } | null)?.config?.from_email) ?? null
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let emailQuery = (supabase as any)
+    .from('sage_emails')
+    .select('*, contact:sage_contacts(id, name, email)')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', effectiveUserId)
+    .eq('direction', 'inbound')
+    .eq('is_trashed', false)
+    .eq('is_read', false)
+  if (dateFrom) emailQuery = emailQuery.gte('received_at', dateFrom)
+  if (dateTo)   emailQuery = emailQuery.lt('received_at', dateTo)
+  emailQuery = emailQuery.order('received_at', { ascending: false }).limit(200)
+
+  // If a specific emailId is requested (e.g. from voice), also fetch it even if read
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const specificEmailQuery = params.emailId
+    ? (supabase as any)
+        .from('sage_emails')
+        .select('*, contact:sage_contacts(id, name, email)')
+        .eq('workspace_id', workspaceId)
+        .eq('id', params.emailId)
+        .limit(1)
+    : null
+
+  const [emailsRes, contactsRes, specificEmailRes] = await Promise.all([
+    emailQuery,
+    supabase
+      .from('sage_contacts')
+      .select('id, name, email')
+      .eq('workspace_id', workspaceId)
+      .not('email', 'is', null),
+    specificEmailQuery ?? Promise.resolve({ data: null }),
+  ])
+
+  const inboxEmails = (emailsRes.data ?? []) as SageEmail[]
+  // Merge the specific email in if it's not already in the unread inbox
+  const specificEmail = ((specificEmailRes as { data: SageEmail[] | null }).data?.[0]) ?? null
+  const rawEmails: SageEmail[] = specificEmail && !inboxEmails.some(e => e.id === specificEmail.id)
+    ? [specificEmail, ...inboxEmails]
+    : inboxEmails
+  const rawContacts = (contactsRes.data ?? []) as { id: string; name: string; email: string | null }[]
+
+  const contactByEmail  = new Map<string, { id: string; name: string; email: string | null }>()
+  const contactByDomain = new Map<string, { id: string; name: string; email: string | null }>()
+  for (const c of rawContacts) {
+    if (!c.email) continue
+    const addr = c.email.toLowerCase()
+    contactByEmail.set(addr, c)
+    const domain = emailDomain(addr)
+    if (domain && !contactByDomain.has(domain)) contactByDomain.set(domain, c)
+  }
+  function findContact(fromAddress: string) {
+    const addr  = fromAddress.toLowerCase()
+    const exact = contactByEmail.get(addr)
+    if (exact) return exact
+    const domain = emailDomain(addr)
+    return domain ? (contactByDomain.get(domain) ?? null) : null
+  }
+
+  const matchedContactIds = Array.from(new Set(
+    rawEmails.map(e => findContact(e.from_address)?.id).filter((id): id is string => Boolean(id)),
+  ))
+  const openDealsByContactId:   Map<string, { id: string; title: string }> = new Map()
+  const closedDealsByContactId: Map<string, { id: string; title: string }> = new Map()
+  if (matchedContactIds.length > 0) {
+    const { data: dealsRaw } = await supabase
+      .from('sage_deals')
+      .select('id, title, contact_id, status')
+      .eq('workspace_id', workspaceId)
+      .in('status', ['open', 'won', 'lost'])
+      .in('contact_id', matchedContactIds)
+    for (const d of (dealsRaw ?? []) as { id: string; title: string; contact_id: string; status: string }[]) {
+      if (d.status === 'open') { if (!openDealsByContactId.has(d.contact_id)) openDealsByContactId.set(d.contact_id, { id: d.id, title: d.title }) }
+      else                     { if (!closedDealsByContactId.has(d.contact_id)) closedDealsByContactId.set(d.contact_id, { id: d.id, title: d.title }) }
+    }
+  }
+
+  const emailIds = rawEmails.map(e => e.id)
+  const meetingsByEmailId = new Map<string, SageMeeting>()
+  if (emailIds.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: meetingsRaw } = await (supabase as any).from('sage_meetings').select('*').in('email_id', emailIds)
+    for (const m of (meetingsRaw ?? []) as SageMeeting[]) {
+      if (m.email_id) meetingsByEmailId.set(m.email_id, m)
+    }
+  }
+
+  let triageEmails: TriageEmail[] = rawEmails.map(email => {
+    const matchedContact = findContact(email.from_address)
+    const openDeal       = matchedContact ? (openDealsByContactId.get(matchedContact.id)   ?? null) : null
+    const closedDeal     = matchedContact ? (closedDealsByContactId.get(matchedContact.id) ?? null) : null
+    return { email, recommendation: deriveRecommendation(email, matchedContact, openDeal, closedDeal), matchedContact, matchedDeal: openDeal ?? closedDeal ?? null, meeting: meetingsByEmailId.get(email.id) ?? null }
+  })
+
+  const CALENDAR_RE      = /^(Accepted|Declined|Tentative|Cancelled|Updated Invitation|Invitation):?\s/i
+  const CALENDAR_SENDERS = new Set(['calendar-notification@google.com','calendar-notification@googlemail.com','noreply@calendar.google.com','calendar@google.com','invitations@microsoft.com'])
+  const isCalendar = (e: { subject: string | null; from_address: string; ai_category?: string | null; ai_action?: string | null }) =>
+    CALENDAR_RE.test(e.subject ?? '') || CALENDAR_SENDERS.has((e.from_address ?? '').toLowerCase()) || (e.ai_category === 'Meeting' && e.ai_action === 'ignore')
+
+  const calendarIds = triageEmails.filter(t => isCalendar(t.email)).map(t => t.email.id)
+  triageEmails = triageEmails.filter(t => !isCalendar(t.email))
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (calendarIds.length > 0) void (supabase as any).from('sage_emails').update({ is_read: true }).in('id', calendarIds)
+
+  const P: Record<string, number> = { high: 0, medium: 1, low: 2 }
+  triageEmails.sort((a, b) => (a.email.ai_priority ? (P[a.email.ai_priority] ?? 3) : 3) - (b.email.ai_priority ? (P[b.email.ai_priority] ?? 3) : 3))
+
+  // Team members for "My view" picker (managers+ only)
+  const admin = createAdminClient()
+  const teamMembers = await (async () => {
+    if (callerRank < ROLE_RANK.manager) return []
+    const [membersRes, profilesRes] = await Promise.all([
+      admin.from('workspace_members').select('user_id, role').eq('workspace_id', workspaceId).not('accepted_at', 'is', null),
+      admin.from('user_profiles').select('user_id, first_name, last_name'),
+    ])
+    type PRow = { user_id: string; first_name: string; last_name: string | null }
+    type MRow = { user_id: string; role: WorkspaceMemberRole }
+    const pMap = new Map((profilesRes.data ?? [] as PRow[]).map((p: PRow) => [p.user_id, p]))
+    return ((membersRes.data ?? []) as MRow[])
+      .filter(m => (ROLE_RANK[m.role] ?? 0) < callerRank && m.user_id !== user.id)
+      .map(m => { const p = pMap.get(m.user_id); return { user_id: m.user_id, name: p ? [p.first_name, p.last_name].filter(Boolean).join(' ') : '', email: '' } })
+  })()
+
+  const activityDate = params.activityDate ?? new Date().toISOString().slice(0, 10)
+  const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+
+  const [activity, viewingAs, deliveryEventsRes] = await Promise.all([
+    getActivityFeed(effectiveUserId, workspaceId, activityDate),
+    resolveViewingAs(params.viewAs, workspaceId),
+    supabase
+      .from('message_events')
+      .select('event_type')
+      .eq('workspace_id', workspaceId)
+      .eq('channel', 'email')
+      .gte('event_at', since30d),
+  ])
+
+  let deliveryStats: DeliveryStats | null = null
+  const evRows = (deliveryEventsRes.data ?? []) as { event_type: string }[]
+  if (evRows.length > 0) {
+    const counts: Record<string, number> = {}
+    for (const r of evRows) counts[r.event_type] = (counts[r.event_type] ?? 0) + 1
+    const sent      = counts['email_sent']      ?? 0
+    const delivered = counts['email_delivered'] ?? 0
+    const bounced   = counts['email_bounced']   ?? 0
+    const failed    = counts['email_failed']    ?? 0
+    if (sent > 0) {
+      deliveryStats = { sent, delivered, bounced, failed, hasIssues: bounced > 0 || failed > 0 }
+    }
+  }
+
+  return (
+    <div className="-m-8 flex flex-col h-screen overflow-hidden">
+      <SageToolbar pageKey="email" preset={preset} customFrom={params.from} customTo={params.to} autoEnabled={autoSettings.email_auto_enabled} viewAsUserId={viewAsUserId} teamMembers={teamMembers} deliveryStats={deliveryStats} />
+      <div className="flex flex-1 overflow-hidden min-h-0">
+        <EmailTriageDashboard triageEmails={triageEmails} workspaceId={workspaceId} emailProvider={emailProvider} connectedEmail={connectedEmail} autoSync={params.syncing === '1'} readonly={!!viewAsUserId} teamMembers={teamMembers} initialEmailId={params.emailId} initialAction={params.action} />
+        <ActivitySidebar activity={activity} date={activityDate} currentPath="/dashboard/email" viewingAs={viewingAs} />
+      </div>
+    </div>
+  )
+}

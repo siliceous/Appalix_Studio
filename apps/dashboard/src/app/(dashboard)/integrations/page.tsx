@@ -1,0 +1,600 @@
+import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
+import { Header } from '@/components/layout/header'
+import { Plug, Plus } from 'lucide-react'
+import { CrmMigrationSection } from '@/components/settings/crm-migration-section'
+import { getCrmConnections, getImportHistory } from '@/app/actions/crm-import'
+import { PLATFORM_META, formatDate } from '@/lib/utils'
+import { IntegrationActions } from './integration-actions'
+import { GoogleWorkspaceCard } from './google-workspace-card'
+import { IntegrationsClient } from '@/app/(dashboard)/sage/integrations/integrations-client'
+import { SourcesClient } from '@/app/(dashboard)/forms/sources/sources-client'
+import type { Metadata } from 'next'
+import type { Platform, Integration, LeadAdSource, SageIntegration } from '@/lib/types'
+import { SageToolbar } from '@/components/dashboard/sage-toolbar'
+
+type IntegrationRow = Integration & { bots?: { name: string } | null }
+
+export const metadata: Metadata = { title: 'Integrations' }
+
+const CRM_PROVIDERS: { logo: string; name: string; desc: string; guide: string }[] = [
+  { logo: '/integrations/zapier.png',     name: 'Zapier',     desc: 'Route leads to HubSpot, Salesforce, Google Sheets, and 6,000+ apps via a Catch Hook.',        guide: '/resources/connect-zapier' },
+  { logo: '/integrations/hubspot.png',    name: 'HubSpot',    desc: 'Push captured leads directly into HubSpot contacts using a Private App token.',                 guide: '/resources/connect-hubspot' },
+  { logo: '/integrations/intercom.png',   name: 'Intercom',   desc: 'Create Intercom leads instantly when a visitor shares contact details in chat.',                guide: '/resources/connect-intercom' },
+  { logo: '/integrations/zoho.png',       name: 'Zoho CRM',   desc: 'Automatically add leads to Zoho CRM using an OAuth access token.',                             guide: '/resources/connect-zoho-crm' },
+  { logo: '/integrations/salesforce.png', name: 'Salesforce', desc: 'Create Salesforce Lead records via the REST API the moment a lead is captured.',               guide: '/resources/connect-salesforce' },
+  { logo: '__monday__',                   name: 'Monday.com', desc: 'Create Monday.com board items automatically when your bot captures a lead.',                    guide: '/resources/connect-monday' },
+]
+
+// Action label shown on each platform card / connected row
+const PLATFORM_ACTION: Partial<Record<Platform, string>> = {
+  wordpress:          'Download ZIP plugin',
+  web_widget:         'Get embed code',
+  slack:              'Connect Slack',
+  google_chat:        'Connect Google Chat',
+  facebook_messenger: 'Connect Facebook',
+  whatsapp:           'Connect WhatsApp',
+  custom_api:         'View API docs',
+  sms:                'View webhook URL',
+}
+
+// All supported platforms shown in the "add" grid
+const AVAILABLE_PLATFORMS: { platform: Platform; desc: string; guide: string }[] = [
+  { platform: 'sms',                desc: 'Send & receive SMS via Twilio — bot auto-replies included', guide: '/resources/connect-sms' },
+  { platform: 'slack',              desc: 'Respond to messages in Slack channels and DMs',         guide: '/resources/connect-slack' },
+  { platform: 'google_chat',        desc: 'Answer questions in Google Chat spaces',                 guide: '/resources/connect-google-chat' },
+  { platform: 'facebook_messenger', desc: 'Handle Messenger conversations on your Facebook page',  guide: '/resources/connect-facebook-messenger' },
+  { platform: 'whatsapp',           desc: 'Chat with customers on WhatsApp Business',              guide: '/resources/connect-whatsapp' },
+  { platform: 'instagram',          desc: 'Auto-reply to Instagram Direct Messages',               guide: '/resources/connect-instagram' },
+  { platform: 'wordpress',          desc: 'Embed a widget on any WordPress site',                  guide: '/resources/add-wordpress-chatbot' },
+  { platform: 'web_widget',         desc: 'Add a chat widget to any website via script tag',       guide: '/resources/embed-web-widget' },
+  { platform: 'telegram',           desc: 'Deploy your bot on Telegram — DMs and group chats',     guide: '/resources/connect-telegram' },
+  { platform: 'shopify',            desc: 'Connect Woo, Shopify & let bot answer orders & shipping queries.', guide: '/resources/connect-shopify' },
+  { platform: 'custom_api',         desc: 'Connect via REST API — build any custom integration',   guide: '/resources/custom-api-integration' },
+]
+
+export default async function IntegrationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ provider?: string; onboarding?: string; hint?: string; connected?: string; error?: string; crm_connected?: string; crm_error?: string }>
+}) {
+  const { provider: initialProvider, onboarding, hint, connected, error, crm_connected, crm_error } = await searchParams
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: membershipRaw } = await supabase
+    .from('workspace_members').select('workspace_id, role').eq('user_id', user.id).order('created_at', { ascending: true }).limit(1).single()
+  const membership = membershipRaw as { workspace_id: string; role: string } | null
+  if (!membership) redirect('/login')
+
+  const EMAIL_PROVIDERS = ['mailchimp', 'activecampaign', 'convertkit', 'klaviyo', 'constantcontact'] as const
+
+  const admin = createAdminClient()
+  const [{ data: rawIntegrations }, { data: sageIntegrationsRaw }, { data: sourcesRaw }, { data: emailIntegrationsRaw }, { data: allConnectedEmailsRaw }, { data: profilesRaw }, { data: membersRaw }, { data: formIntegConfigsRaw }, { data: allConnectedRaw }, { data: googleOAuthConfigsRaw }] = await Promise.all([
+    supabase.from('integrations').select('*, bots(name)').eq('workspace_id', membership.workspace_id).order('created_at', { ascending: false }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any).from('sage_integrations').select('provider, status').eq('workspace_id', membership.workspace_id).eq('user_id', user.id),
+    supabase.from('lead_ad_sources').select('*').eq('workspace_id', membership.workspace_id),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any).from('sage_integrations').select('id, provider, status, updated_at, sync_enabled, last_synced_at, last_sync_count').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', EMAIL_PROVIDERS),
+    // All connected email integrations for this workspace (gmail + microsoft) — to show per-provider info
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any).from('sage_integrations').select('provider, user_id, config').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', ['gmail', 'microsoft']),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any).from('user_profiles').select('user_id, first_name, last_name'),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any).from('workspace_members').select('user_id, role').eq('workspace_id', membership.workspace_id),
+    // Form plugin configs — to build webhook URLs with secrets for GF/WPForms/Fluent Forms/CF/Webflow/WP
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any).from('sage_integrations').select('provider, config').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', ['gravity_forms', 'google_forms', 'fluent_forms', 'clickfunnels', 'webflow', 'wordpress_forms']),
+    // All connected sage integrations — for connector name/role display
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any).from('sage_integrations').select('provider, user_id').eq('workspace_id', membership.workspace_id).eq('status', 'connected'),
+    // Google OAuth emails — to show which Google account is connected per provider
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any).from('sage_integrations').select('provider, config').eq('workspace_id', membership.workspace_id).eq('status', 'connected').in('provider', ['google_calendar', 'google_drive', 'google_forms']),
+  ])
+  const [crmConnections, crmHistory] = await Promise.all([getCrmConnections(), getImportHistory()])
+
+  // SMS phone numbers
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: phoneNumbersRaw } = await (admin as any)
+    .from('workspace_phone_numbers')
+    .select('id, e164, country_code, capabilities')
+    .eq('workspace_id', membership.workspace_id)
+    .is('released_at', null)
+    .order('purchased_at', { ascending: false })
+  const phoneNumbers = (phoneNumbersRaw ?? []) as Array<{ id: string; e164: string; country_code: string | null; capabilities: { sms: boolean } }>
+
+  const integrations      = (rawIntegrations ?? []) as IntegrationRow[]
+  const adSources         = (sourcesRaw ?? []) as LeadAdSource[]
+  const emailIntegrationsRawTyped = (emailIntegrationsRaw ?? []) as Pick<SageIntegration, 'id' | 'provider' | 'status' | 'updated_at' | 'sync_enabled' | 'last_synced_at' | 'last_sync_count'>[]
+
+  const headersList = await headers()
+  const host        = headersList.get('host') ?? 'appalix.ai'
+  const proto       = host.startsWith('localhost') ? 'http' : 'https'
+  const baseUrl     = `${proto}://${host}`
+
+  // Build webhook URLs with secrets for GF / WPForms / Fluent Forms
+  const SLUG_MAP: Record<string, string> = { gravity_forms: 'gravity-forms', fluent_forms: 'fluent-forms', wordpress_forms: 'wordpress-forms' }
+  type FormCfgRow = { provider: string; config: Record<string, string> }
+  const formWebhookUrls: Record<string, string> = {}
+  for (const row of (formIntegConfigsRaw ?? []) as FormCfgRow[]) {
+    const secret = row.config?.webhook_secret ?? ''
+    const slug   = SLUG_MAP[row.provider] ?? row.provider
+    const base   = `${baseUrl}/api/webhooks/${slug}/${membership.workspace_id}`
+    formWebhookUrls[row.provider] = secret ? `${base}?secret=${encodeURIComponent(secret)}` : base
+  }
+
+  const connectedPlatforms   = new Set(integrations?.map((i) => i.platform))
+  const platformIntegrationId = new Map(integrations?.map((i) => [i.platform, i.id]))
+
+  const sageConnected = new Set<string>(
+    (sageIntegrationsRaw ?? [])
+      .filter((r: { provider: string; status: string }) => r.status === 'connected')
+      .map((r: { provider: string; status: string }) => r.provider)
+  )
+
+  // Build per-provider email info map (provider → { email, userName, role })
+  type ProfileRow = { user_id: string; first_name: string; last_name: string | null }
+  type MemberRow  = { user_id: string; role: string }
+  type EmailRow   = { provider: string; user_id: string; config: Record<string, string> }
+  type ConnRow    = { provider: string; user_id: string }
+  const profileMap = new Map(((profilesRaw ?? []) as ProfileRow[]).map(p => [p.user_id, p]))
+  const memberMap  = new Map(((membersRaw  ?? []) as MemberRow[]).map(m => [m.user_id, m]))
+  const connectedEmailInfoByProvider: Record<string, { email: string; userName: string; role: string }> = {}
+  for (const row of (allConnectedEmailsRaw ?? []) as EmailRow[]) {
+    const p    = profileMap.get(row.user_id)
+    const m    = memberMap.get(row.user_id)
+    const name = p ? [p.first_name, p.last_name].filter(Boolean).join(' ') : ''
+    connectedEmailInfoByProvider[row.provider] = {
+      email:    row.config.from_email ?? '',
+      userName: name,
+      role:     m?.role ?? '',
+    }
+  }
+
+  // Build sync_enabled map for email marketing providers
+  const syncEnabledByProvider: Record<string, boolean> = {}
+  for (const row of emailIntegrationsRawTyped) {
+    syncEnabledByProvider[row.provider] = row.sync_enabled ?? false
+  }
+
+  // Build connector info for all providers (name + role shown on every connected card)
+  const connectedProviderInfo: Record<string, { userName: string; role: string }> = {}
+  const connectedProviderUserId: Record<string, string> = {}
+  for (const row of (allConnectedRaw ?? []) as ConnRow[]) {
+    const p    = profileMap.get(row.user_id)
+    const m    = memberMap.get(row.user_id)
+    const name = p ? [p.first_name, p.last_name].filter(Boolean).join(' ') : ''
+    connectedProviderInfo[row.provider]  = { userName: name, role: m?.role ?? '' }
+    connectedProviderUserId[row.provider] = row.user_id
+  }
+
+  // Google account email + selected form per OAuth provider (calendar, drive, forms)
+  type GoogleOAuthRow = { provider: string; config: Record<string, string> }
+  const googleEmailByProvider: Record<string, string> = {}
+  const googleFormsTitleByProvider: Record<string, string> = {}
+  for (const row of (googleOAuthConfigsRaw ?? []) as GoogleOAuthRow[]) {
+    const email = row.config?.google_email
+    if (email) googleEmailByProvider[row.provider] = email
+    if (row.provider === 'google_forms' && row.config?.form_title) {
+      googleFormsTitleByProvider['google_forms'] = row.config.form_title
+    }
+  }
+
+  // Enrich email integrations with connected-by info for EmailPlatformCard
+  const emailIntegrations = emailIntegrationsRawTyped.map(row => {
+    const uid  = connectedProviderUserId[row.provider]
+    const info = connectedProviderInfo[row.provider]
+    const email = uid === user.id ? (user.email ?? '') : ''
+    return { ...row, connected_by_name: info?.userName || undefined, connected_by_email: email || undefined, connected_by_role: info?.role || undefined }
+  })
+
+  return (
+    <div className="-m-8 flex flex-col flex-1 min-h-0">
+      <SageToolbar pageKey="integrations" />
+      <div className="p-8 pb-16 flex-1 overflow-y-auto">
+      <div className="max-w-5xl mx-auto">
+      <Header
+        title="Integrations"
+        description="Connect your bot to a channel — Slack, WhatsApp, your website, and more"
+        action={
+          <a
+            href="/integrations/new"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add integration
+          </a>
+        }
+      />
+
+      {/* Connected integrations */}
+      {integrations && integrations.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Connected</h2>
+          <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-[#15A4AE]/30 divide-y divide-[#15A4AE]/20">
+            {integrations.map((int) => (
+              <div key={int.id} className="flex items-center gap-4 px-5 py-4">
+                <div className={`px-2.5 py-1 rounded-lg text-xs font-medium ${PLATFORM_META[int.platform]?.color}`}>
+                  {PLATFORM_META[int.platform]?.label}
+                </div>
+                <div className="flex-1">
+                  <a href={`/integrations/${int.id}`} className="text-sm font-medium text-gray-900 hover:text-brand-700 transition-colors">{int.name}</a>
+                  <p className="text-xs text-gray-400">
+                    Bot:{' '}
+                    {int.bots?.name
+                      ? <span>{int.bots.name}</span>
+                      : <span className="text-amber-500 font-medium">No bot attached</span>
+                    }
+                    {' '}· Added {formatDate(int.created_at)}
+                  </p>
+                  {int.last_error && (
+                    <p className="text-xs text-red-500 mt-0.5">{int.last_error}</p>
+                  )}
+                </div>
+                <a
+                  href={`/integrations/${int.id}`}
+                  className="text-xs text-brand-600 hover:text-brand-700 font-medium transition-colors shrink-0"
+                >
+                  {PLATFORM_ACTION[int.platform] ?? 'Setup guide'} →
+                </a>
+                <IntegrationActions id={int.id} status={int.status} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Available platforms */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+          Available platforms
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {AVAILABLE_PLATFORMS.map(({ platform, desc, guide }) => {
+            const connected = connectedPlatforms.has(platform)
+            return (
+              <div
+                key={platform}
+                className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-[#15A4AE]/30 p-4 flex flex-col gap-2"
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`mt-0.5 px-2 py-1 rounded-md text-xs font-medium shrink-0 ${PLATFORM_META[platform]?.color}`}>
+                    {PLATFORM_META[platform]?.label}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border border-purple-200 dark:border-purple-500/25">Bot</span>
+                      {connected && <span className="text-xs text-green-600 font-medium">Connected</span>}
+                    </div>
+                    <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 pt-1">
+                  {connected ? (
+                    <IntegrationActions id={platformIntegrationId.get(platform)!} status="active" compact />
+                  ) : (
+                    <a
+                      href={`/integrations/new?platform=${platform}`}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg shadow-sm transition-colors"
+                    >
+                      <Plug className="w-3 h-3" />
+                      Connect
+                    </a>
+                  )}
+                  <a href={guide} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                    Setup guide →
+                  </a>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </section>
+
+      {/* CRM OAuth feedback */}
+      {crm_connected && (
+        <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#15A4AE]/10 border border-[#15A4AE]/30 text-sm text-[#2a7d6e] dark:text-[#15A4AE]">
+          <span className="text-lg">✅</span>
+          <span><strong className="capitalize">{crm_connected}</strong> connected. You can now import your contacts and deals.</span>
+        </div>
+      )}
+      {crm_error && (
+        <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-sm text-red-700 dark:text-red-400">
+          <span className="text-lg">⚠️</span>
+          <span>CRM connection failed: {decodeURIComponent(crm_error)}. Please try again.</span>
+        </div>
+      )}
+
+      {/* OAuth connection feedback */}
+      {connected === '1' && initialProvider && (
+        <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#15A4AE]/10 border border-[#15A4AE]/30 text-sm text-[#2a7d6e] dark:text-[#15A4AE]">
+          <span className="text-lg">✅</span>
+          <span><strong className="capitalize">{initialProvider}</strong> connected successfully. You can now use it from Sage.</span>
+        </div>
+      )}
+      {error && (
+        <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-sm text-red-700 dark:text-red-400">
+          <span className="text-lg">⚠️</span>
+          <span>Connection failed: {decodeURIComponent(error)}. Please try again.</span>
+        </div>
+      )}
+
+      {/* SMS & Phone */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">SMS & Phone</h2>
+        <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-[#15A4AE]/30 p-4 flex items-start gap-3">
+          <div className="w-12 h-12 rounded-xl bg-[#15A4AE]/10 flex items-center justify-center shrink-0">
+            <svg className="w-6 h-6 text-[#15A4AE]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">SMS</p>
+              {phoneNumbers.length > 0
+                ? <span className="text-xs text-green-600 dark:text-green-400 font-medium">{phoneNumbers.length} number{phoneNumbers.length !== 1 ? 's' : ''} active</span>
+                : <span className="text-xs text-gray-400 font-medium">Not configured</span>
+              }
+            </div>
+            <p className="text-xs text-gray-500 leading-relaxed mb-2">
+              Send and receive SMS — buy numbers for AU, US, GB and let your bots auto-reply.
+            </p>
+            {phoneNumbers.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {phoneNumbers.slice(0, 4).map(n => (
+                  <span key={n.id} className="text-xs font-mono px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300">
+                    {n.e164}
+                  </span>
+                ))}
+                {phoneNumbers.length > 4 && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500">+{phoneNumbers.length - 4} more</span>
+                )}
+              </div>
+            )}
+            <a
+              href="/integrations/sms/setup"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
+            >
+              {phoneNumbers.length > 0 ? 'Manage numbers' : 'Set up SMS'}
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Google Workspace */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Google Workspace</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <GoogleWorkspaceCard
+            id="google_calendar"
+            name="Google Calendar"
+            desc="Lets Sage check availability, schedule meetings, and create events on your behalf."
+            logo="/integrations/google-calendar.png"
+            connectHref="/api/oauth/google-calendar?return=/sage/calendar"
+            isConnected={sageConnected.has('google_calendar')}
+            connectedEmail={googleEmailByProvider['google_calendar']}
+            connectedByName={connectedProviderInfo['google_calendar']?.userName}
+            guide="/resources/connect-google-calendar"
+          />
+          <GoogleWorkspaceCard
+            id="google_forms"
+            name="Google Forms"
+            desc="Read form responses and trigger automations when new responses arrive."
+            logo="/integrations/google-forms.png"
+            connectHref="/api/oauth/google-forms?return=/integrations"
+            isConnected={sageConnected.has('google_forms')}
+            connectedEmail={googleEmailByProvider['google_forms']}
+            connectedByName={connectedProviderInfo['google_forms']?.userName}
+            connectedFormTitle={googleFormsTitleByProvider['google_forms']}
+            guide="/resources/connect-google-forms"
+          />
+          <GoogleWorkspaceCard
+            id="google_drive"
+            name="Google Drive"
+            desc="Index files from Google Drive into your knowledge base so your bot can answer questions from documents."
+            logo="/integrations/google-drive.png"
+            connectHref="/api/oauth/google-drive"
+            isConnected={sageConnected.has('google_drive')}
+            connectedEmail={googleEmailByProvider['google_drive']}
+            connectedByName={connectedProviderInfo['google_drive']?.userName}
+            guide="/resources/connect-google-drive"
+          />
+          <GoogleWorkspaceCard
+            id="google_chat"
+            name="Google Chat"
+            desc="Answer questions in Google Chat spaces and DMs using your bot."
+            logo="/integrations/google-chat.png"
+            connectHref="/integrations/new?platform=google_chat"
+            isConnected={connectedPlatforms.has('google_chat')}
+            guide="/resources/connect-google-chat"
+            noDisconnect
+          />
+        </div>
+      </section>
+
+      {/* Email — Gmail + Microsoft, full width */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Email</h2>
+        <IntegrationsClient
+          connected={sageConnected}
+          standalone={false}
+          providers={['gmail', 'microsoft']}
+          initialExpanded={initialProvider}
+          onboarding={onboarding === '1'}
+          loginHint={hint}
+          connectedEmailInfoByProvider={connectedEmailInfoByProvider}
+          connectedProviderInfo={connectedProviderInfo}
+        />
+      </section>
+
+      {/* Microsoft — OneDrive */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Microsoft</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {([
+            {
+              id: 'onedrive',
+              name: 'OneDrive',
+              desc: 'Connect Microsoft OneDrive to index SharePoint and OneDrive files into your knowledge base.',
+              logo: '/integrations/onedrive.png',
+              href: '/api/oauth/onedrive',
+              isConnected: sageConnected.has('onedrive'),
+              info: connectedProviderInfo['onedrive'],
+            },
+          ]).map(({ id, name, desc, logo, href, isConnected, info }) => (
+            <div key={id} className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-[#15A4AE]/30 p-4 flex items-start gap-3">
+              <div className="w-12 h-12 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 shadow-sm flex items-center justify-center shrink-0 overflow-hidden p-2">
+                <img src={logo} alt={name} className="w-full h-full object-contain" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{name}</p>
+                  {isConnected && <span className="text-xs text-green-600 dark:text-green-400 font-medium">Connected</span>}
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
+                {isConnected && info?.userName && (
+                  <p className="text-[11px] text-gray-400 mt-0.5">Connected by {info.userName}</p>
+                )}
+                <div className="mt-2">
+                  <a href={href} className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${isConnected ? 'bg-gray-100 dark:bg-white/8 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/12' : 'bg-brand-600 hover:bg-brand-700 text-white'}`}>
+                    <Plug className="w-3 h-3" />
+                    {isConnected ? 'Reconnect' : 'Connect'}
+                  </a>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Payments — Stripe, full width */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Payments</h2>
+        <IntegrationsClient
+          connected={sageConnected}
+          standalone={false}
+          providers={['stripe']}
+          connectedProviderInfo={connectedProviderInfo}
+        />
+      </section>
+
+      {/* Form Lead Sources — Google Ads + Meta, Mailchimp + Klaviyo, GF/WPForms/Typeform */}
+      <section id="sage-email-marketing" className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Form Lead Sources</h2>
+        <SourcesClient
+          sources={adSources}
+          workspaceId={membership.workspace_id}
+          baseUrl={baseUrl}
+          emailIntegrations={emailIntegrations}
+          platformLayout="stack"
+          emailLayout="stack"
+          showEmailProviders={['mailchimp']}
+          hideEmailHeading
+        />
+        <div className="mt-4">
+          <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3 px-1">Email Marketing — API Connections</p>
+          <IntegrationsClient
+            connected={sageConnected}
+            standalone={false}
+            providers={['klaviyo', 'activecampaign', 'convertkit', 'constantcontact']}
+            connectedProviderInfo={connectedProviderInfo}
+            syncEnabledByProvider={syncEnabledByProvider}
+          />
+        </div>
+        <div className="mt-4">
+          <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3 px-1">Form Plugins</p>
+          <IntegrationsClient
+            connected={sageConnected}
+            standalone={false}
+            providers={['gravity_forms', 'google_forms', 'typeform', 'fluent_forms', 'clickfunnels', 'webflow', 'wordpress_forms']}
+            workspaceId={membership.workspace_id}
+            formWebhookUrls={formWebhookUrls}
+            connectedProviderInfo={connectedProviderInfo}
+          />
+        </div>
+      </section>
+
+      {/* Tickets — Freshdesk + Zendesk side by side */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Tickets</h2>
+        <IntegrationsClient
+          connected={sageConnected}
+          standalone={false}
+          providers={['freshdesk', 'zendesk']}
+          columns={2}
+          connectedProviderInfo={connectedProviderInfo}
+        />
+      </section>
+
+      {/* Automation — Zapier + Make side by side */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Automation</h2>
+        <IntegrationsClient
+          connected={sageConnected}
+          standalone={false}
+          providers={['zapier', 'make']}
+          columns={2}
+          connectedProviderInfo={connectedProviderInfo}
+        />
+      </section>
+
+      {/* CRM Migration */}
+      <section className="mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">CRM Migration</h2>
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[#15A4AE]/10 text-[#15A4AE]">Pro</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {crmConnections.map(conn => (
+            <CrmMigrationSection key={conn.provider} connections={[conn]} importHistory={crmHistory.filter(r => r.provider === conn.provider)} />
+          ))}
+        </div>
+        <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
+          <strong className="text-gray-500 dark:text-gray-400">What gets imported:</strong>{' '}
+          Contacts (name, email, phone, company, title, city, notes &amp; tags) and Deals (title, value, stage). Duplicates skipped by email. All records tagged with the source CRM.
+        </p>
+      </section>
+
+      {/* CRM & Lead Capture */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">CRM &amp; Lead Capture</h2>
+        <p className="text-xs text-gray-400 mb-3">Configure lead routing on any integration's settings page. Select a provider below to view the setup guide.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          {CRM_PROVIDERS.map((crm) => (
+            <div key={crm.name} className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-[#15A4AE]/30 p-4 flex items-start gap-3">
+              <div className="w-16 h-16 rounded-2xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 shadow-sm flex items-center justify-center shrink-0 overflow-hidden p-2.5">
+                {crm.logo === '__monday__' ? (
+                  <svg viewBox="0 0 40 40" className="w-full h-full">
+                    <rect width="40" height="40" rx="8" fill="white" stroke="#E5E7EB"/>
+                    <ellipse cx="12" cy="24" rx="4" ry="4" fill="#FF3D57"/>
+                    <ellipse cx="20" cy="24" rx="4" ry="4" fill="#FFCB00"/>
+                    <ellipse cx="28" cy="24" rx="4" ry="4" fill="#00CA72"/>
+                  </svg>
+                ) : (
+                  <img src={crm.logo} alt={crm.name} className="w-full h-full object-contain" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{crm.name}</p>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border border-purple-200 dark:border-purple-500/25">Bot</span>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed mt-0.5">{crm.desc}</p>
+                <a href={crm.guide} className="text-xs text-brand-600 hover:text-brand-700 font-medium mt-1.5 inline-block">
+                  Setup guide →
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+    </div>
+  </div>
+  )
+}

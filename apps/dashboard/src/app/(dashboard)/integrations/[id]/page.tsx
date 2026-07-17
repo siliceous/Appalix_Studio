@@ -1,0 +1,753 @@
+import { createClient } from '@/lib/supabase/server'
+import { notFound, redirect } from 'next/navigation'
+import { Header } from '@/components/layout/header'
+import { PLATFORM_META } from '@/lib/utils'
+import { CheckCircle2, Pencil, Download } from 'lucide-react'
+import type { Metadata } from 'next'
+import type { Integration } from '@/lib/types'
+import { CopyField } from './copy-field'
+import { ConnectedBanner } from './connected-banner'
+import { SlackChannelPicker } from './slack-channel-picker'
+import { FacebookPageSwitcher } from './facebook-page-switcher'
+import { DeleteIntegrationButton } from './delete-integration-button'
+import { ShopifyInjectButton } from './shopify-inject-button'
+import { InstagramResubscribeButton } from './instagram-resubscribe-button'
+
+export const metadata: Metadata = { title: 'Integration setup' }
+
+const API_URL  = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.appalix.ai'
+const APP_URL  = process.env.NEXT_PUBLIC_APP_URL      ?? 'https://app.appalix.ai'
+
+export default async function IntegrationSetupPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ connected?: string }>
+}) {
+  const { id } = await params
+  const { connected } = await searchParams
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: membershipRaw } = await supabase
+    .from('workspace_members').select('workspace_id').eq('user_id', user.id).order('created_at', { ascending: true }).limit(1).single()
+  const membership = membershipRaw as { workspace_id: string } | null
+  if (!membership) redirect('/login')
+
+  const { data: intRaw } = await supabase
+    .from('integrations')
+    .select('*, bots(name)')
+    .eq('id', id)
+    .eq('workspace_id', membership.workspace_id)
+    .single()
+  if (!intRaw) notFound()
+
+  const integration = intRaw as Integration & { bots?: { name: string } | null }
+  const cfg = integration.config as Record<string, unknown>
+  const meta = PLATFORM_META[integration.platform]
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      {connected && <ConnectedBanner platform={PLATFORM_META[integration.platform]?.label ?? connected} />}
+      <Header
+        title={integration.name}
+        description="Setup guide and credentials for this integration"
+        action={
+          <div className="flex items-center gap-2">
+            <a
+              href={`/integrations/${id}/edit`}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 dark:bg-white/5 dark:border-white/10 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/10 transition-colors"
+            >
+              <Pencil className="w-4 h-4" />
+              Edit
+            </a>
+            <DeleteIntegrationButton id={id} />
+          </div>
+        }
+      />
+
+      {/* Status card */}
+      <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5 mb-5 flex items-center gap-4">
+        <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${meta?.color}`}>
+          {meta?.label}
+        </span>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{integration.name}</p>
+          <p className="text-xs text-gray-400 mt-0.5">Bot: {integration.bots?.name ?? '—'}</p>
+        </div>
+        <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${
+          integration.status === 'active'
+            ? 'bg-green-100 text-green-700'
+            : 'bg-gray-100 text-gray-500'
+        }`}>
+          <CheckCircle2 className="w-3 h-3" />
+          {integration.status}
+        </span>
+      </div>
+
+      {/* Platform-specific setup */}
+      {integration.platform === 'wordpress' && (
+        <WordPressSetup integrationId={id} cfg={cfg} apiUrl={API_URL} />
+      )}
+      {integration.platform === 'web_widget' && (
+        <WebWidgetSetup integrationId={id} apiUrl={API_URL} />
+      )}
+      {integration.platform === 'custom_api' && (
+        <CustomApiSetup integrationId={id} cfg={cfg} apiUrl={API_URL} />
+      )}
+      {integration.platform === 'slack' && (
+        <SlackSetup integrationId={id} cfg={cfg} apiUrl={API_URL} />
+      )}
+      {integration.platform === 'facebook_messenger' && (
+        <FacebookSetup integrationId={id} cfg={cfg} apiUrl={API_URL} />
+      )}
+      {integration.platform === 'whatsapp' && (
+        <WhatsAppSetup integrationId={id} cfg={cfg} apiUrl={API_URL} />
+      )}
+      {integration.platform === 'google_chat' && (
+        <GoogleChatSetup integrationId={id} cfg={cfg} apiUrl={API_URL} />
+      )}
+      {integration.platform === 'telegram' && (
+        <TelegramSetup integrationId={id} cfg={cfg} apiUrl={API_URL} />
+      )}
+      {integration.platform === 'instagram' && (
+        <InstagramSetup integrationId={id} cfg={cfg} apiUrl={API_URL} />
+      )}
+      {integration.platform === 'shopify' && (
+        <ShopifySetup integrationId={id} cfg={cfg} apiUrl={API_URL} />
+      )}
+      {integration.platform === 'sms' && (
+        <SmsSetup integrationId={id} cfg={cfg} appUrl={APP_URL} />
+      )}
+    </div>
+  )
+}
+
+// ─── WordPress ──────────────────────────────────────────────────────────────
+
+function WordPressSetup({
+  integrationId,
+  cfg,
+  apiUrl,
+}: {
+  integrationId: string
+  cfg: Record<string, unknown>
+  apiUrl: string
+}) {
+  const endpoint = `${apiUrl}/webhooks/wordpress/${integrationId}`
+  const apiKey   = (cfg.api_key as string) || '(not set)'
+
+  return (
+    <div className="space-y-5">
+      <SetupSection title="Step 1 — Install the Appalix plugin">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Download and install the Appalix Chat plugin on your WordPress site. It replaces the
+          Claude AI Chat plugin and routes all chat traffic through your Appalix workspace.
+        </p>
+        <a
+          href="https://appalix.ai/downloads/appalix-chat.zip"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          Download appalix-chat.zip
+        </a>
+        <p className="text-xs text-gray-400 mt-3">
+          WordPress Admin → Plugins → Add New → Upload Plugin → choose the zip → Install Now → Activate
+        </p>
+      </SetupSection>
+
+      <SetupSection title="Step 2 — Configure the plugin">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          In WordPress, go to <strong>Settings → Appalix Chat</strong> and enter these two values:
+        </p>
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">API Endpoint</p>
+            <CopyField value={endpoint} />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">API Key</p>
+            <CopyField value={apiKey} secret />
+          </div>
+        </div>
+      </SetupSection>
+
+      <SetupSection title="Step 3 — Verify">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Save the plugin settings. Open your WordPress site and start a chat — messages will be
+          processed by your bot and conversations will appear in the Appalix dashboard under{' '}
+          <strong>Conversations</strong>.
+        </p>
+      </SetupSection>
+    </div>
+  )
+}
+
+// ─── Web Widget ──────────────────────────────────────────────────────────────
+
+function WebWidgetSetup({
+  integrationId,
+  apiUrl,
+}: {
+  integrationId: string
+  apiUrl: string
+}) {
+  const snippet = `<script>
+  window.AppalixConfig = { integrationId: '${integrationId}' };
+</script>
+<script src="${apiUrl}/widget.js" async></script>`
+
+  return (
+    <div className="space-y-5">
+      <SetupSection title="Embed the chat widget">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Paste this snippet before the closing <code className="text-xs bg-gray-100 dark:bg-white/10 px-1 py-0.5 rounded">&lt;/body&gt;</code> tag
+          of every page you want the chat widget to appear on.
+        </p>
+        <CopyField value={snippet} multiline />
+      </SetupSection>
+
+      <SetupSection title="WordPress / CMS sites">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Use a plugin like <strong>Header Footer Code Manager</strong> or <strong>Insert Headers and Footers</strong>{' '}
+          to inject the snippet into your site footer without editing theme files.
+        </p>
+      </SetupSection>
+    </div>
+  )
+}
+
+// ─── Custom API ───────────────────────────────────────────────────────────────
+
+function CustomApiSetup({
+  integrationId,
+  cfg,
+  apiUrl,
+}: {
+  integrationId: string
+  cfg: Record<string, unknown>
+  apiUrl: string
+}) {
+  const endpoint = `${apiUrl}/chat/custom/${integrationId}`
+  const apiKey   = (cfg.api_key as string) || '(not set)'
+
+  const curlExample = `curl -X POST '${endpoint}' \\
+  -H 'Content-Type: application/json' \\
+  -H 'x-api-key: ${apiKey}' \\
+  -d '{"message": "Hello!", "user_id": "user-123"}'`
+
+  return (
+    <div className="space-y-5">
+      <SetupSection title="Endpoint">
+        <CopyField value={endpoint} />
+      </SetupSection>
+      <SetupSection title="API Key">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          Send this key in the <code className="text-xs bg-gray-100 dark:bg-white/10 px-1 py-0.5 rounded">x-api-key</code> header with every request.
+        </p>
+        <CopyField value={apiKey} secret />
+      </SetupSection>
+      <SetupSection title="Example request">
+        <CopyField value={curlExample} multiline />
+        <p className="text-xs text-gray-400 mt-2">
+          Response: <code className="text-xs bg-gray-100 dark:bg-white/10 px-1 py-0.5 rounded">{'{"reply":"...","conversation_id":"..."}'}</code>
+        </p>
+      </SetupSection>
+    </div>
+  )
+}
+
+// ─── Slack ────────────────────────────────────────────────────────────────────
+
+function SlackSetup({
+  integrationId,
+  apiUrl,
+}: {
+  integrationId: string
+  cfg: Record<string, unknown>
+  apiUrl: string
+}) {
+  const webhookUrl = `${apiUrl}/webhooks/slack/${integrationId}`
+
+  return (
+    <div className="space-y-5">
+      <SetupSection title="Slack app configuration">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          In your Slack app settings (<a href="https://api.slack.com/apps" target="_blank" rel="noreferrer" className="text-brand-600 hover:underline">api.slack.com/apps</a>),
+          set the Event Subscriptions Request URL to:
+        </p>
+        <CopyField value={webhookUrl} />
+        <p className="text-xs text-gray-400 mt-3">
+          Subscribe to the <strong>message.channels</strong> and <strong>message.im</strong> bot events,
+          then reinstall the app to your workspace.
+        </p>
+      </SetupSection>
+      <SetupSection title="Active channels">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Choose which channels and DMs your bot responds in. Leave all unchecked to respond everywhere.
+        </p>
+        <SlackChannelPicker integrationId={integrationId} />
+      </SetupSection>
+    </div>
+  )
+}
+
+// ─── Facebook Messenger ───────────────────────────────────────────────────────
+
+function FacebookSetup({
+  integrationId,
+  cfg,
+}: {
+  integrationId: string
+  cfg: Record<string, unknown>
+  apiUrl: string
+}) {
+  const pageName = (cfg.page_name as string) || ''
+  const pageId   = (cfg.page_id   as string) || ''
+  const appId    = process.env.MESSENGER_APP_ID || process.env.META_APP_ID || process.env.FACEBOOK_APP_ID || ''
+
+  return (
+    <div className="space-y-5">
+      <SetupSection title="Connected Facebook Page">
+        <div className="flex items-center gap-3">
+          <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {pageName || 'Facebook Page'}
+            </p>
+            {pageId && <p className="text-xs text-gray-400 mt-0.5">Page ID: {pageId}</p>}
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
+          Your bot is live. Any message sent to this Facebook Page via Messenger will receive
+          an automatic reply from your bot.
+        </p>
+        <FacebookPageSwitcher
+          integrationId={integrationId}
+          appId={appId}
+          currentPageName={pageName}
+          currentPageId={pageId}
+        />
+      </SetupSection>
+      <SetupSection title="Testing">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Open Messenger and send a message to your Facebook Page. Your bot will reply within
+          a few seconds. Make sure the Page has Messaging turned on in{' '}
+          <strong>Page Settings → Messaging</strong>.
+        </p>
+      </SetupSection>
+    </div>
+  )
+}
+
+// ─── WhatsApp ─────────────────────────────────────────────────────────────────
+
+function WhatsAppSetup({
+  integrationId,
+  cfg,
+  apiUrl,
+}: {
+  integrationId: string
+  cfg: Record<string, unknown>
+  apiUrl: string
+}) {
+  const webhookUrl  = `${apiUrl}/webhooks/whatsapp/${integrationId}`
+  const verifyToken = (cfg.verify_token as string) || '(not set)'
+
+  return (
+    <div className="space-y-5">
+      <SetupSection title="Step 1 — Register your webhook in Meta">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          In your{' '}
+          <a href="https://developers.facebook.com/apps" target="_blank" rel="noreferrer" className="text-brand-600 hover:underline">
+            Meta developer app
+          </a>
+          , go to <strong>WhatsApp → Configuration → Webhooks</strong> and click <strong>Edit</strong>.
+          Enter the values below:
+        </p>
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Callback URL</p>
+            <CopyField value={webhookUrl} />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Verify Token</p>
+            <CopyField value={verifyToken} secret />
+          </div>
+        </div>
+      </SetupSection>
+      <SetupSection title="Step 2 — Subscribe to messages">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          After verification, click <strong>Manage</strong> next to the webhook and subscribe to the{' '}
+          <strong>messages</strong> field. Your bot will now auto-reply to every incoming WhatsApp message.
+        </p>
+      </SetupSection>
+    </div>
+  )
+}
+
+// ─── Google Chat ─────────────────────────────────────────────────────────────
+
+function GoogleChatSetup({
+  integrationId,
+  apiUrl,
+}: {
+  integrationId: string
+  cfg: Record<string, unknown>
+  apiUrl: string
+}) {
+  const endpointUrl = `${apiUrl}/webhooks/google-chat/${integrationId}`
+
+  return (
+    <div className="space-y-5">
+      <SetupSection title="Step 1 — Enable Google Chat API">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          In{' '}
+          <a href="https://console.cloud.google.com" target="_blank" rel="noreferrer" className="text-brand-600 hover:underline">
+            Google Cloud Console
+          </a>
+          , go to <strong>APIs &amp; Services → Library</strong>, search for <strong>Google Chat API</strong>,
+          and click <strong>Enable</strong> (if not already enabled).
+        </p>
+      </SetupSection>
+
+      <SetupSection title="Step 2 — Configure your Chat app">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Go to <strong>Google Chat API → Configuration</strong> in the Cloud Console.
+          Fill in the app name and avatar, then set the Connection settings:
+        </p>
+        <ul className="space-y-1.5 text-sm text-gray-600 dark:text-gray-400 list-disc list-inside mb-4">
+          <li>Connection type: <strong>HTTP endpoint URL</strong></li>
+          <li>Paste the URL below as the App URL</li>
+        </ul>
+        <CopyField value={endpointUrl} />
+        <p className="text-xs text-gray-400 mt-3">
+          Save the configuration — no OAuth review required for internal use.
+        </p>
+      </SetupSection>
+
+      <SetupSection title="Step 3 — Add the bot to a Space">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Open Google Chat, go to any Space (or create one), click <strong>Add people &amp; apps</strong>,
+          and search for your app by name. Once added, your bot will reply to every message in that Space.
+        </p>
+      </SetupSection>
+    </div>
+  )
+}
+
+// ─── Telegram ────────────────────────────────────────────────────────────────
+
+function TelegramSetup({
+  integrationId,
+  cfg,
+  apiUrl,
+}: {
+  integrationId: string
+  cfg: Record<string, unknown>
+  apiUrl: string
+}) {
+  const webhookUrl   = `${apiUrl}/webhooks/telegram/${integrationId}`
+  const botToken     = (cfg.bot_token as string) || '(not set)'
+  const botUsername  = cfg.bot_username as string | undefined
+
+  return (
+    <div className="space-y-5">
+      {/* Step 1 — done */}
+      <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-green-200 dark:border-green-500/30 p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Step 1 — Bot token saved</p>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          Your bot token from{' '}
+          <a href="https://t.me/BotFather" target="_blank" rel="noreferrer" className="text-brand-600 hover:underline font-medium">
+            @BotFather
+          </a>
+          {' '}is stored and ready.
+        </p>
+        <div>
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Bot token (stored)</p>
+          <CopyField value={botToken} secret />
+        </div>
+      </div>
+
+      {/* Step 2 — done */}
+      <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border border-green-200 dark:border-green-500/30 p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Step 2 — Webhook registered</p>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          Appalix registered the webhook with Telegram automatically. No manual setup needed.
+        </p>
+        <div>
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Webhook URL</p>
+          <CopyField value={webhookUrl} />
+        </div>
+      </div>
+
+      {/* Step 3 — action required */}
+      <div className="bg-[#15A4AE]/5 dark:bg-[#15A4AE]/10 rounded-xl border border-[#15A4AE]/30 p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-4 h-4 rounded-full border-2 border-[#15A4AE] shrink-0" />
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Step 3 — Send your bot a message</p>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Everything is set up. Open Telegram, search for your bot by username, and send it a message — it will reply within seconds.
+          Group chats work too: add the bot to any group and it responds to every message.
+        </p>
+        <a
+          href={botUsername ? `https://t.me/${botUsername}` : 'https://t.me'}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#15A4AE] hover:bg-[#0e8f98] text-white text-sm font-medium rounded-lg transition-colors"
+        >
+          {botUsername ? `Open @${botUsername} →` : 'Open Telegram →'}
+        </a>
+      </div>
+    </div>
+  )
+}
+
+// ─── Instagram ────────────────────────────────────────────────────────────────
+
+function InstagramSetup({
+  integrationId,
+  cfg,
+}: {
+  integrationId: string
+  cfg: Record<string, unknown>
+  apiUrl: string
+}) {
+  const igUsername = (cfg.instagram_username as string) || ''
+  const igAccountId = (cfg.instagram_account_id as string) || ''
+  const pageName = (cfg.page_name as string) || ''
+
+  return (
+    <div className="space-y-5">
+      <SetupSection title="Connected Instagram Account">
+        <div className="flex items-center gap-3">
+          <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {igUsername ? `@${igUsername}` : 'Instagram Business Account'}
+            </p>
+            {igAccountId && (
+              <p className="text-xs text-gray-400 mt-0.5">Account ID: {igAccountId}</p>
+            )}
+            {pageName && (
+              <p className="text-xs text-gray-400 mt-0.5">Via Facebook Page: {pageName}</p>
+            )}
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
+          Your bot is live. Any direct message sent to your Instagram Business account will
+          receive an automatic reply from your bot.
+        </p>
+      </SetupSection>
+
+      <SetupSection title="Requirements">
+        <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+            Instagram account must be a <strong>Business</strong> or <strong>Creator</strong> account
+          </li>
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+            Instagram account must be linked to a Facebook Page
+          </li>
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+            Message Control must be enabled in Instagram Professional Settings
+          </li>
+        </ul>
+      </SetupSection>
+
+      <SetupSection title="Webhook Subscriptions">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          If your bot isn't responding to DMs, click below to re-register the webhook subscriptions
+          with Meta. This is safe to run at any time.
+        </p>
+        <InstagramResubscribeButton integrationId={integrationId} />
+      </SetupSection>
+
+      <SetupSection title="Testing">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Send a DM to your Instagram account from another account. Your bot will reply within
+          a few seconds. Note: Instagram only delivers webhooks for messages from accounts that
+          have not been blocked, and your Meta app must be live or in developer mode with the
+          sender as a tester.
+        </p>
+        {igUsername && (
+          <a
+            href={`https://www.instagram.com/${igUsername}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg text-white transition-colors"
+            style={{ backgroundColor: '#E1306C' }}
+          >
+            Open @{igUsername} on Instagram →
+          </a>
+        )}
+      </SetupSection>
+    </div>
+  )
+}
+
+// ─── SMS ─────────────────────────────────────────────────────────────────────
+
+function SmsSetup({ integrationId, cfg, appUrl }: { integrationId: string; cfg: Record<string, unknown>; appUrl: string }) {
+  const webhookUrl  = `${appUrl}/api/webhooks/twilio/${integrationId}`
+  const phoneNumber = (cfg.phone_number as string) || '(not set)'
+
+  return (
+    <div className="space-y-5">
+      <SetupSection title="Step 1 — Add your Twilio number">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Go to your <strong>Twilio Console → Phone Numbers → Manage → Active numbers</strong>
+          , select the number you want to use, and make sure it matches the one saved on this integration.
+        </p>
+        <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-white/5 rounded-lg border dark:border-white/10">
+          <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">Phone number</span>
+          <span className="text-sm font-mono font-medium text-gray-800 dark:text-gray-200">{phoneNumber}</span>
+        </div>
+      </SetupSection>
+
+      <SetupSection title="Step 2 — Point Twilio to this webhook">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          In the Twilio Console, go to your phone number → <strong>Messaging Configuration</strong>.
+          Set <strong>A message comes in</strong> → <strong>Webhook</strong> to the URL below (HTTP POST).
+        </p>
+        <CopyField value={webhookUrl} />
+      </SetupSection>
+
+      <SetupSection title="Step 3 — Assign a bot (optional)">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          If you want the bot to auto-reply to every inbound SMS, go to{' '}
+          <a href={`/integrations/${integrationId}/edit`} className="text-brand-600 hover:underline">Edit this integration</a>{' '}
+          and select a bot from the dropdown. Leave it blank for manual-reply-only mode.
+        </p>
+      </SetupSection>
+    </div>
+  )
+}
+
+// ─── Shared UI ───────────────────────────────────────────────────────────────
+
+function SetupSection({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="bg-white dark:bg-[#2a2a2a] rounded-xl border dark:border-white/10 p-5">
+      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">{title}</p>
+      {children}
+    </div>
+  )
+}
+
+// ─── Shopify ──────────────────────────────────────────────────────────────────
+
+function ShopifySetup({ integrationId, cfg, apiUrl }: { integrationId: string; cfg: Record<string, unknown>; apiUrl: string }) {
+  const shopDomain      = cfg.shop_domain    as string | undefined
+  const shopName        = cfg.shop_name      as string | undefined
+  const scriptTagSrc    = cfg.script_tag_src as string | undefined
+  const scriptTagDone   = !!scriptTagSrc
+
+  const systemPromptSuggestion = `You have access to this store's Shopify data. When a customer asks about their order status, shipping, or order history, use your Shopify tools to look it up. Always ask for their email address or order number if not provided.`
+
+  const embedSnippet = `<script>
+  window.AppalixConfig = { integrationId: '${integrationId}' };
+</script>
+<script src="${apiUrl}/widget.js" async></script>`
+
+  return (
+    <div className="space-y-4 mt-6">
+      <SetupStep
+        number={1}
+        title="Store connected"
+        done
+        desc={shopDomain
+          ? `Connected to ${shopName ? `${shopName} (${shopDomain})` : shopDomain}. Order webhooks registered automatically.`
+          : 'Your Shopify store credentials are saved.'}
+      />
+
+      <SetupStep
+        number={2}
+        title="Chat widget injected"
+        done={scriptTagDone}
+        desc={scriptTagDone
+          ? `The chat widget has been automatically added to every page on your store via Shopify ScriptTag — no theme editing needed.`
+          : 'The widget could not be auto-injected (your Admin API token may be missing the write_script_tags scope). Use the manual snippet below or reconnect with the correct token.'}
+      >
+        {!scriptTagDone && (
+          <div className="mt-3 space-y-4">
+            <ShopifyInjectButton integrationId={integrationId} />
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Or paste manually before <code className="text-xs bg-gray-100 dark:bg-white/10 px-1 rounded">&lt;/body&gt;</code> in <strong>theme.liquid</strong>:</p>
+              <CopyField value={embedSnippet} multiline />
+            </div>
+          </div>
+        )}
+      </SetupStep>
+
+      <SetupStep
+        number={3}
+        title="Enable tools on your bot"
+        done={false}
+        desc='Go to your bot settings and turn on "Enable tools". This lets the bot call the Shopify API mid-conversation to look up orders, shipping status, and customer details.'
+      />
+
+      <SetupStep
+        number={4}
+        title="Add Shopify context to your bot's system prompt"
+        done={false}
+        desc="Tell the bot it has Shopify access. Add this to the system prompt:"
+      >
+        <div className="mt-3">
+          <CopyField value={systemPromptSuggestion} multiline />
+        </div>
+      </SetupStep>
+
+      <SetupStep
+        number={5}
+        title="Test it"
+        done={false}
+        desc='Open your store and start a chat. Try asking: "Where is my order #1001?" — the bot will look it up live using your Shopify data.'
+      />
+    </div>
+  )
+}
+
+function SetupStep({
+  number,
+  title,
+  desc,
+  done,
+  children,
+}: {
+  number: number
+  title: string
+  desc: string
+  done: boolean
+  children?: React.ReactNode
+}) {
+  return (
+    <div className="flex gap-4 p-4 rounded-xl border dark:border-white/10 bg-white dark:bg-[#2a2a2a]">
+      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 ${done ? 'bg-green-100 text-green-700' : 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400'}`}>
+        {done ? '✓' : number}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">{title}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{desc}</p>
+        {children}
+      </div>
+    </div>
+  )
+}
