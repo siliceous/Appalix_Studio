@@ -220,16 +220,13 @@ export default function TalkingActors() {
           parsedMetadata: parseImageMetadata(img.prompt)
         }))
 
-        // Filter out duplicates by ID (handle -0, -1 suffixes)
-        const existingIds = new Set(savedImages.map(img => {
-          const baseId = img.id.replace(/-\d+$/, '')
-          return baseId
-        }))
+        // Filter out duplicates by image URL (most reliable dedup key)
+        const existingUrls = new Set(savedImages.map(img => img.image))
         const uniqueNewImages = parsedImages.filter((img: GeneratedImage) => {
-          const baseId = img.id.replace(/-\d+$/, '')
-          return !existingIds.has(baseId)
+          return !existingUrls.has(img.image)
         })
         console.log("[TalkingActors] Adding", uniqueNewImages.length, "new unique images")
+        console.log("[TalkingActors] New image URLs:", uniqueNewImages.map(img => img.image))
 
         // Merge saved + imported
         const merged = [...savedImages, ...uniqueNewImages]
