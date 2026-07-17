@@ -438,7 +438,8 @@ export default function AIStudio() {
                       {selectedImageIds.length} selected
                     </div>
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        console.log('[SelectActors] IMPORT BUTTON CLICKED', e)
                         console.log('[SelectActors] Selected IDs:', selectedImageIds)
                         console.log('[SelectActors] All images count:', images.length)
                         const imagesToImport = images.filter(img => selectedImageIds.includes(img.id) && !img.deletedAt)
