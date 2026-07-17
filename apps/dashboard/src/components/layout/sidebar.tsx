@@ -6,28 +6,7 @@ import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import {
   LayoutDashboard,
-  Bot,
-  MessageSquare,
-  Smartphone,
-  Phone,
-  Plug,
   LogOut,
-  Kanban,
-  Users,
-  Ticket,
-  Mail,
-  FileText,
-  FolderOpen,
-  ListFilter,
-  Receipt,
-  Clock,
-  Target,
-  Zap,
-  Palette,
-  CalendarDays,
-  Wallet,
-  ShieldCheck,
-  Send,
   Video,
   Users as ActorIcon,
   Sparkles,
@@ -57,65 +36,17 @@ interface NavGroup {
 
 const NAV_GROUPS: NavGroup[] = [
   {
+    label: 'AI Studio',
     items: [
-      { href: '/dashboard',         label: 'Overview',       icon: LayoutDashboard },
-      { href: '/dashboard/email',   label: 'Emails',         icon: Mail,            sub: true },
-      { href: '/dashboard/sms',     label: 'SMS',            icon: Smartphone,      sub: true },
-      { href: '/dashboard/calls',   label: 'Phone Calls',    icon: Phone,           sub: true },
-      { href: '/dashboard/bots',    label: 'Conversations',  icon: MessageSquare,   sub: true },
-      { href: '/dashboard/forms',   label: 'Forms',          icon: FileText,        sub: true },
-      { href: '/dashboard/tickets', label: 'Tickets',        icon: Ticket,          sub: true },
-    ],
-  },
-  {
-    label: 'Studio',
-    items: [
-      { href: '/ai-studio', label: 'AI Studio', icon: Sparkles, adminOnly: true },
-      { href: '/ai-studio/create-image', label: 'Create Image', icon: Sparkles, adminOnly: true, sub: true },
-      { href: '/studio/talking-actors', label: 'Talking Actors', icon: ActorIcon, adminOnly: true },
-      { href: '/ai-studio/create-video', label: 'Video Generator', icon: Video, adminOnly: true, sub: true },
-    ],
-  },
-  {
-    label: 'Agent',
-    items: [
-      { href: '/bots',          label: 'Bots',         icon: Bot,      adminOnly: true },
-      { href: '/integrations',  label: 'Integrations', icon: Plug,     adminOnly: true },
-      { href: '/phone',          label: 'Phone Numbers', icon: Phone,     adminOnly: true },
-      { href: '/settings/compliance', label: 'Compliance', icon: ShieldCheck, adminOnly: true },
-    ],
-  },
-  {
-    label: 'Sage',
-    pro: true,
-    items: [
-      { href: '/sage/branding',           label: 'Branding',        icon: Palette,    permissionKey: 'can_view_pipelines' },
-      { href: '/sage/prospects',          label: 'Lead Enrichment', icon: Target,     permissionKey: 'can_view_pipelines' },
-      { href: '/sage/automation-builder', label: 'Automations',     icon: Zap,        permissionKey: 'can_view_pipelines' },
-      { href: '/sage/rules',              label: 'Rules',            icon: ListFilter, adminOnly: true                     },
-    ],
-  },
-  {
-    label: 'Email Marketing',
-    items: [
-      { href: '/email/campaigns', label: 'Campaigns', icon: Send, adminOnly: true },
-    ],
-  },
-  {
-    label: 'CRM',
-    pro: true,
-    items: [
-      { href: '/sage/contacts',  label: 'Contacts',          icon: Users,         permissionKey: 'can_view_contacts'  },
-      { href: '/sage/calendar',  label: 'Calendar',          icon: CalendarDays,  permissionKey: 'can_view_pipelines' },
-      { href: '/sage/pipelines', label: 'Pipelines',         icon: Kanban,        permissionKey: 'can_view_pipelines' },
-      { href: '/sage/projects',  label: 'Projects',          icon: FolderOpen,    permissionKey: 'can_view_projects'  },
-      { href: '/sage/quotes',    label: 'Quotes & Invoices', icon: Receipt,       permissionKey: 'can_view_projects'  },
+      { href: '/ai-studio', label: 'Library', icon: Sparkles },
+      { href: '/ai-studio/create-image', label: 'Create Image', icon: Sparkles, sub: true },
+      { href: '/studio/talking-actors', label: 'Talking Actors', icon: ActorIcon },
+      { href: '/ai-studio/create-video', label: 'Video Generator', icon: Video, sub: true },
     ],
   },
   {
     items: [
-      { href: '/my-activity',  label: 'My Activity', icon: Clock },
-      { href: '/full/dashboard',  label: 'Full Dashboard', icon: LayoutDashboard },
+      { href: '/settings', label: 'Settings', icon: LayoutDashboard },
     ],
   },
 ]
