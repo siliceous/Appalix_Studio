@@ -141,7 +141,7 @@ export default function TalkingActors() {
   const [selectedGender, setSelectedGender] = useState<string | null>(null)
   const [selectedDateRange, setSelectedDateRange] = useState<string | null>(null)
   const [credits, setCredits] = useState(0)
-  const [imageZoom, setImageZoom] = useState(1)
+  const [imageZoom, setImageZoom] = useState(0.5)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [showSaveDialog, setShowSaveDialog] = useState(false)
@@ -226,10 +226,10 @@ export default function TalkingActors() {
           return !existingUrls.has(img.image)
         })
         console.log("[TalkingActors] Adding", uniqueNewImages.length, "new unique images")
-        console.log("[TalkingActors] New image URLs:", uniqueNewImages.map(img => img.image))
+        console.log("[TalkingActors] New image URLs:", uniqueNewImages.map((img: GeneratedImage) => img.image))
 
-        // Merge saved + imported
-        const merged = [...savedImages, ...uniqueNewImages]
+        // Merge imported + saved (new images on top)
+        const merged = [...uniqueNewImages, ...savedImages]
 
         // Persist to localStorage
         localStorage.setItem("talkingActorsImages", JSON.stringify(merged))
@@ -506,12 +506,12 @@ export default function TalkingActors() {
         const newIdx = fullscreenImageIndex - 1
         setFullscreenImageIndex(newIdx)
         setFullscreenImage(filteredImages[newIdx])
-        setImageZoom(1)
+        setImageZoom(0.5)
       } else if (e.key === 'ArrowRight' && fullscreenImageIndex < filteredImages.length - 1) {
         const newIdx = fullscreenImageIndex + 1
         setFullscreenImageIndex(newIdx)
         setFullscreenImage(filteredImages[newIdx])
-        setImageZoom(1)
+        setImageZoom(0.5)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -782,7 +782,7 @@ export default function TalkingActors() {
                               ? 'border-blue-500 shadow-lg shadow-blue-500/50'
                               : 'border-gray-600 hover:border-gray-500 shadow-md'
                           }`}
-                          onClick={() => { setFullscreenImage(image); setFullscreenImageIndex(idx); setImageZoom(1) }}
+                          onClick={() => { setFullscreenImage(image); setFullscreenImageIndex(idx); setImageZoom(0.5) }}
                         >
                           <img
                             src={image.image}
@@ -842,8 +842,8 @@ export default function TalkingActors() {
       </div>
 
       {fullscreenImage && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex" onClick={() => { setFullscreenImage(null); setImageZoom(1) }}>
-          <div className="flex-1 flex items-center justify-center overflow-hidden p-4 relative" ref={imageContainerRef} onWheel={(e) => { e.preventDefault(); setImageZoom(Math.max(0.5, Math.min(50, imageZoom + e.deltaY * 0.001))) }} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/90 z-50 flex" onClick={() => { setFullscreenImage(null); setImageZoom(0.5) }}>
+          <div className="flex-1 flex items-center justify-center overflow-hidden p-4 relative" ref={imageContainerRef} onWheel={(e) => { e.preventDefault(); setImageZoom(Math.max(0.5, Math.min(1, imageZoom + e.deltaY * 0.001))) }} onClick={(e) => e.stopPropagation()}>
             <div
               className="overflow-auto scrollbar-hide"
               style={{ userSelect: 'none', cursor: isDragging ? 'grabbing' : 'grab', width: '100%', height: '100%' }}
@@ -864,21 +864,19 @@ export default function TalkingActors() {
               onMouseUp={() => setIsDragging(false)}
               onMouseLeave={() => setIsDragging(false)}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '100%', minHeight: '100%' }}>
-                <img src={fullscreenImage.image} alt={fullscreenImage.prompt} style={{ width: `${imageZoom * 100}%`, height: 'auto', flexShrink: 0 }} className="object-contain pointer-events-none" />
-              </div>
+              <img src={fullscreenImage.image} alt={fullscreenImage.prompt} style={{ width: `${imageZoom * 100}%`, height: 'auto', margin: 'auto' }} className="object-contain pointer-events-none" />
             </div>
-            {fullscreenImageIndex > 0 && <button onClick={(e) => { e.stopPropagation(); const newIdx = fullscreenImageIndex - 1; setFullscreenImageIndex(newIdx); setFullscreenImage(filteredImages[newIdx]); setImageZoom(1) }} className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full shadow-lg transition-all z-10"><ChevronLeft className="w-8 h-8 text-white" /></button>}
-            {fullscreenImageIndex < filteredImages.length - 1 && <button onClick={(e) => { e.stopPropagation(); const newIdx = fullscreenImageIndex + 1; setFullscreenImageIndex(newIdx); setFullscreenImage(filteredImages[newIdx]); setImageZoom(1) }} className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full shadow-lg transition-all z-10"><ChevronRight className="w-8 h-8 text-white" /></button>}
+            {fullscreenImageIndex > 0 && <button onClick={(e) => { e.stopPropagation(); const newIdx = fullscreenImageIndex - 1; setFullscreenImageIndex(newIdx); setFullscreenImage(filteredImages[newIdx]); setImageZoom(0.5) }} className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full shadow-lg transition-all z-10"><ChevronLeft className="w-8 h-8 text-white" /></button>}
+            {fullscreenImageIndex < filteredImages.length - 1 && <button onClick={(e) => { e.stopPropagation(); const newIdx = fullscreenImageIndex + 1; setFullscreenImageIndex(newIdx); setFullscreenImage(filteredImages[newIdx]); setImageZoom(0.5) }} className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 hover:bg-white/30 rounded-full shadow-lg transition-all z-10"><ChevronRight className="w-8 h-8 text-white" /></button>}
           </div>
 
           <div className="w-96 bg-black/95 border-l border-gray-700 p-6 flex flex-col gap-4 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between flex-shrink-0">
               <div className="text-sm text-white font-medium">{fullscreenImageIndex + 1} of {filteredImages.length}</div>
-              <button onClick={() => { setFullscreenImage(null); setImageZoom(1) }} className="p-2 hover:bg-gray-700 rounded-lg transition-colors"><X className="w-5 h-5 text-white" /></button>
+              <button onClick={() => { setFullscreenImage(null); setImageZoom(0.5) }} className="p-2 hover:bg-gray-700 rounded-lg transition-colors"><X className="w-5 h-5 text-white" /></button>
             </div>
 
-            <div className="text-xs text-white bg-gray-900 rounded-lg p-2 border border-gray-700 flex-shrink-0">Scroll to zoom (50% - 5000%) | Current: {Math.round(imageZoom * 100)}%</div>
+            <div className="text-xs text-white bg-gray-900 rounded-lg p-2 border border-gray-700 flex-shrink-0">Current: {Math.round(imageZoom * 100)}%</div>
 
             <div className="flex flex-col gap-2 flex-1 min-h-0">
               <p className="text-xs text-white uppercase font-semibold flex-shrink-0">Prompt</p>
@@ -887,7 +885,7 @@ export default function TalkingActors() {
 
             <div className="flex flex-col gap-2 pt-4 border-t border-gray-700 flex-shrink-0">
               <button onClick={() => handleSaveToFolder(fullscreenImage)} className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><Save className="w-4 h-4" /> Save to Folder</button>
-              <button onClick={() => { handleDelete(fullscreenImage.id); setFullscreenImage(null); setImageZoom(1) }} className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><Trash2 className="w-4 h-4" /> Delete</button>
+              <button onClick={() => { handleDelete(fullscreenImage.id); setFullscreenImage(null); setImageZoom(0.5) }} className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><Trash2 className="w-4 h-4" /> Delete</button>
             </div>
           </div>
         </div>
