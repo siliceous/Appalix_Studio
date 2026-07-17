@@ -115,6 +115,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     items: [
       { href: '/my-activity',  label: 'My Activity', icon: Clock },
+      { href: '/full/dashboard',  label: 'Full Dashboard', icon: LayoutDashboard },
     ],
   },
 ]
