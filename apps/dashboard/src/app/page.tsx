@@ -71,11 +71,12 @@ const FEATURES = [
 
 
 export default async function HomePage() {
-  // Redirect logged-in users straight to AI Studio
+  // Redirect logged-in users straight to the dashboard
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (user) {
-    redirect('/ai-studio')
+    const host = (await headers()).get('host') ?? ''
+    redirect(host === 'www.appalix.ai' ? 'https://app.appalix.ai/dashboard' : '/dashboard')
   }
 
   const admin = createAdminClient()
