@@ -434,11 +434,19 @@ export default function AIStudio() {
                     </div>
                     <button
                       onClick={() => {
+                        console.log('[SelectActors] Selected IDs:', selectedImageIds)
+                        console.log('[SelectActors] All images count:', images.length)
                         const imagesToImport = images.filter(img => selectedImageIds.includes(img.id) && !img.deletedAt)
-                        console.log('[SelectActors] Importing', imagesToImport.length, 'images')
+                        console.log('[SelectActors] Importing', imagesToImport.length, 'images', imagesToImport)
+
+                        if (imagesToImport.length === 0) {
+                          alert("No images to import - selected IDs don't match loaded images")
+                          return
+                        }
 
                         // Store for talking-actors to import
                         sessionStorage.setItem("selectedActorImages", JSON.stringify(imagesToImport))
+                        console.log('[SelectActors] Stored to sessionStorage')
                         router.push("/studio/talking-actors")
                       }}
                       disabled={selectedImageIds.length === 0}
@@ -576,19 +584,26 @@ export default function AIStudio() {
                           />
 
                           {selectionMode && (
-                            <div className="absolute top-2 right-2 z-50 bg-white rounded-md p-1 shadow-lg">
+                            <div
+                              className="absolute top-2 right-2 z-50 bg-white rounded-md p-1 shadow-lg cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                console.log('[SelectActors] Checkbox clicked for image:', image.id)
+                                setSelectedImageIds(prev => {
+                                  const isSelected = prev.includes(image.id)
+                                  const newSelection = isSelected
+                                    ? prev.filter(id => id !== image.id)
+                                    : [...prev, image.id]
+                                  console.log('[SelectActors] Updated selection:', newSelection)
+                                  return newSelection
+                                })
+                              }}
+                            >
                               <input
                                 type="checkbox"
                                 checked={selectedImageIds.includes(image.id)}
-                                onChange={(e) => {
-                                  e.stopPropagation()
-                                  setSelectedImageIds(prev =>
-                                    prev.includes(image.id)
-                                      ? prev.filter(id => id !== image.id)
-                                      : [...prev, image.id]
-                                  )
-                                }}
-                                className="w-6 h-6 cursor-pointer accent-purple-600"
+                                onChange={() => {}}
+                                className="w-6 h-6 cursor-pointer accent-purple-600 pointer-events-none"
                               />
                             </div>
                           )}
