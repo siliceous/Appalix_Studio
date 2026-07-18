@@ -736,6 +736,26 @@ export default function CreateImagePage() {
     }
   }
 
+  let clickTimeout: NodeJS.Timeout | null = null
+
+  const handleImageClick = (img: GeneratedImage) => {
+    if (clickTimeout) {
+      clearTimeout(clickTimeout)
+      clickTimeout = null
+      // Double click - open in overlay
+      setFullscreenImage(img.image)
+      setFullscreenImageData(img)
+      setImageZoom(1)
+    } else {
+      // Single click - display in center section
+      clickTimeout = setTimeout(() => {
+        setSelectedImage(img)
+        setSelectedImageIndex(history.findIndex(h => h.id === img.id))
+        clickTimeout = null
+      }, 250)
+    }
+  }
+
   const handleRefreshImages = async () => {
     setIsRefreshing(true)
     try {
@@ -1511,6 +1531,31 @@ export default function CreateImagePage() {
                     </div>
                   </div>
                 ))
+              ) : selectedImage ? (
+                // Show selected image from library
+                <div className="relative w-full h-full flex items-center justify-center gap-2">
+                  <div
+                    key={`selected-${selectedImage.id}`}
+                    className={`bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden shadow-md hover:shadow-lg transition-shadow relative group w-auto ${
+                      aspectRatio === '9:16' ? 'aspect-[9/16] h-[480px]' :
+                      aspectRatio === '16:9' ? 'aspect-video h-80' :
+                      aspectRatio === '3:4' ? 'aspect-[3/4] h-[480px]' :
+                      aspectRatio === '4:3' ? 'aspect-[4/3] h-80' :
+                      aspectRatio === '1:1' ? 'aspect-square h-80' :
+                      aspectRatio === '2:3' ? 'aspect-[2/3] h-[480px]' :
+                      aspectRatio === '21:9' ? 'aspect-[21/9] h-40' :
+                      'aspect-video h-80'
+                    }`}
+                  >
+                    <img
+                      src={selectedImage.image}
+                      alt={`Selected image`}
+                      className="w-full h-full object-cover rounded-lg cursor-pointer"
+                      onClick={() => handleImageClick(selectedImage)}
+                      onError={() => handleImageLoadError(selectedImage.id)}
+                    />
+                  </div>
+                </div>
               ) : displayedImages.length > 0 ? (
                 // Show grid of images based on aspect ratio
                 <div className={`relative w-full h-full flex items-center justify-center gap-2 ${
@@ -1524,26 +1569,29 @@ export default function CreateImagePage() {
                     <div
                       key={`${img.id}-${idx}`}
                       className={`bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden shadow-md hover:shadow-lg transition-shadow relative group ${
-                        displayedImages.length >= 2 && (aspectRatio === '16:9' || aspectRatio === '4:3' || aspectRatio === '21:9')
+                        displayedImages.length === 1
+                          ? 'w-auto'
+                          : displayedImages.length >= 2 && (aspectRatio === '16:9' || aspectRatio === '4:3' || aspectRatio === '21:9')
                           ? 'w-[calc(50%-4px)]'
                           : displayedImages.length >= 3 && (aspectRatio === '9:16' || aspectRatio === '3:4' || aspectRatio === '2:3')
                           ? 'w-[calc(33.333%-4px)]'
                           : 'w-full'
                       } ${
-                        aspectRatio === '9:16' ? 'aspect-[9/16] h-[300px]' :
-                        aspectRatio === '16:9' ? 'aspect-video h-40' :
-                        aspectRatio === '3:4' ? 'aspect-[3/4] h-[300px]' :
-                        aspectRatio === '4:3' ? 'aspect-[4/3] h-40' :
-                        aspectRatio === '1:1' ? 'aspect-square h-40' :
-                        aspectRatio === '2:3' ? 'aspect-[2/3] h-[300px]' :
-                        aspectRatio === '21:9' ? 'aspect-[21/9] h-28' :
-                        'aspect-video h-40'
+                        aspectRatio === '9:16' ? 'aspect-[9/16] h-[480px]' :
+                        aspectRatio === '16:9' ? 'aspect-video h-80' :
+                        aspectRatio === '3:4' ? 'aspect-[3/4] h-[480px]' :
+                        aspectRatio === '4:3' ? 'aspect-[4/3] h-80' :
+                        aspectRatio === '1:1' ? 'aspect-square h-80' :
+                        aspectRatio === '2:3' ? 'aspect-[2/3] h-[480px]' :
+                        aspectRatio === '21:9' ? 'aspect-[21/9] h-40' :
+                        'aspect-video h-80'
                       }`}
                     >
                       <img
                         src={img.image}
                         alt={`Generated ${idx + 1}`}
-                        className="w-full h-full object-cover rounded-lg"
+                        className="w-full h-full object-cover rounded-lg cursor-pointer"
+                        onClick={() => handleImageClick(img)}
                         onError={() => handleImageLoadError(img.id)}
                       />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto rounded-lg">
@@ -1854,12 +1902,7 @@ export default function CreateImagePage() {
                     className={`group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer transition-all col-span-1 ${
                       canvasImage?.id === image.id ? 'ring-2 ring-blue-500 ring-offset-1' : ''
                     }`}
-                    onClick={() => {
-                      setFullscreenImage(image.image)
-                      setFullscreenImageData(image)
-                      setFullscreenImageIndex(idx)
-                      setImageZoom(1)
-                    }}
+                    onClick={() => handleImageClick(image)}
                   >
                     <img
                       src={image.image}
