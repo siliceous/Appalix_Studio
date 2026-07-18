@@ -436,13 +436,21 @@ export default function CreateVideoPage() {
               />
               <div className="flex gap-2 items-center justify-between px-3 py-3 bg-gray-50 border-t border-gray-300">
                 <span className="text-xs text-gray-500">{prompt.length} / 10000</span>
-                <button
-                  onClick={handleGenerate}
-                  disabled={!prompt.trim() || isGenerating}
-                  className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors whitespace-nowrap flex-shrink-0"
-                >
-                  {isGenerating ? 'Generating...' : 'Generate'}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => router.push('/ai-studio/create-image?mode=library')}
+                    className="px-3 py-2 bg-gray-600 text-white text-xs font-semibold rounded-lg shadow-md hover:bg-gray-700 transition-colors whitespace-nowrap flex-shrink-0"
+                  >
+                    Import Image
+                  </button>
+                  <button
+                    onClick={handleGenerate}
+                    disabled={!prompt.trim() || isGenerating}
+                    className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors whitespace-nowrap flex-shrink-0"
+                  >
+                    {isGenerating ? 'Generating...' : 'Generate'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
