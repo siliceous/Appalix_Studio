@@ -421,7 +421,7 @@ export default function CreateVideoPage() {
                       <Film className="w-5 h-5 text-gray-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-900 truncate">Video {video.id.slice(0, 8)}</p>
+                      <p className="text-xs font-medium text-gray-900 truncate">Video {(video.id || video.provider_job_id || 'unknown').slice(0, 8)}</p>
                       <p className="text-xs text-gray-500 mt-1">
                         {video.status === 'generating' ? '⏳ Generating...' :
                          video.status === 'ready' ? '✓ Ready' :
