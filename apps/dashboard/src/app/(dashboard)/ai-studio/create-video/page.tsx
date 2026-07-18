@@ -139,7 +139,7 @@ export default function CreateVideoPage() {
       }
 
       const data = await response.json()
-      setVideos([data, ...videos])
+      setVideos([{ id: data.provider_job_id, status: 'generating', ...data }, ...videos])
       setPrompt('')
       alert('Video generation started!')
     } catch (error) {
