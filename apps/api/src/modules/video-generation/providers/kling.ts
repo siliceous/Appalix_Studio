@@ -49,8 +49,11 @@ export class KlingProvider implements VideoProviderInterface {
       prompt: params.prompt,
       duration: params.duration_seconds || 15,
       aspect_ratio: this.normalizeAspectRatio(params.aspect_ratio || '9:16'),
-      model: 'kling-v1',  // Specify Kling model
+      model: 'kling-v1',
     };
+
+    console.log('[Kling generateVideo] Input duration_seconds:', params.duration_seconds, 'type:', typeof params.duration_seconds);
+    console.log('[Kling generateVideo] Final klingParams.duration:', klingParams.duration, 'type:', typeof klingParams.duration);
 
     // For image-to-video requests
     if (params.video_type === 'image_to_video' && params.source_image_url) {
