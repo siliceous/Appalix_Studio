@@ -22,7 +22,9 @@ export async function pollPendingVideoJobs() {
     }
 
     if (!jobs || jobs.length === 0) {
-      console.debug('No pending video jobs to poll');
+      console.log('[Video Polling] No pending video jobs. Checking all jobs...');
+      const allJobs = await (supabase.from('video_generation_jobs').select('*').limit(5) as any);
+      console.log('[Video Polling] Recent jobs:', allJobs.data);
       return;
     }
 
