@@ -110,7 +110,7 @@ export async function imageRoutes(app: FastifyInstance) {
       let { prompt, style, lighting, aspectRatio, model, quantity, negativePrompt, temperature, resolution } = request.body
       const workspaceId = request.headers['x-workspace-id'] as string
 
-      console.log('[Image Generation] POST /generate/image called with prompt:', prompt.substring(0, 50), 'quantity:', quantity)
+      console.log('[Image Generation] POST /generate/image called with prompt:', prompt.substring(0, 50), 'quantity:', quantity, 'model:', model)
 
       if (!workspaceId) {
         return reply.status(400).send({ error: 'Missing workspace ID' })
