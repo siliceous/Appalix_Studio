@@ -105,8 +105,8 @@ export default function CreateVideoPage() {
   }
 
   const handleGenerate = async () => {
-    if (!startImage || !workspaceId) {
-      alert('Please select a start image')
+    if (!workspaceId) {
+      alert('Missing workspace ID')
       return
     }
 
