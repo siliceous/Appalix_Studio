@@ -55,7 +55,24 @@ export default function CreateVideoPage() {
 
     if (wId) {
       setWorkspaceId(wId)
-      fetchVideos()
+      // Fetch videos with the workspace ID directly
+      fetch('/api/ai-studio/videos', {
+        headers: { 'x-workspace-id': wId }
+      })
+        .then(r => r.json())
+        .then(data => {
+          const videoArray = Array.isArray(data) ? data : (data.videos || [])
+          const videoList = videoArray.map((v: any) => ({
+            id: v.id,
+            status: v.status,
+            title: v.title,
+            output_url: v.output_url,
+            ...v
+          }))
+          setVideos(videoList)
+        })
+        .catch(err => console.error('Error loading videos:', err))
+      
       const fetchCredits = async () => {
         try {
           const response = await fetch('/api/wallet/balance', { headers: { 'x-workspace-id': wId } })
