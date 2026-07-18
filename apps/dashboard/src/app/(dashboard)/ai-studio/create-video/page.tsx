@@ -380,7 +380,7 @@ export default function CreateVideoPage() {
                 <span className="text-xs text-gray-500">{prompt.length} / 10000</span>
                 <button
                   onClick={handleGenerate}
-                  disabled={!prompt.trim() || !startImage || isGenerating}
+                  disabled={!prompt.trim() || isGenerating}
                   className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors whitespace-nowrap flex-shrink-0"
                 >
                   {isGenerating ? 'Generating...' : 'Generate'}
