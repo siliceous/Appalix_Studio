@@ -46,7 +46,7 @@ export class KlingProvider implements VideoProviderInterface {
   async generateVideo(params: GenerateVideoRequest & { job_id: string }) {
     const klingParams: KlingGenerateRequest = {
       prompt: params.prompt,
-      duration: params.duration_seconds || 15,
+      duration: String(params.duration_seconds || 15),
       aspect_ratio: this.normalizeAspectRatio(params.aspect_ratio || '9:16'),
       model: 'kling-v1',  // Specify Kling model
     };
