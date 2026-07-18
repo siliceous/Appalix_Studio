@@ -19,14 +19,21 @@ interface KlingGenerateRequest {
 }
 
 interface KlingJobResponse {
-  task_id: string;
+  code: number;
+  message: string;
   request_id: string;
-  task_status: 'submitted' | 'processing' | 'succeed' | 'failed';
-  task_result?: {
-    videos: Array<{
-      path: string;
-      duration: number;
-    }>;
+  data: {
+    task_id: string;
+    task_status: 'submitted' | 'processing' | 'succeed' | 'failed';
+    task_info?: any;
+    task_result?: {
+      videos: Array<{
+        path: string;
+        duration: number;
+      }>;
+    };
+    created_at?: number;
+    updated_at?: number;
   };
 }
 
@@ -83,13 +90,17 @@ export class KlingProvider implements VideoProviderInterface {
         body: JSON.stringify(klingParams),
       });
 
-      if (response.task_status === 'failed') {
-        throw new Error(`Kling API error: ${response.task_id}`);
+      console.log('[Kling generateVideo] Kling API response:', JSON.stringify(response, null, 2));
+
+      if (response.code !== 0 || !response.data?.task_id) {
+        throw new Error(`Kling API error: ${response.message || 'Unknown error'}`);
       }
 
-      this.jobTimestamps.set(response.task_id, Date.now());
+      const taskId = response.data.task_id;
+      this.jobTimestamps.set(taskId, Date.now());
+      console.log('[Kling generateVideo] Task ID stored:', taskId);
       return {
-        provider_job_id: response.task_id,
+        provider_job_id: taskId,
         estimated_duration_seconds: duration,
       };
     } catch (error) {
