@@ -1,22 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:3001'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
     const workspaceId = request.headers.get('x-workspace-id')
-    const userId = request.headers.get('x-user-id')
 
     if (!workspaceId) {
       return NextResponse.json({ error: 'Missing workspace ID' }, { status: 400 })
     }
 
-    const apiUrl = process.env.API_BASE_URL || 'http://localhost:3001'
-    const response = await fetch(`${apiUrl}/api/ai-studio/generate/video`, {
+    // Get user ID from Supabase session
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+
+    const response = await fetch(`${API_URL}/api/ai-studio/generate/video`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-workspace-id': workspaceId,
-        ...(userId && { 'x-user-id': userId }),
+        'x-user-id': user.id,
       },
       body: JSON.stringify(body),
     })
