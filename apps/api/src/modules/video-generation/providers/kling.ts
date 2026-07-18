@@ -36,6 +36,7 @@ export class KlingProvider implements VideoProviderInterface {
   private timeout: number;
 
   constructor(config: ProviderConfig) {
+    console.error('[KlingProvider Constructor] config.api_key:', config.api_key ? 'SET' : 'UNDEFINED', 'config:', config)
     if (!config.api_key) {
       throw new Error('Kling API key is required');
     }
@@ -46,7 +47,7 @@ export class KlingProvider implements VideoProviderInterface {
   async generateVideo(params: GenerateVideoRequest & { job_id: string }) {
     const klingParams: KlingGenerateRequest = {
       prompt: params.prompt,
-      duration: String(params.duration_seconds || 15),
+      duration: params.duration_seconds || 15,
       aspect_ratio: this.normalizeAspectRatio(params.aspect_ratio || '9:16'),
       model: 'kling-v1',  // Specify Kling model
     };
