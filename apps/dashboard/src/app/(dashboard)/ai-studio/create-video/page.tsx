@@ -23,6 +23,7 @@ export default function CreateVideoPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [workspaceId, setWorkspaceId] = useState('')
   const [videos, setVideos] = useState<any[]>([])
+  const [viewMode, setViewMode] = useState<'library' | 'projects'>('library')
   const [credits, setCredits] = useState(0)
   const [startImage, setStartImage] = useState<string | null>(null)
   const [endImage, setEndImage] = useState<string | null>(null)
@@ -427,11 +428,32 @@ export default function CreateVideoPage() {
 
         {/* Right Panel - Generated Videos */}
         <div className="w-72 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden m-3 mt-24 flex-shrink-0">
-          <div className="bg-black text-white px-4 py-3 rounded-t-2xl h-12 flex items-center justify-between flex-shrink-0">
-            <h2 className="text-sm font-semibold">Generated Videos</h2>
+          <div className="bg-black text-white px-4 py-3 rounded-t-2xl flex items-center justify-between flex-shrink-0 gap-2">
+            <div className="flex gap-1">
+              <button
+                onClick={() => setViewMode('library')}
+                className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
+                  viewMode === 'library'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                Library
+              </button>
+              <button
+                onClick={() => setViewMode('projects')}
+                className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
+                  viewMode === 'projects'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                Projects
+              </button>
+            </div>
             <button
               onClick={() => setShowTrash(!showTrash)}
-              className="text-xs text-white hover:text-gray-200 font-medium"
+              className="text-xs text-white hover:text-gray-200 font-medium ml-auto"
             >
               {showTrash ? '← Back' : 'Trash'}
             </button>
@@ -449,7 +471,9 @@ export default function CreateVideoPage() {
                 <p className="text-xs">No videos yet</p>
               </div>
             ) : (
-              videos.map((video) => (
+              videos
+                .filter(video => viewMode === 'library' ? video.status === 'ready' : true)
+                .map((video) => (
                 <div key={video.id} className="p-3 border border-gray-200 rounded-lg hover:border-blue-300 transition-all">
                   <div className="flex gap-2 items-start">
                     <div className="w-12 h-12 rounded bg-gray-100 flex-shrink-0 flex items-center justify-center">
