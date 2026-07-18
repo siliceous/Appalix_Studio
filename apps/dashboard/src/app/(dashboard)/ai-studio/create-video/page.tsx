@@ -378,8 +378,14 @@ export default function CreateVideoPage() {
                 aspectRatio === '4:3' ? 'aspect-[4/3] h-96' :
                 'aspect-square h-96'
               }`}>
-                {startImage ? (
-                  <img src={startImage} alt="Start" className="w-full h-full object-contain" />
+                {isGenerating || videos.some(v => v.status === 'generating') ? (
+                  <div className="text-center text-gray-400 flex flex-col items-center justify-center h-full animate-pulse">
+                    <div className="inline-flex items-center justify-center mb-4">
+                      <div className="w-16 h-16 rounded-full border-4 border-gray-300 border-t-blue-500 animate-spin" />
+                    </div>
+                    <p className="text-sm font-semibold">Rendering Video...</p>
+                    <p className="text-xs mt-2 text-gray-500">This typically takes 2-5 minutes</p>
+                  </div>
                 ) : (
                   <div className="text-center text-gray-400 flex flex-col items-center justify-center h-full">
                     <Film className="w-8 h-8 mb-2 opacity-50" />
