@@ -277,13 +277,20 @@ export async function imageRoutes(app: FastifyInstance) {
         })
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error)
+        const errorStack = error instanceof Error ? error.stack : ''
         console.error('[Image Generation] Error:', errorMsg)
+        console.error('[Image Generation] Stack:', errorStack)
+        console.error('[Image Generation] Full error:', JSON.stringify(error, null, 2))
         await (supabase.from('ai_image_generations').update({ status: 'failed' } as any).eq('id', generationId) as any)
-        return reply.status(500).send({ error: `Image generation failed: ${errorMsg}` })
+        return reply.status(500).send({ error: `Image generation failed: ${errorMsg}`, stack: errorStack })
       }
     } catch (error) {
-      console.error('[Image Generation] Unexpected error:', error)
-      return reply.status(500).send({ error: 'Internal server error' })
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      const errorStack = error instanceof Error ? error.stack : ''
+      console.error('[Image Generation] Unexpected outer error:', errorMsg)
+      console.error('[Image Generation] Stack:', errorStack)
+      console.error('[Image Generation] Full:', JSON.stringify(error, null, 2))
+      return reply.status(500).send({ error: `Internal server error: ${errorMsg}`, stack: errorStack })
     }
   })
 
