@@ -736,22 +736,22 @@ export default function CreateImagePage() {
     }
   }
 
-  let clickTimeout: NodeJS.Timeout | null = null
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const handleImageClick = (img: GeneratedImage) => {
-    if (clickTimeout) {
-      clearTimeout(clickTimeout)
-      clickTimeout = null
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current)
+      clickTimeoutRef.current = null
       // Double click - open in overlay
       setFullscreenImage(img.image)
       setFullscreenImageData(img)
       setImageZoom(1)
     } else {
       // Single click - display in center section
-      clickTimeout = setTimeout(() => {
+      clickTimeoutRef.current = setTimeout(() => {
         setSelectedImage(img)
         setSelectedImageIndex(history.findIndex(h => h.id === img.id))
-        clickTimeout = null
+        clickTimeoutRef.current = null
       }, 250)
     }
   }
