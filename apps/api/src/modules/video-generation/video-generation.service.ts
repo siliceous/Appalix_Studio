@@ -91,6 +91,7 @@ export class VideoGenerationService {
 
     // Get provider config (default to Kling for MVP)
     const provider: VideoProvider = 'kling';
+    console.log('[Video Service] KLING_API_KEY:', process.env.KLING_API_KEY ? 'SET' : 'NOT SET')
     const config = {
       api_key: process.env.KLING_API_KEY,
       webhook_secret: process.env.KLING_WEBHOOK_SECRET,
