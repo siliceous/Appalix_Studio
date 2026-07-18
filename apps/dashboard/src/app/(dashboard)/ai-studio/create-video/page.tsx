@@ -141,17 +141,24 @@ export default function CreateVideoPage() {
     fetchLibraryImages()
   }
 
-  const fetchLibraryImages = async () => {
-    if (!workspaceId) return
+  const fetchLibraryImages = () => {
     setLibraryLoading(true)
     try {
-      const response = await fetch('/api/ai-studio/images?limit=50', {
-        headers: { 'x-workspace-id': workspaceId }
-      })
-      if (response.ok) {
-        const data = await response.json()
-        const images = Array.isArray(data) ? data : (data.images || [])
-        setLibraryImages(images.filter((img: any) => img.status === 'completed'))
+      if (typeof window !== 'undefined') {
+        const savedHistory = localStorage.getItem('imageGenerationHistory')
+        if (savedHistory) {
+          const parsed = JSON.parse(savedHistory)
+          if (Array.isArray(parsed)) {
+            const validImages = parsed.filter((img: any) => {
+              if (!img?.id || !img?.image) return false
+              if (typeof img.image !== 'string') return false
+              if (img.image.length < 100) return false
+              return true
+            })
+            setLibraryImages(validImages)
+            console.log('[Library] Loaded', validImages.length, 'images from localStorage')
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching library images:', error)
@@ -674,11 +681,11 @@ export default function CreateVideoPage() {
                   {libraryImages.map((image) => (
                     <button
                       key={image.id}
-                      onClick={() => handleSelectLibraryImage(image.image_url || image.url)}
+                      onClick={() => handleSelectLibraryImage(image.image)}
                       className="relative group rounded-lg overflow-hidden border-2 border-transparent hover:border-blue-500 transition-all"
                     >
                       <img
-                        src={image.image_url || image.url}
+                        src={image.image}
                         alt={image.title || 'Library image'}
                         className="w-full h-24 object-cover"
                       />
