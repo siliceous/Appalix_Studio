@@ -83,9 +83,8 @@ export class KlingProvider implements VideoProviderInterface {
 
   async getStatus(provider_job_id: string, workspace_id: string): Promise<JobStatus> {
     try {
-      const response = await this.callKlingAPI(`/v1/videos/status`, {
+      const response = await this.callKlingAPI(`/v1/videos/status?task_id=${provider_job_id}`, {
         method: 'GET',
-        body: JSON.stringify({ task_id: provider_job_id }),
       });
 
       const klingStatus = response.task_status;
