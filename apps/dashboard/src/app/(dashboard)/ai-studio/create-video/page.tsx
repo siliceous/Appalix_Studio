@@ -70,7 +70,7 @@ export default function CreateVideoPage() {
       fetchCredits()
       
       // Poll for video updates every 2 seconds
-      const pollInterval = setInterval(fetchVideos, 2000)
+      const pollInterval = setInterval(fetchVideos, 5000)
       return () => clearInterval(pollInterval)
     }
   }, [workspaceId])
@@ -120,10 +120,8 @@ export default function CreateVideoPage() {
       })
       if (response.ok) {
         const data = await response.json()
-        console.log('[FetchVideos] Response:', data)
         // API returns either {videos: [...]} or just [...]
         const videoArray = Array.isArray(data) ? data : (data.videos || [])
-        console.log('[FetchVideos] First video:', videoArray[0])
         const videoList = videoArray.map((v: any) => ({
           id: v.id,
           status: v.status,
