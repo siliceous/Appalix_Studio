@@ -75,8 +75,8 @@ export default function CreateVideoPage() {
           }))
           console.log('[Videos Loaded]', {
             total: videoList.length,
-            statuses: videoList.map(v => v.status),
-            withOutputUrl: videoList.filter(v => v.output_url).length
+            statuses: videoList.map((v: any) => v.status),
+            withOutputUrl: videoList.filter((v: any) => v.output_url).length
           })
           setVideos(videoList)
         })

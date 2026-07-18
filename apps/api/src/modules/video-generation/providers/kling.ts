@@ -63,6 +63,7 @@ export class KlingProvider implements VideoProviderInterface {
     }
 
     try {
+      console.log('[Kling generateVideo] Sending params:', JSON.stringify(klingParams, null, 2));
       const response = await this.callKlingAPI('/v1/videos/text2video', {
         method: 'POST',
         body: JSON.stringify(klingParams),
@@ -77,7 +78,8 @@ export class KlingProvider implements VideoProviderInterface {
         estimated_duration_seconds: params.duration_seconds || 15,
       };
     } catch (error) {
-      console.error('Kling generateVideo error:', error);
+      console.error('[Kling generateVideo] Error:', error);
+      console.error('[Kling generateVideo] Error details:', JSON.stringify(error, null, 2));
       throw new Error(`Failed to generate video with Kling: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
