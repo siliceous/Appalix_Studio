@@ -146,18 +146,36 @@ export default function CreateVideoPage() {
     try {
       if (typeof window !== 'undefined') {
         const savedHistory = localStorage.getItem('imageGenerationHistory')
+        console.log('[Library] Storage keys:', Object.keys(localStorage))
+        console.log('[Library] Raw saved history:', savedHistory)
+
         if (savedHistory) {
           const parsed = JSON.parse(savedHistory)
+          console.log('[Library] Parsed data:', parsed)
+
           if (Array.isArray(parsed)) {
             const validImages = parsed.filter((img: any) => {
-              if (!img?.id || !img?.image) return false
-              if (typeof img.image !== 'string') return false
-              if (img.image.length < 100) return false
+              if (!img?.id || !img?.image) {
+                console.log('[Library] Filtered out (no id/image):', img)
+                return false
+              }
+              if (typeof img.image !== 'string') {
+                console.log('[Library] Filtered out (not string):', img)
+                return false
+              }
+              if (img.image.length < 100) {
+                console.log('[Library] Filtered out (too short):', img?.id)
+                return false
+              }
               return true
             })
             setLibraryImages(validImages)
-            console.log('[Library] Loaded', validImages.length, 'images from localStorage')
+            console.log('[Library] Loaded', validImages.length, 'valid images from localStorage')
+          } else {
+            console.log('[Library] Parsed data is not array:', typeof parsed)
           }
+        } else {
+          console.log('[Library] No imageGenerationHistory in localStorage')
         }
       }
     } catch (error) {
@@ -673,8 +691,15 @@ export default function CreateVideoPage() {
                   <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
                 </div>
               ) : libraryImages.length === 0 ? (
-                <div className="text-center text-gray-500 py-8">
+                <div className="text-center text-gray-500 py-8 space-y-4">
                   <p>No images in library yet</p>
+                  <p className="text-xs">Generate images in <strong>Create Image</strong> first, then return here to select them.</p>
+                  <button
+                    onClick={() => router.push('/ai-studio/create-image')}
+                    className="mt-4 px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Go to Create Image
+                  </button>
                 </div>
               ) : (
                 <div className="grid grid-cols-4 gap-4">
