@@ -1559,9 +1559,9 @@ export default function CreateImagePage() {
               ) : displayedImages.length > 0 ? (
                 // Show grid of images based on aspect ratio
                 <div className={`relative w-full h-full flex items-center justify-center gap-2 ${
-                  displayedImages.length >= 2 && (aspectRatio === '16:9' || aspectRatio === '4:3' || aspectRatio === '21:9')
+                  displayedImages.length >= 2 && (displayedImages[0].aspectRatio === '16:9' || displayedImages[0].aspectRatio === '4:3' || displayedImages[0].aspectRatio === '21:9')
                     ? 'flex-wrap'
-                    : displayedImages.length >= 3 && (aspectRatio === '9:16' || aspectRatio === '3:4' || aspectRatio === '2:3')
+                    : displayedImages.length >= 3 && (displayedImages[0].aspectRatio === '9:16' || displayedImages[0].aspectRatio === '3:4' || displayedImages[0].aspectRatio === '2:3')
                     ? 'flex-wrap'
                     : 'flex-col'
                 }`}>
@@ -1571,19 +1571,19 @@ export default function CreateImagePage() {
                       className={`bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden shadow-md hover:shadow-lg transition-shadow relative group ${
                         displayedImages.length === 1
                           ? 'w-auto'
-                          : displayedImages.length >= 2 && (aspectRatio === '16:9' || aspectRatio === '4:3' || aspectRatio === '21:9')
+                          : displayedImages.length >= 2 && (img.aspectRatio === '16:9' || img.aspectRatio === '4:3' || img.aspectRatio === '21:9')
                           ? 'w-[calc(50%-4px)]'
-                          : displayedImages.length >= 3 && (aspectRatio === '9:16' || aspectRatio === '3:4' || aspectRatio === '2:3')
+                          : displayedImages.length >= 3 && (img.aspectRatio === '9:16' || img.aspectRatio === '3:4' || img.aspectRatio === '2:3')
                           ? 'w-[calc(33.333%-4px)]'
                           : 'w-full'
                       } ${
-                        aspectRatio === '9:16' ? 'aspect-[9/16] h-[480px]' :
-                        aspectRatio === '16:9' ? 'aspect-video h-80' :
-                        aspectRatio === '3:4' ? 'aspect-[3/4] h-[480px]' :
-                        aspectRatio === '4:3' ? 'aspect-[4/3] h-80' :
-                        aspectRatio === '1:1' ? 'aspect-square h-80' :
-                        aspectRatio === '2:3' ? 'aspect-[2/3] h-[480px]' :
-                        aspectRatio === '21:9' ? 'aspect-[21/9] h-40' :
+                        img.aspectRatio === '9:16' ? 'aspect-[9/16] h-[480px]' :
+                        img.aspectRatio === '16:9' ? 'aspect-video h-80' :
+                        img.aspectRatio === '3:4' ? 'aspect-[3/4] h-[480px]' :
+                        img.aspectRatio === '4:3' ? 'aspect-[4/3] h-80' :
+                        img.aspectRatio === '1:1' ? 'aspect-square h-80' :
+                        img.aspectRatio === '2:3' ? 'aspect-[2/3] h-[480px]' :
+                        img.aspectRatio === '21:9' ? 'aspect-[21/9] h-40' :
                         'aspect-video h-80'
                       }`}
                     >
