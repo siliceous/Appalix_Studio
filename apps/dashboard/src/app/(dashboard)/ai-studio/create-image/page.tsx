@@ -1793,7 +1793,7 @@ export default function CreateImagePage() {
                 ? `${history.filter(img => img.deletedAt).length} deleted`
                 : viewMode === 'library'
                   ? `${history.filter(img => !img.deletedAt).length} image${history.filter(img => !img.deletedAt).length !== 1 ? 's' : ''}`
-                  : `${selectedProjectId ? history.filter(img => !img.deletedAt && img.projectId === selectedProjectId).length : 0} image${selectedProjectId && history.filter(img => !img.deletedAt && img.projectId === selectedProjectId).length !== 1 ? 's' : ''}`}
+                  : `${history.filter(img => !img.deletedAt).length} image${history.filter(img => !img.deletedAt).length !== 1 ? 's' : ''}`}
             </p>
           </div>
 
