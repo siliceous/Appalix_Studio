@@ -29,16 +29,17 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    const data = await response.json()
-
     if (!response.ok) {
-      return NextResponse.json(data, { status: response.status })
+      const errorText = await response.text()
+      console.error('[Videos API Proxy] Backend error:', response.status, errorText)
+      return NextResponse.json({ error: 'Failed to fetch videos' }, { status: response.status })
     }
 
+    const data = await response.json()
     return NextResponse.json(data)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
-    console.error('[Videos API Proxy] Error:', message)
+    console.error('[Videos API Proxy] Error:', message, error)
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

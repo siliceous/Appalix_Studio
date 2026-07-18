@@ -123,6 +123,7 @@ export default function CreateVideoPage() {
         console.log('[FetchVideos] Response:', data)
         // API returns either {videos: [...]} or just [...]
         const videoArray = Array.isArray(data) ? data : (data.videos || [])
+        console.log('[FetchVideos] First video:', videoArray[0])
         const videoList = videoArray.map((v: any) => ({
           id: v.id,
           status: v.status,
