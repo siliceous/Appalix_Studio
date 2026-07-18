@@ -53,6 +53,8 @@ export default function CreateVideoPage() {
     }
 
     if (wId) {
+      setWorkspaceId(wId)
+      fetchVideos()
       const fetchCredits = async () => {
         try {
           const response = await fetch('/api/wallet/balance', { headers: { 'x-workspace-id': wId } })
@@ -65,8 +67,12 @@ export default function CreateVideoPage() {
         }
       }
       fetchCredits()
+      
+      // Poll for video updates every 2 seconds
+      const pollInterval = setInterval(fetchVideos, 2000)
+      return () => clearInterval(pollInterval)
     }
-  }, [])
+  }, [workspaceId])
 
   const creditsPerSecond = QUALITY_MODES.find(m => m.value === qualityMode)?.creditsPerSecond || 6
   const estimatedCredits = creditsPerSecond * duration
@@ -101,6 +107,29 @@ export default function CreateVideoPage() {
       }
     } catch (error) {
       console.error('Error deleting video:', error)
+    }
+  }
+
+
+  const fetchVideos = async () => {
+    if (!workspaceId) return
+    try {
+      const response = await fetch('/api/ai-studio/videos', {
+        headers: { 'x-workspace-id': workspaceId }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        const videoList = (data.videos || []).map((v: any) => ({
+          id: v.id,
+          status: v.status,
+          title: v.title,
+          output_url: v.output_url,
+          ...v
+        }))
+        setVideos(videoList)
+      }
+    } catch (error) {
+      console.error('Error fetching videos:', error)
     }
   }
 
@@ -139,7 +168,7 @@ export default function CreateVideoPage() {
       }
 
       const data = await response.json()
-      setVideos([{ id: data.provider_job_id, status: 'generating', ...data }, ...videos])
+      setVideos([{ id: data.video_id, status: 'generating', ...data }, ...videos])
       setPrompt('')
       alert('Video generation started!')
     } catch (error) {
