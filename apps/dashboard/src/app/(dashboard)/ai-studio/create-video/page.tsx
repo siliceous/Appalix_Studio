@@ -121,7 +121,9 @@ export default function CreateVideoPage() {
       if (response.ok) {
         const data = await response.json()
         console.log('[FetchVideos] Response:', data)
-        const videoList = (data.videos || []).map((v: any) => ({
+        // API returns either {videos: [...]} or just [...]
+        const videoArray = Array.isArray(data) ? data : (data.videos || [])
+        const videoList = videoArray.map((v: any) => ({
           id: v.id,
           status: v.status,
           title: v.title,
