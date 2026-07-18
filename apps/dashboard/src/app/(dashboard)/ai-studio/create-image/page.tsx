@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Sparkles, Download, Trash2, Heart, Loader, X, Copy, Edit, ChevronLeft, ChevronRight, ChevronDown, ImagePlay, Plus } from 'lucide-react'
+import { ArrowLeft, Sparkles, Download, Trash2, Heart, Loader, X, Copy, Edit, ChevronLeft, ChevronRight, ChevronDown, ImagePlay, Plus, RefreshCw } from 'lucide-react'
 
 import ImageViewerModal from '@/components/ImageViewerModal'
 import { SageToolbar } from '@/components/dashboard/sage-toolbar'
@@ -306,6 +306,17 @@ export default function CreateImagePage() {
   const [imageZoom, setImageZoom] = useState(1)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [viewMode, setViewMode] = useState<'library' | 'projects'>('library')
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [referenceImage, setReferenceImage] = useState<string | null>(null)
+  const [referenceStrength, setReferenceStrength] = useState(0.5)
+  const [variations, setVariations] = useState<number>(1)
+  const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(new Set())
+  const [generatingCount, setGeneratingCount] = useState(0)
+  const [loadingImageIds, setLoadingImageIds] = useState<Set<string>>(new Set())
+  const [displayedImages, setDisplayedImages] = useState<GeneratedImage[]>([])
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const imageContainerRef = useRef<HTMLDivElement>(null)
 
 
@@ -327,17 +338,29 @@ export default function CreateImagePage() {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
     setWorkspaceId(wId)
 
-    // Smart cleanup: deduplicate and keep recent images
+    // Smart cleanup: deduplicate, validate, and keep recent images
     if (typeof window !== 'undefined') {
       try {
         const savedHistory = localStorage.getItem('imageGenerationHistory')
         if (savedHistory) {
           const parsed = JSON.parse(savedHistory)
           if (Array.isArray(parsed) && parsed.length > 0) {
-            // Deduplicate by keeping first occurrence of each ID
+            // First pass: remove broken/invalid images
+            const validImages = parsed.filter((img: any) => {
+              if (!img?.id || !img?.image) return false
+              if (typeof img.image !== 'string') return false
+              if (img.image.length < 100) return false // Too short to be valid
+              return true
+            })
+
+            const brokenCount = parsed.length - validImages.length
+            if (brokenCount > 0) {
+              console.log('[Load] Removed', brokenCount, 'broken images')
+            }
+
+            // Second pass: deduplicate by keeping first occurrence of each ID
             const seen = new Set<string>()
-            const deduped = parsed.filter((img: any) => {
-              if (!img?.id) return false
+            const deduped = validImages.filter((img: any) => {
               if (seen.has(img.id)) {
                 console.log('[Load] Filtering duplicate:', img.id)
                 return false
@@ -346,12 +369,16 @@ export default function CreateImagePage() {
               return true
             })
 
-            if (deduped.length < parsed.length) {
-              console.log('[Load] Removed', parsed.length - deduped.length, 'duplicates from', parsed.length, 'images')
-              localStorage.setItem('imageGenerationHistory', JSON.stringify(deduped))
-            } else {
-              console.log('[Load] Loaded', deduped.length, 'images from localStorage (no duplicates found)')
+            if (deduped.length < validImages.length) {
+              console.log('[Load] Removed', validImages.length - deduped.length, 'duplicates from', validImages.length, 'images')
             }
+
+            if (deduped.length < parsed.length) {
+              console.log('[Load] Saved to localStorage. Total:', deduped.length, 'images')
+              localStorage.setItem('imageGenerationHistory', JSON.stringify(deduped))
+            }
+
+            console.log('[Load] Loaded', deduped.length, 'valid images from localStorage')
             setHistory(deduped)
           }
         }
@@ -493,28 +520,41 @@ export default function CreateImagePage() {
 
     // Clear canvas and show loading state
     setIsGenerating(true)
+    setGeneratingCount(variations)
+    setLoadingImageIds(new Set(Array.from({length: variations}, (_, i) => `loading-${i}`)))
     setSelectedImage(null)
     setOriginalPrompt('')
     setFullscreenImage(null)
 
     try {
+      const generationPayload = {
+        prompt: getEnhancedPrompt(),
+        model,
+        qualityPreset,
+        resolution,
+        temperature,
+        style,
+        lighting: lighting.join(','),
+        aspectRatio,
+        quantity: variations,
+        variations: variations,
+        referenceImage: referenceImage ? referenceImage : undefined,
+        referenceStrength: referenceImage ? referenceStrength : undefined,
+      }
+
+      console.log('[Generate] Sending generation request with:', {
+        variations,
+        hasReferenceImage: !!referenceImage,
+        referenceStrength,
+      })
+
       const response = await fetch('/api/ai-studio/generate/image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-workspace-id': workspaceId,
         },
-        body: JSON.stringify({
-          prompt: getEnhancedPrompt(),
-          model,
-          qualityPreset,
-          resolution,
-          temperature,
-          style,
-          lighting: lighting.join(','),
-          aspectRatio,
-          quantity,
-        }),
+        body: JSON.stringify(generationPayload),
       })
 
       const data = await response.json()
@@ -588,13 +628,16 @@ export default function CreateImagePage() {
 
               setHistory(prev => {
                 console.log('Previous history length:', prev.length)
+                // Remove loading placeholders and add real images
+                const withoutLoading = prev.filter(img => !img.id.startsWith('loading-'))
+
                 // Deduplicate: don't add images that already exist by ID or image URL
-                const existingIds = new Set(prev.map(img => img.id))
-                const existingUrls = new Set(prev.map(img => img.image))
+                const existingIds = new Set(withoutLoading.map(img => img.id))
+                const existingUrls = new Set(withoutLoading.map(img => img.image))
                 const uniqueNewImages = newImages.filter((img: any) => !existingIds.has(img.id) && !existingUrls.has(img.image))
-                
+
                 console.log('Unique new images:', uniqueNewImages.length, '/', newImages.length)
-                const updated = [...prev, ...uniqueNewImages]
+                const updated = [...withoutLoading, ...uniqueNewImages]
                 console.log('Updated history length after append:', updated.length)
                 console.log('Storing to localStorage...')
 
@@ -625,10 +668,15 @@ export default function CreateImagePage() {
                 return updated
               })
 
-              // Display the last generated image in the canvas area (not fullscreen)
+              // Display all generated images in the center panel
+              setDisplayedImages(newImages)
               const lastImage = newImages[newImages.length - 1]
               setCanvasImage(lastImage)
               setOriginalPrompt(prompt)
+
+              // Clear loading state
+              setLoadingImageIds(new Set())
+              setGeneratingCount(0)
               console.log('Images received and processed:', statusData.imageUrls.length)
             } else {
               console.warn('Completed but no imageUrls found. statusData:', statusData)
@@ -686,6 +734,96 @@ export default function CreateImagePage() {
       setFullscreenImageData(null)
       setImageZoom(1)
     }
+  }
+
+  const handleRefreshImages = async () => {
+    setIsRefreshing(true)
+    try {
+      if (typeof window !== 'undefined') {
+        const savedHistory = localStorage.getItem('imageGenerationHistory')
+        console.log('[Refresh] Loading from localStorage...')
+        if (savedHistory) {
+          const parsed = JSON.parse(savedHistory)
+          if (Array.isArray(parsed)) {
+            console.log('[Refresh] Found', parsed.length, 'images')
+            // Deduplicate images
+            const seen = new Set<string>()
+            const deduped = parsed.filter((img: any) => {
+              if (!img?.id) return false
+              if (seen.has(img.id)) return false
+              seen.add(img.id)
+              return true
+            })
+            console.log('[Refresh] After dedup:', deduped.length, 'images')
+            setHistory(deduped)
+          }
+        } else {
+          console.log('[Refresh] No saved history found')
+          setHistory([])
+        }
+      }
+    } catch (err) {
+      console.error('[Refresh] Error refreshing images:', err)
+    } finally {
+      // Add small delay before stopping spinner
+      setTimeout(() => setIsRefreshing(false), 500)
+    }
+  }
+
+  const handleReferenceImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string
+        setReferenceImage(dataUrl)
+        console.log('[Reference] Image uploaded, size:', file.size, 'bytes')
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const removeReferenceImage = () => {
+    setReferenceImage(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const validateAndCleanImages = () => {
+    if (typeof window === 'undefined') return
+
+    try {
+      const savedHistory = localStorage.getItem('imageGenerationHistory')
+      if (!savedHistory) return
+
+      const parsed = JSON.parse(savedHistory)
+      if (!Array.isArray(parsed)) return
+
+      // Filter out broken images (those with invalid or missing URLs)
+      const validImages = parsed.filter((img: any) => {
+        if (!img?.id || !img?.image) return false
+        // Check if image URL is not empty and not truncated
+        if (typeof img.image !== 'string') return false
+        if (img.image.length < 100) return false // Too short to be valid
+        return true
+      })
+
+      const removed = parsed.length - validImages.length
+      if (removed > 0) {
+        console.log(`[Cleanup] Removed ${removed} broken images`)
+        localStorage.setItem('imageGenerationHistory', JSON.stringify(validImages))
+        setHistory(validImages)
+        return { removed, remaining: validImages.length }
+      }
+    } catch (err) {
+      console.error('[Cleanup] Error validating images:', err)
+    }
+  }
+
+  const handleImageLoadError = (imageId: string) => {
+    console.warn(`[Image Error] Failed to load image: ${imageId}`)
+    setBrokenImageIds(prev => new Set([...prev, imageId]))
   }
 
   const handleRestoreImage = (imageId: string) => {
@@ -1350,43 +1488,135 @@ export default function CreateImagePage() {
 
           <div className="flex flex-col overflow-hidden h-full items-center p-4">
             {/* Preview Area - Grows/shrinks with aspect ratio */}
-            <div className="flex-1 flex items-center justify-center w-full">
-              {/* Canvas Preview */}
-              <div
-                className={`bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden shadow-md hover:shadow-lg transition-shadow relative group ${
-                  aspectRatio === '9:16' ? 'aspect-[9/16] h-[480px]' :
-                  aspectRatio === '16:9' ? 'aspect-video h-96' :
-                  aspectRatio === '3:4' ? 'aspect-[3/4] h-[480px]' :
-                  aspectRatio === '4:3' ? 'aspect-[4/3] h-96' :
-                  aspectRatio === '1:1' ? 'aspect-square h-96' :
-                  aspectRatio === '2:3' ? 'aspect-[2/3] h-[480px]' :
-                  aspectRatio === '21:9' ? 'aspect-[21/9] h-48' :
-                  'aspect-video h-96'
-                }`}
-                data-canvas
-              >
-                {isGenerating ? (
-                  <div className="text-center">
-                    <Loader className="w-16 h-16 mx-auto mb-4 animate-spin text-blue-600" />
-                    <p className="text-sm text-gray-600">Generating image...</p>
+            <div className="flex-1 flex items-center justify-center w-full gap-4 relative">
+              {isGenerating && generatingCount > 0 ? (
+                // Show loading placeholders while generating
+                Array.from({length: generatingCount}).map((_, i) => (
+                  <div
+                    key={`loading-${i}`}
+                    className={`bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden shadow-md border-2 border-dashed border-blue-300 ${
+                      aspectRatio === '9:16' ? 'aspect-[9/16] h-[480px]' :
+                      aspectRatio === '16:9' ? 'aspect-video h-96' :
+                      aspectRatio === '3:4' ? 'aspect-[3/4] h-[480px]' :
+                      aspectRatio === '4:3' ? 'aspect-[4/3] h-96' :
+                      aspectRatio === '1:1' ? 'aspect-square h-96' :
+                      aspectRatio === '2:3' ? 'aspect-[2/3] h-[480px]' :
+                      aspectRatio === '21:9' ? 'aspect-[21/9] h-48' :
+                      'aspect-video h-96'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <Loader className="w-12 h-12 mx-auto mb-2 animate-spin text-blue-600" />
+                      <p className="text-xs text-gray-600">Generating {i + 1}...</p>
+                    </div>
                   </div>
-                ) : canvasImage ? (
-                  <img
-                    src={canvasImage.image}
-                    alt="Generated"
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                ) : (
+                ))
+              ) : displayedImages.length > 0 ? (
+                // Show grid of images based on aspect ratio
+                <div className={`relative w-full h-full flex items-center justify-center gap-2 ${
+                  displayedImages.length >= 2 && (aspectRatio === '16:9' || aspectRatio === '4:3' || aspectRatio === '21:9')
+                    ? 'flex-wrap'
+                    : displayedImages.length >= 3 && (aspectRatio === '9:16' || aspectRatio === '3:4' || aspectRatio === '2:3')
+                    ? 'flex-wrap'
+                    : 'flex-col'
+                }`}>
+                  {displayedImages.map((img, idx) => (
+                    <div
+                      key={`${img.id}-${idx}`}
+                      className={`bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden shadow-md hover:shadow-lg transition-shadow relative group ${
+                        displayedImages.length >= 2 && (aspectRatio === '16:9' || aspectRatio === '4:3' || aspectRatio === '21:9')
+                          ? 'w-[calc(50%-4px)]'
+                          : displayedImages.length >= 3 && (aspectRatio === '9:16' || aspectRatio === '3:4' || aspectRatio === '2:3')
+                          ? 'w-[calc(33.333%-4px)]'
+                          : 'w-full'
+                      } ${
+                        aspectRatio === '9:16' ? 'aspect-[9/16] h-[300px]' :
+                        aspectRatio === '16:9' ? 'aspect-video h-40' :
+                        aspectRatio === '3:4' ? 'aspect-[3/4] h-[300px]' :
+                        aspectRatio === '4:3' ? 'aspect-[4/3] h-40' :
+                        aspectRatio === '1:1' ? 'aspect-square h-40' :
+                        aspectRatio === '2:3' ? 'aspect-[2/3] h-[300px]' :
+                        aspectRatio === '21:9' ? 'aspect-[21/9] h-28' :
+                        'aspect-video h-40'
+                      }`}
+                    >
+                      <img
+                        src={img.image}
+                        alt={`Generated ${idx + 1}`}
+                        className="w-full h-full object-cover rounded-lg"
+                        onError={() => handleImageLoadError(img.id)}
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto rounded-lg">
+                        <button
+                          className="p-2 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors"
+                          onClick={() => {
+                            sessionStorage.setItem('importedImage', JSON.stringify(img))
+                            router.push('/ai-studio/create-video')
+                          }}
+                          title="Create Video"
+                        >
+                          <Plus className="w-4 h-4 text-white" />
+                        </button>
+                        <button
+                          className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+                          onClick={() => handleSaveImage(img)}
+                          title="Save"
+                        >
+                          <Heart className="w-4 h-4 text-gray-700" />
+                        </button>
+                        <button
+                          className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+                          onClick={() => {
+                            setFullscreenImage(img.image)
+                            setFullscreenImageData(img)
+                            setImageZoom(1)
+                          }}
+                          title="View"
+                        >
+                          <Edit className="w-4 h-4 text-gray-700" />
+                        </button>
+                      </div>
+
+                      {/* Image Number Badge */}
+                      <div className="absolute top-2 left-2 bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium">
+                        {idx + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                // Show empty state
+                <div
+                  className={`bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden shadow-md hover:shadow-lg transition-shadow relative group ${
+                    aspectRatio === '9:16' ? 'aspect-[9/16] h-[480px]' :
+                    aspectRatio === '16:9' ? 'aspect-video h-96' :
+                    aspectRatio === '3:4' ? 'aspect-[3/4] h-[480px]' :
+                    aspectRatio === '4:3' ? 'aspect-[4/3] h-96' :
+                    aspectRatio === '1:1' ? 'aspect-square h-96' :
+                    aspectRatio === '2:3' ? 'aspect-[2/3] h-[480px]' :
+                    aspectRatio === '21:9' ? 'aspect-[21/9] h-48' :
+                    'aspect-video h-96'
+                  }`}
+                  data-canvas
+                >
                   <div className="text-center">
                     <Sparkles className="w-16 h-16 mx-auto mb-4 opacity-30 text-gray-400" />
                     <p className="text-sm text-gray-500">{aspectRatioLabels[aspectRatio]}</p>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleReferenceImageUpload}
+              className="hidden"
+            />
+
             {/* Prompt Bar - Fixed at bottom */}
-            <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative w-full mt-[25px] flex-shrink-0">
+            <div className="bg-white rounded-lg border border-gray-300 flex flex-col overflow-hidden relative w-full mt-[12px] flex-shrink-0">
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
@@ -1398,6 +1628,67 @@ export default function CreateImagePage() {
               <div className="flex gap-2 items-center justify-between px-3 py-3 bg-gray-50 border-t border-gray-300">
                 <div className="flex gap-2 items-center">
                   <span className="text-xs text-gray-500">{prompt.length} / 10000</span>
+
+                  {/* Reference Image Thumbnail */}
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`w-7 h-7 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                      referenceImage
+                        ? 'border-blue-400 bg-white overflow-hidden'
+                        : 'border-gray-300 bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700'
+                    }`}
+                    title={referenceImage ? 'Click to change reference image' : 'Upload reference image'}
+                  >
+                    {referenceImage ? (
+                      <img src={referenceImage} alt="Reference" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xs">📎</span>
+                    )}
+                  </button>
+
+                  {/* Strength Slider - only show if reference image exists */}
+                  {referenceImage && (
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={referenceStrength}
+                        onChange={(e) => setReferenceStrength(parseFloat(e.target.value))}
+                        className="w-16 h-1"
+                        title="Reference strength"
+                      />
+                      <span className="text-xs text-gray-600 w-5">{(referenceStrength * 100).toFixed(0)}%</span>
+                    </div>
+                  )}
+
+                  {/* Variations Buttons with Label */}
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs font-semibold text-gray-600">Variations</span>
+                    <div className="flex gap-0.5 items-center">
+                      {[
+                        { num: 1, label: 'Single' },
+                        { num: 2, label: 'Pair' },
+                        { num: 3, label: 'Triple' },
+                        { num: 4, label: 'Quad' }
+                      ].map(({ num, label }) => (
+                        <button
+                          key={num}
+                          onClick={() => setVariations(num)}
+                          className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                            variations === num
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                          title={`Generate ${num} variation${num > 1 ? 's' : ''}`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {canvasImage && (
                     <>
                       <button
@@ -1436,9 +1727,17 @@ export default function CreateImagePage() {
 
         {/* Right Panel - History */}
         <div className="w-64 flex flex-col rounded-2xl shadow-lg bg-white overflow-hidden m-3 mt-24 flex-shrink-0">
-          <div className="px-4 py-3 bg-black text-white rounded-t-2xl h-12 flex items-center justify-between">
-            <div className="flex items-center justify-between w-full">
-              <h2 className="text-sm font-semibold">Generated Images</h2>
+          <div className="px-4 py-3 bg-black text-white rounded-t-2xl flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Generated Images</h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleRefreshImages}
+                disabled={isRefreshing}
+                className="p-1.5 hover:bg-white/20 rounded transition-colors disabled:opacity-50"
+                title="Refresh images"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </button>
               <button
                 onClick={() => setShowTrash(!showTrash)}
                 className="text-xs text-white hover:text-gray-200 font-medium"
@@ -1447,23 +1746,54 @@ export default function CreateImagePage() {
               </button>
             </div>
           </div>
+
+          {/* View Mode Toggle */}
           <div className="px-4 py-3 bg-white border-b border-gray-200 space-y-2">
-            <select
-              value={selectedProjectId}
-              onChange={(e) => setSelectedProjectId(e.target.value)}
-              className="w-full px-2 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="">Select folder...</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex gap-2 mb-2">
+              <button
+                onClick={() => setViewMode('library')}
+                className={`flex-1 px-2 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  viewMode === 'library'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <Sparkles className="w-3 h-3 inline mr-1" />
+                Library
+              </button>
+              <button
+                onClick={() => setViewMode('projects')}
+                className={`flex-1 px-2 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  viewMode === 'projects'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                My Projects
+              </button>
+            </div>
+
+            {viewMode === 'projects' && (
+              <select
+                value={selectedProjectId}
+                onChange={(e) => setSelectedProjectId(e.target.value)}
+                className="w-full px-2 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="">Select folder...</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            )}
+
             <p className="text-xs text-gray-600">
               {showTrash
                 ? `${history.filter(img => img.deletedAt).length} deleted`
-                : `${history.filter(img => !img.deletedAt).length} image${history.filter(img => !img.deletedAt).length !== 1 ? 's' : ''}`}
+                : viewMode === 'library'
+                  ? `${history.filter(img => !img.deletedAt).length} image${history.filter(img => !img.deletedAt).length !== 1 ? 's' : ''}`
+                  : `${selectedProjectId ? history.filter(img => !img.deletedAt && img.projectId === selectedProjectId).length : 0} image${selectedProjectId && history.filter(img => !img.deletedAt && img.projectId === selectedProjectId).length !== 1 ? 's' : ''}`}
             </p>
           </div>
 
