@@ -258,7 +258,7 @@ export default function CreateImagePage() {
   const router = useRouter()
 
   // Generator settings
-  const [model, setModel] = useState('nano-banana-pro')
+  const [model, setModel] = useState('sd3.5-large-turbo')
   const [models, setModels] = useState<any[]>([])
   const [loadingModels, setLoadingModels] = useState(true)
   const [qualityPreset, setQualityPreset] = useState('balanced')

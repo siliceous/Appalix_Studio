@@ -56,11 +56,17 @@ class StabilityAdapter {
     if (params.negativePrompt) {
       formData.append('negative_prompt', params.negativePrompt)
     }
-    formData.append('aspect_ratio', params.aspectRatio || '1:1')
+    const finalAspectRatio = params.aspectRatio || '1:1'
+    formData.append('aspect_ratio', finalAspectRatio)
     formData.append('output_format', 'png')
     formData.append('model', params.modelId || 'sd3-large-turbo')
 
-    console.log('[Stability] Sending generation request with prompt:', prompt)
+    console.log('[Stability] Sending generation request with:', {
+      prompt: prompt.substring(0, 100),
+      aspectRatio: finalAspectRatio,
+      model: params.modelId || 'sd3-large-turbo',
+      dimensions
+    })
 
     const response = await fetch(`${this.baseUrl}/stable-image/generate/sd3`, {
       method: 'POST',
