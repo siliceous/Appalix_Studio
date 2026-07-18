@@ -23,6 +23,19 @@ const nextConfig: NextConfig = {
         destination: 'https://app.appalix.ai/sage/:path*',
         permanent: true,
       },
+      // studio.appalix.ai → AI Studio
+      {
+        source: '/',
+        has: [{ type: 'host', value: 'studio.appalix.ai' }],
+        destination: '/ai-studio',
+        permanent: false,
+      },
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'studio.appalix.ai' }],
+        destination: '/ai-studio/:path*',
+        permanent: false,
+      },
     ]
   },
   env: {
