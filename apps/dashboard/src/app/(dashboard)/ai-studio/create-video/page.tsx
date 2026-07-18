@@ -30,6 +30,10 @@ export default function CreateVideoPage() {
   const [showStartImageModal, setShowStartImageModal] = useState(false)
   const [showEndImageModal, setShowEndImageModal] = useState(false)
   const [showTrash, setShowTrash] = useState(false)
+  const [showLibraryModal, setShowLibraryModal] = useState(false)
+  const [libraryImages, setLibraryImages] = useState<any[]>([])
+  const [libraryLoading, setLibraryLoading] = useState(false)
+  const [selectedImageType, setSelectedImageType] = useState<'start' | 'end' | null>(null)
   const startImageInputRef = useRef<HTMLInputElement>(null)
   const endImageInputRef = useRef<HTMLInputElement>(null)
 
@@ -129,6 +133,40 @@ export default function CreateVideoPage() {
     } catch (error) {
       console.error('Error deleting video:', error)
     }
+  }
+
+  const openLibraryModal = (type: 'start' | 'end') => {
+    setSelectedImageType(type)
+    setShowLibraryModal(true)
+    fetchLibraryImages()
+  }
+
+  const fetchLibraryImages = async () => {
+    if (!workspaceId) return
+    setLibraryLoading(true)
+    try {
+      const response = await fetch('/api/ai-studio/images?limit=50', {
+        headers: { 'x-workspace-id': workspaceId }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        const images = Array.isArray(data) ? data : (data.images || [])
+        setLibraryImages(images.filter((img: any) => img.status === 'completed'))
+      }
+    } catch (error) {
+      console.error('Error fetching library images:', error)
+    } finally {
+      setLibraryLoading(false)
+    }
+  }
+
+  const handleSelectLibraryImage = (imageUrl: string) => {
+    if (selectedImageType === 'start') {
+      setStartImage(imageUrl)
+    } else if (selectedImageType === 'end') {
+      setEndImage(imageUrl)
+    }
+    setShowLibraryModal(false)
   }
 
 
@@ -438,7 +476,7 @@ export default function CreateVideoPage() {
                 <span className="text-xs text-gray-500">{prompt.length} / 10000</span>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => router.push('/ai-studio/create-image?mode=library')}
+                    onClick={() => openLibraryModal('start')}
                     className="px-3 py-2 bg-gray-600 text-white text-xs font-semibold rounded-lg shadow-md hover:bg-gray-700 transition-colors whitespace-nowrap flex-shrink-0"
                   >
                     Import Image
@@ -603,6 +641,54 @@ export default function CreateVideoPage() {
                   if (file) handleImageSelect('end', file)
                 }}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Library Modal */}
+      {showLibraryModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="text-lg font-semibold text-black">Select Image from Library</h3>
+              <button
+                onClick={() => setShowLibraryModal(false)}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              {libraryLoading ? (
+                <div className="flex items-center justify-center h-40">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                </div>
+              ) : libraryImages.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">
+                  <p>No images in library yet</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-4 gap-4">
+                  {libraryImages.map((image) => (
+                    <button
+                      key={image.id}
+                      onClick={() => handleSelectLibraryImage(image.image_url || image.url)}
+                      className="relative group rounded-lg overflow-hidden border-2 border-transparent hover:border-blue-500 transition-all"
+                    >
+                      <img
+                        src={image.image_url || image.url}
+                        alt={image.title || 'Library image'}
+                        className="w-full h-24 object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
+                        <div className="text-white font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Select</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
