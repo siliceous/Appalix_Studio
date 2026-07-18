@@ -48,6 +48,7 @@ export class KlingProvider implements VideoProviderInterface {
       prompt: params.prompt,
       duration: params.duration_seconds || 15,
       aspect_ratio: this.normalizeAspectRatio(params.aspect_ratio || '9:16'),
+      model: 'kling-v1',  // Specify Kling model
     };
 
     // For image-to-video requests
@@ -208,7 +209,9 @@ export class KlingProvider implements VideoProviderInterface {
       });
 
       if (!response.ok) {
-        throw new Error(`Kling API error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('[Kling API Error]', response.status, errorText);
+        throw new Error(`Kling API error: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       return response.json() as Promise<KlingJobResponse>;
