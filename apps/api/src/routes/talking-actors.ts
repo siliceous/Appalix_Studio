@@ -265,4 +265,198 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
       }
     }
   )
+
+  /**
+   * Get preset actors (available to all workspaces)
+   */
+  server.get(
+    '/presets',
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const sb = getSupabase()
+        const { data: actors, error } = await sb
+          .from('talking_actors')
+          .select('*')
+          .eq('is_preset', true)
+          .order('created_at', { ascending: false })
+
+        if (error) throw error
+
+        reply.send({
+          success: true,
+          presets: actors || [],
+          count: actors?.length || 0,
+        })
+      } catch (error) {
+        reply.status(500).send({
+          error: error instanceof Error ? error.message : 'Failed to fetch presets',
+        })
+      }
+    }
+  )
+
+  /**
+   * Publish actor as preset (only from info@gorank workspace)
+   */
+  server.post<{ Body: { actorId: string; workspaceId: string } }>(
+    '/publish-preset',
+    async (req: FastifyRequest<{ Body: { actorId: string; workspaceId: string } }>, reply: FastifyReply) => {
+      try {
+        const { actorId, workspaceId } = req.body
+        const sb = getSupabase()
+
+        // Verify this is from info@gorank workspace
+        const { data: workspace, error: wsError } = await sb
+          .from('workspaces')
+          .select('id, owner_email')
+          .eq('id', workspaceId)
+          .single()
+
+        if (wsError || workspace?.owner_email !== 'info@gorank.com.au') {
+          return reply.status(403).send({
+            error: 'Only info@gorank.com.au workspace can publish presets',
+          })
+        }
+
+        // Get the actor
+        const { data: actor, error: actorError } = await sb
+          .from('talking_actors')
+          .select('*')
+          .eq('id', actorId)
+          .eq('workspace_id', workspaceId)
+          .single()
+
+        if (actorError || !actor) {
+          return reply.status(404).send({
+            error: 'Actor not found',
+          })
+        }
+
+        // Publish as preset
+        const { error: updateError } = await sb
+          .from('talking_actors')
+          .update({
+            is_preset: true,
+            preset_created_by: workspace?.owner_email,
+          })
+          .eq('id', actorId)
+
+        if (updateError) throw updateError
+
+        reply.send({
+          success: true,
+          message: 'Actor published as preset',
+          actor: { ...actor, is_preset: true, preset_created_by: workspace?.owner_email },
+        })
+      } catch (error) {
+        reply.status(500).send({
+          error: error instanceof Error ? error.message : 'Failed to publish preset',
+        })
+      }
+    }
+  )
+
+  /**
+   * Unpublish actor from presets
+   */
+  server.post<{ Body: { actorId: string; workspaceId: string } }>(
+    '/unpublish-preset',
+    async (req: FastifyRequest<{ Body: { actorId: string; workspaceId: string } }>, reply: FastifyReply) => {
+      try {
+        const { actorId, workspaceId } = req.body
+        const sb = getSupabase()
+
+        // Verify this is from info@gorank workspace
+        const { data: workspace, error: wsError } = await sb
+          .from('workspaces')
+          .select('id, owner_email')
+          .eq('id', workspaceId)
+          .single()
+
+        if (wsError || workspace?.owner_email !== 'info@gorank.com.au') {
+          return reply.status(403).send({
+            error: 'Only info@gorank.com.au workspace can unpublish presets',
+          })
+        }
+
+        // Unpublish
+        const { error: updateError } = await sb
+          .from('talking_actors')
+          .update({
+            is_preset: false,
+            preset_created_by: null,
+          })
+          .eq('id', actorId)
+
+        if (updateError) throw updateError
+
+        reply.send({
+          success: true,
+          message: 'Actor unpublished from presets',
+        })
+      } catch (error) {
+        reply.status(500).send({
+          error: error instanceof Error ? error.message : 'Failed to unpublish preset',
+        })
+      }
+    }
+  )
+
+  /**
+   * Copy preset actor to workspace
+   */
+  server.post<{ Body: { presetActorId: string; workspaceId: string; newName?: string } }>(
+    '/copy-preset',
+    async (req: FastifyRequest<{ Body: { presetActorId: string; workspaceId: string; newName?: string } }>, reply: FastifyReply) => {
+      try {
+        const { presetActorId, workspaceId, newName } = req.body
+        const sb = getSupabase()
+
+        // Get the preset actor
+        const { data: presetActor, error: presetError } = await sb
+          .from('talking_actors')
+          .select('*')
+          .eq('id', presetActorId)
+          .eq('is_preset', true)
+          .single()
+
+        if (presetError || !presetActor) {
+          return reply.status(404).send({
+            error: 'Preset actor not found',
+          })
+        }
+
+        // Create a copy in the requesting workspace
+        const newActorId = uuidv4()
+        const copyName = newName || `${presetActor.name} (Copy)`
+
+        const { error: insertError } = await sb
+          .from('talking_actors')
+          .insert({
+            id: newActorId,
+            workspace_id: workspaceId,
+            name: copyName,
+            image_url: presetActor.image_url,
+            video_url: presetActor.video_url,
+            description: presetActor.description,
+            tags: presetActor.tags,
+            preset_source_id: presetActorId, // Track which preset this came from
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+
+        if (insertError) throw insertError
+
+        reply.send({
+          success: true,
+          message: 'Preset actor copied to workspace',
+          actor_id: newActorId,
+        })
+      } catch (error) {
+        reply.status(500).send({
+          error: error instanceof Error ? error.message : 'Failed to copy preset',
+        })
+      }
+    }
+  )
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Download, Trash2, Search, Loader2, X, ChevronLeft, ChevronRight, Plus, Eye, Save } from 'lucide-react'
+import { Download, Trash2, Search, Loader2, X, ChevronLeft, ChevronRight, Plus, Eye, Save, Sparkles } from 'lucide-react'
 import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 
 interface GeneratedImage {
@@ -161,6 +161,10 @@ export default function TalkingActors() {
   const [selectedSkinTone, setSelectedSkinTone] = useState<string>('')
   const [actorName, setActorName] = useState('')
   const [showTrash, setShowTrash] = useState(false)
+  const [presetActors, setPresetActors] = useState<any[]>([])
+  const [showPresets, setShowPresets] = useState(false)
+  const [isPublishing, setIsPublishing] = useState(false)
+  const [selectedImageForPreset, setSelectedImageForPreset] = useState<GeneratedImage | null>(null)
 
   useEffect(() => {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
@@ -285,6 +289,93 @@ export default function TalkingActors() {
     }
     fetchFolders()
   }, [workspaceId])
+
+  // Fetch preset actors
+  useEffect(() => {
+    const fetchPresets = async () => {
+      try {
+        const response = await fetch('/api/talking-actors/presets')
+        if (response.ok) {
+          const data = await response.json()
+          setPresetActors(data.presets || [])
+        }
+      } catch (error) {
+        console.error('Error fetching presets:', error)
+      }
+    }
+    fetchPresets()
+  }, [])
+
+  const handlePublishAsPreset = async (imageId: string) => {
+    if (workspaceId !== 'info@gorank.com.au') {
+      alert('Only info@gorank.com.au workspace can publish presets')
+      return
+    }
+
+    const image = images.find(img => img.id === imageId)
+    if (!image) return
+
+    setIsPublishing(true)
+    try {
+      const response = await fetch('/api/talking-actors/publish-preset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-workspace-id': workspaceId,
+        },
+        body: JSON.stringify({
+          actorId: imageId,
+          workspaceId,
+        }),
+      })
+
+      if (response.ok) {
+        alert('✅ Actor published as preset!')
+        setSelectedImageForPreset(null)
+        // Refresh presets
+        const presetsResponse = await fetch('/api/talking-actors/presets')
+        if (presetsResponse.ok) {
+          const data = await presetsResponse.json()
+          setPresetActors(data.presets || [])
+        }
+      } else {
+        const error = await response.json()
+        alert('❌ ' + (error.error || 'Failed to publish'))
+      }
+    } catch (error) {
+      console.error('Error publishing preset:', error)
+      alert('Error publishing preset')
+    } finally {
+      setIsPublishing(false)
+    }
+  }
+
+  const handleCopyPreset = async (presetId: string) => {
+    try {
+      const response = await fetch('/api/talking-actors/copy-preset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          presetActorId: presetId,
+          workspaceId,
+        }),
+      })
+
+      if (response.ok) {
+        alert('✅ Preset actor copied to your workspace!')
+        // Refresh images
+        window.location.reload()
+      } else {
+        const error = await response.json()
+        alert('❌ ' + (error.error || 'Failed to copy'))
+      }
+    } catch (error) {
+      console.error('Error copying preset:', error)
+      alert('Error copying preset')
+    }
+  }
 
   const deletedImages = images.filter((img) => img.deletedAt).sort((a, b) => (b.deletedAt || 0) - (a.deletedAt || 0))
 
@@ -661,6 +752,14 @@ export default function TalkingActors() {
                 </div>
                 <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-white/10 border border-white/20">{credits} Credits</div>
                 <button
+                  onClick={() => setShowPresets(!showPresets)}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-purple-600 border border-purple-500 hover:bg-purple-700 transition-colors"
+                  title="View and copy preset actors"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Presets ({presetActors.length})
+                </button>
+                <button
                   onClick={() => setShowTrash(!showTrash)}
                   className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors text-white ${
                     showTrash
@@ -886,6 +985,15 @@ export default function TalkingActors() {
 
             <div className="flex flex-col gap-2 pt-4 border-t border-gray-700 flex-shrink-0">
               <button onClick={() => handleSaveToFolder(fullscreenImage)} className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><Save className="w-4 h-4" /> Save to Folder</button>
+              {workspaceId === 'info@gorank.com.au' && (
+                <button
+                  onClick={() => handlePublishAsPreset(fullscreenImage.id)}
+                  disabled={isPublishing}
+                  className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" /> {isPublishing ? 'Publishing...' : 'Publish as Preset'}
+                </button>
+              )}
               <button onClick={() => { handleDelete(fullscreenImage.id); setFullscreenImage(null); setImageZoom(0.5) }} className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><Trash2 className="w-4 h-4" /> Delete</button>
             </div>
           </div>
@@ -932,6 +1040,44 @@ export default function TalkingActors() {
               <button onClick={() => { setShowCreateProjectDialog(false); setCreateProjectName('') }} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors">Cancel</button>
               <button onClick={() => { }} disabled={!createProjectName.trim() || isCreatingProject} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">{isCreatingProject ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating</> : <><Plus className="w-4 h-4" /> Create</>}</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Presets Modal */}
+      {showPresets && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-96 overflow-y-auto p-6 space-y-4">
+            <div className="flex items-center justify-between flex-shrink-0">
+              <h2 className="text-lg font-bold text-gray-900">Preset Talking Actors</h2>
+              <button onClick={() => setShowPresets(false)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <X className="w-5 h-5 text-gray-700" />
+              </button>
+            </div>
+
+            {presetActors.length === 0 ? (
+              <p className="text-gray-600 text-center py-8">No preset actors available yet</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {presetActors.map((preset) => (
+                  <div key={preset.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                    {preset.image_url && (
+                      <img src={preset.image_url} alt={preset.name} className="w-full h-40 object-cover" />
+                    )}
+                    <div className="p-3 space-y-2">
+                      <p className="font-semibold text-gray-900 truncate">{preset.name}</p>
+                      <p className="text-xs text-gray-600 line-clamp-2">{preset.description}</p>
+                      <button
+                        onClick={() => handleCopyPreset(preset.id)}
+                        className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors"
+                      >
+                        Copy to My Workspace
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
