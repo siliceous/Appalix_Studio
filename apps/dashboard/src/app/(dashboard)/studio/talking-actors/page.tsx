@@ -14,6 +14,7 @@ interface GeneratedImage {
   aspectRatio?: string
   projectId?: string
   projectName?: string
+  model?: string
   parsedMetadata?: {
     gender?: string
     age?: string
