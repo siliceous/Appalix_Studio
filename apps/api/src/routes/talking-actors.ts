@@ -420,7 +420,19 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
     '/presets',
     async (req: FastifyRequest, reply: FastifyReply) => {
       try {
+        console.log('[Presets] Fetching presets...')
         const masterWorkspaceIds = await getMasterWorkspaceIds()
+        console.log('[Presets] Master workspace IDs:', masterWorkspaceIds)
+
+        if (masterWorkspaceIds.length === 0) {
+          console.log('[Presets] No master workspaces found, returning empty list')
+          return reply.send({
+            success: true,
+            presets: [],
+            count: 0,
+          })
+        }
+
         const sb = getSupabase()
 
         const { data: actors, error } = await sb
@@ -431,6 +443,8 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
           .in('workspace_id', masterWorkspaceIds)
           .order('created_at', { ascending: false })
 
+        console.log('[Presets] Query result:', { error: error?.message, count: actors?.length })
+
         if (error) throw error
 
         reply.send({
@@ -439,6 +453,7 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
           count: actors?.length || 0,
         })
       } catch (error) {
+        console.error('[Presets] Error:', error)
         reply.status(500).send({
           error: error instanceof Error ? error.message : 'Failed to fetch presets',
         })
