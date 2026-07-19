@@ -353,14 +353,15 @@ export default function TalkingActors() {
       try {
         console.log('[TalkingActors] Fetching saved actors from database...')
 
-        let workspaceRes, presetsRes
+        let workspaceRes: Response | undefined
+        let presetsRes: Response | undefined
         const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
 
         if (!isProduction) {
-        // Get auth token from Supabase session
-        const supabase = createSupabaseClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        const authHeader: string | undefined = session?.access_token ? `Bearer ${session.access_token}` : undefined
+          // Get auth token from Supabase session
+          const supabase = createSupabaseClient()
+          const { data: { session } } = await supabase.auth.getSession()
+          const authHeader: string | undefined = session?.access_token ? `Bearer ${session.access_token}` : undefined
 
           // Fetch both workspace-specific and preset actors on localhost
           [workspaceRes, presetsRes] = await Promise.all([
