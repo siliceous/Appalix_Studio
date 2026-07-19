@@ -226,6 +226,8 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
       try {
         const { workspaceId, name, imageUrl, description } = req.body
 
+        console.log('[SaveActor] Request body:', { workspaceId, name, imageUrl: imageUrl?.substring(0, 50) })
+
         if (!workspaceId || !name || !imageUrl) {
           return reply.status(400).send({
             error: 'Missing required fields: workspaceId, name, imageUrl',
@@ -233,6 +235,8 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
         }
 
         const sb = getSupabase()
+        console.log('[SaveActor] Supabase client initialized')
+
         const { data: actor, error } = await sb
           .from('talking_actors')
           .insert({
@@ -246,7 +250,12 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
           .select()
           .single()
 
-        if (error) throw error
+        console.log('[SaveActor] Insert result:', { error, actor: actor?.id })
+
+        if (error) {
+          console.error('[SaveActor] Database error:', error)
+          throw error
+        }
 
         reply.send({
           success: true,
@@ -254,6 +263,7 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
           message: 'Actor saved to database',
         })
       } catch (error) {
+        console.error('[SaveActor] Exception:', error)
         reply.status(500).send({
           error: error instanceof Error ? error.message : 'Failed to save actor',
         })
