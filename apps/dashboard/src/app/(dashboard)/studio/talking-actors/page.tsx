@@ -323,8 +323,7 @@ export default function TalkingActors() {
         // Get auth token from Supabase session
         const supabase = createSupabaseClient()
         const { data: { session } } = await supabase.auth.getSession()
-        let authHeader: string | undefined
-        authHeader = session?.access_token ? `Bearer ${session.access_token}` : undefined
+        const authHeader = session?.access_token ? `Bearer ${session.access_token}` : undefined
 
           // Fetch both workspace-specific and preset actors on localhost
           [workspaceRes, presetsRes] = await Promise.all([
