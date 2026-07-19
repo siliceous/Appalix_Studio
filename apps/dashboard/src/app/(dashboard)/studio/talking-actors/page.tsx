@@ -1246,20 +1246,20 @@ export default function TalkingActors() {
                                 e.stopPropagation()
                                 handleSaveToFolder(image)
                               }}
-                              className="p-2 bg-red-500 rounded-full hover:bg-red-600 transition-colors"
+                              className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
                               title="Save to Folder"
                             >
-                              <Heart className="w-4 h-4 text-white" />
+                              <Heart className="w-4 h-4 text-gray-700" />
                             </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
                                 handleDelete(image.id)
                               }}
-                              className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
+                              className="p-2 bg-red-600 rounded-full hover:bg-red-700 transition-colors"
                               title="Delete"
                             >
-                              <Trash2 className="w-4 h-4 text-gray-700" />
+                              <Trash2 className="w-4 h-4 text-white" />
                             </button>
                           </div>
                         </div>
