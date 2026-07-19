@@ -359,22 +359,29 @@ export default function TalkingActors() {
 
         if (!isProduction) {
           // Get auth token from Supabase session
-          const supabase = createSupabaseClient()
-          const { data: { session } } = await supabase.auth.getSession()
-          const token = session?.access_token
-          const authHeader = typeof token === 'string' ? `Bearer ${token}` : undefined
+          const supabase = createSupabaseClient();
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          const authHeader = session?.access_token
+            ? `Bearer ${session.access_token}`
+            : undefined;
+
+          const requestHeaders: HeadersInit = authHeader
+            ? {
+                Authorization: authHeader,
+              }
+            : {};
 
           // Fetch both workspace-specific and preset actors on localhost
-          const [res1, res2] = await Promise.all([
+          [workspaceRes, presetsRes] = await Promise.all([
             fetch(`/api/talking-actors/workspace/${workspaceId}`, {
-              headers: { 'x-workspace-id': workspaceId, ...(authHeader ? { 'Authorization': authHeader } : {}) }
+              headers: { 'x-workspace-id': workspaceId, ...requestHeaders },
             }),
             fetch(`/api/talking-actors/presets`, {
-              headers: { 'x-workspace-id': workspaceId, ...(authHeader ? { 'Authorization': authHeader } : {}) }
-            })
-          ])
-          workspaceRes = res1
-          presetsRes = res2
+              headers: { 'x-workspace-id': workspaceId, ...requestHeaders },
+            }),
+          ]);
         } else {
           console.log('[TalkingActors] Running on production, using localStorage only')
         }
