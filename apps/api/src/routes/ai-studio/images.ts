@@ -5,6 +5,7 @@ import { gemini } from '../../adapters/gemini.js'
 import { nanoBanana } from '../../adapters/nano-banana.js'
 import { seedence } from '../../adapters/seedence.js'
 import { imageOptimization } from '../../services/image-optimization.service.js'
+import { getCurrentWorkspaceContext } from '../../lib/workspace-context.js'
 import { v4 as uuid } from 'uuid'
 
 interface ImageGenerationRequest {
@@ -105,16 +106,13 @@ export async function imageRoutes(app: FastifyInstance) {
   })
 
   // Generate image
+  // SECURITY: Validates user can generate in this workspace
   app.post<{ Body: ImageGenerationRequest }>('/generate/image', async (request, reply) => {
     try {
+      const context = await getCurrentWorkspaceContext(request)
       let { prompt, style, lighting, aspectRatio, model, quantity, negativePrompt, temperature, resolution } = request.body
-      const workspaceId = request.headers['x-workspace-id'] as string
 
       console.log('[Image Generation] POST /generate/image called with prompt:', prompt.substring(0, 50), 'quantity:', quantity, 'model:', model)
-
-      if (!workspaceId) {
-        return reply.status(400).send({ error: 'Missing workspace ID' })
-      }
 
       if (!prompt?.trim()) {
         return reply.status(400).send({ error: 'Prompt is required' })
@@ -136,21 +134,12 @@ export async function imageRoutes(app: FastifyInstance) {
 
       prompt = sanitizePrompt(prompt)
 
-      // Check workspace has Leonardo API configured
-      const { data: workspace } = await supabase
-        .from('workspaces')
-        .select('id')
-        .eq('id', workspaceId)
-        .single()
-
-      if (!workspace) {
-        return reply.status(404).send({ error: 'Workspace not found' })
-      }
+      // Workspace already validated by getCurrentWorkspaceContext
 
       // Estimate storage needed (average 300KB per image, conservative estimate)
       const estimatedSizePerImage = 300 * 1024
       const estimatedTotalSize = estimatedSizePerImage * quantity
-      const quotaCheck = await checkStorageQuota(workspaceId, estimatedTotalSize)
+      const quotaCheck = await checkStorageQuota(context.workspaceId, estimatedTotalSize)
       if (!quotaCheck.allowed) {
         return reply.status(507).send({ error: quotaCheck.error })
       }
@@ -161,7 +150,7 @@ export async function imageRoutes(app: FastifyInstance) {
       const { data: generation, error: insertError } = await (supabase
         .from('ai_image_generations')
         .insert({
-          workspace_id: workspaceId,
+          workspace_id: context.workspaceId,
           prompt,
           negative_prompt: negativePrompt,
           style,
@@ -295,21 +284,18 @@ export async function imageRoutes(app: FastifyInstance) {
   })
 
   // Get generation status
+  // SECURITY: Validates user can access this workspace
   app.get<{ Params: { id: string } }>('/generations/:id', async (request, reply) => {
     try {
+      const context = await getCurrentWorkspaceContext(request)
       const { id } = request.params
-      const workspaceId = request.headers['x-workspace-id'] as string
-
-      if (!workspaceId) {
-        return reply.status(400).send({ error: 'Missing workspace ID' })
-      }
 
       // Get generation record
       const { data: generation, error } = await supabase
         .from('ai_image_generations')
         .select('*')
         .eq('id', id)
-        .eq('workspace_id', workspaceId)
+        .eq('workspace_id', context.workspaceId)
         .single()
 
       if (error || !generation) {
@@ -478,17 +464,13 @@ export async function imageRoutes(app: FastifyInstance) {
   // Get all completed images for a workspace
   app.get('/all-images', async (request, reply) => {
     try {
-      const workspaceId = request.headers['x-workspace-id'] as string
-
-      if (!workspaceId) {
-        return reply.status(400).send({ error: 'Missing workspace ID' })
-      }
+      const context = await getCurrentWorkspaceContext(request)
 
       // Fetch all completed image generations
       const { data: allGenerations, error } = await supabase
         .from('ai_image_generations')
         .select('id, prompt, created_at, output_url, output_urls, storage_keys, status, quantity, aspect_ratio')
-        .eq('workspace_id', workspaceId)
+        .eq('workspace_id', context.workspaceId)
         .eq('status', 'completed')
         .order('created_at', { ascending: false })
         .limit(1000)

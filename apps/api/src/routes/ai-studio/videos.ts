@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { VideoGenerationService } from '../../modules/video-generation/video-generation.service.js'
+import { getCurrentWorkspaceContext } from '../../lib/workspace-context.js'
 
 interface GenerateVideoRequest {
   prompt: string
@@ -33,16 +34,7 @@ export async function videoRoutes(app: FastifyInstance) {
     },
     async (request: FastifyRequest<{ Body: GenerateVideoRequest }>, reply: FastifyReply) => {
       try {
-        const workspaceId = request.headers['x-workspace-id'] as string
-        const userId = request.headers['x-user-id'] as string
-
-        if (!workspaceId) {
-          return reply.status(400).send({ error: 'Missing workspace ID' })
-        }
-
-        if (!userId) {
-          return reply.status(401).send({ error: 'Unauthorized' })
-        }
+        const context = await getCurrentWorkspaceContext(request)
 
         const { prompt, duration_seconds, quality_mode, aspect_ratio, source_image_url } = request.body
 
@@ -56,8 +48,8 @@ export async function videoRoutes(app: FastifyInstance) {
         const result = await service.generateVideo({
           prompt,
           video_type: videoType,
-          workspace_id: workspaceId,
-          user_id: userId,
+          workspace_id: context.workspaceId,
+          user_id: context.userId,
           quality_mode: quality_mode || 'fast',
           duration_seconds: duration_seconds || 15,
           aspect_ratio: (aspect_ratio || '9:16') as any,
@@ -102,17 +94,13 @@ export async function videoRoutes(app: FastifyInstance) {
     },
     async (request: FastifyRequest<{ Querystring: { limit?: string; offset?: string; status?: string } }>, reply: FastifyReply) => {
       try {
-        const workspaceId = request.headers['x-workspace-id'] as string
-
-        if (!workspaceId) {
-          return reply.status(400).send({ error: 'Missing workspace ID' })
-        }
+        const context = await getCurrentWorkspaceContext(request)
 
         const service = new VideoGenerationService()
         const limit = parseInt(request.query.limit || '50')
         const offset = parseInt(request.query.offset || '0')
 
-        const result = await service.listVideos(workspaceId, {
+        const result = await service.listVideos(context.workspaceId, {
           status: request.query.status as any,
           limit,
           offset,
@@ -135,15 +123,11 @@ export async function videoRoutes(app: FastifyInstance) {
     '/videos/:id',
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       try {
-        const workspaceId = request.headers['x-workspace-id'] as string
+        const context = await getCurrentWorkspaceContext(request)
         const { id } = request.params
 
-        if (!workspaceId) {
-          return reply.status(400).send({ error: 'Missing workspace ID' })
-        }
-
         const service = new VideoGenerationService()
-        const result = await service.getVideo(id, workspaceId)
+        const result = await service.getVideo(id, context.workspaceId)
 
         if (!result) {
           return reply.status(404).send({ error: 'Video not found' })
@@ -166,20 +150,11 @@ export async function videoRoutes(app: FastifyInstance) {
     '/videos/:id',
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       try {
-        const workspaceId = request.headers['x-workspace-id'] as string
-        const userId = request.headers['x-user-id'] as string
+        const context = await getCurrentWorkspaceContext(request)
         const { id } = request.params
 
-        if (!workspaceId) {
-          return reply.status(400).send({ error: 'Missing workspace ID' })
-        }
-
-        if (!userId) {
-          return reply.status(401).send({ error: 'Unauthorized' })
-        }
-
         const service = new VideoGenerationService()
-        await service.deleteVideo(id, workspaceId)
+        await service.deleteVideo(id, context.workspaceId)
         return reply.send({ success: true })
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error'

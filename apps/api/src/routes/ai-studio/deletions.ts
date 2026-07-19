@@ -1,20 +1,18 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { supabase } from '../../lib/supabase.js'
 import { ensureDeletionTableExists } from '../../lib/init-deletion-table.js'
+import { getCurrentWorkspaceContext } from '../../lib/workspace-context.js'
 
 export async function deletionRoutes(app: FastifyInstance) {
   // Initialize table on startup
   await ensureDeletionTableExists()
 
   // Mark an image as deleted/trashed
+  // SECURITY: Validates user can trash images in this workspace
   app.post<{ Body: { image_id: string } }>('/trash-image', async (request, reply) => {
     try {
-      const workspaceId = request.headers['x-workspace-id'] as string
+      const context = await getCurrentWorkspaceContext(request)
       const { image_id } = request.body
-
-      if (!workspaceId) {
-        return reply.status(400).send({ error: 'Missing workspace ID' })
-      }
 
       if (!image_id) {
         return reply.status(400).send({ error: 'Missing image_id' })
@@ -24,7 +22,7 @@ export async function deletionRoutes(app: FastifyInstance) {
       const { data: existingDeletion, error: selectError } = await supabase
         .from('ai_image_deletions')
         .select('id')
-        .eq('workspace_id', workspaceId)
+        .eq('workspace_id', context.workspaceId)
         .eq('image_id', image_id)
         .single()
 
@@ -44,7 +42,7 @@ export async function deletionRoutes(app: FastifyInstance) {
       const { error } = await supabase
         .from('ai_image_deletions')
         .insert({
-          workspace_id: workspaceId,
+          workspace_id: context.workspaceId,
           image_id: image_id,
         })
 
@@ -69,14 +67,11 @@ export async function deletionRoutes(app: FastifyInstance) {
   })
 
   // Restore an image from trash
+  // SECURITY: Validates user can restore images in this workspace
   app.post<{ Body: { image_id: string } }>('/restore-image', async (request, reply) => {
     try {
-      const workspaceId = request.headers['x-workspace-id'] as string
+      const context = await getCurrentWorkspaceContext(request)
       const { image_id } = request.body
-
-      if (!workspaceId) {
-        return reply.status(400).send({ error: 'Missing workspace ID' })
-      }
 
       if (!image_id) {
         return reply.status(400).send({ error: 'Missing image_id' })
@@ -86,7 +81,7 @@ export async function deletionRoutes(app: FastifyInstance) {
       const { error } = await supabase
         .from('ai_image_deletions')
         .delete()
-        .eq('workspace_id', workspaceId)
+        .eq('workspace_id', context.workspaceId)
         .eq('image_id', image_id)
 
       // If table doesn't exist, still return success (client already removed from local)
@@ -110,19 +105,16 @@ export async function deletionRoutes(app: FastifyInstance) {
   })
 
   // Get all deleted image IDs for a workspace
+  // SECURITY: Validates user can view deletions for this workspace
   app.get('/deleted-images', async (request, reply) => {
     try {
-      const workspaceId = request.headers['x-workspace-id'] as string
-
-      if (!workspaceId) {
-        return reply.status(400).send({ error: 'Missing workspace ID' })
-      }
+      const context = await getCurrentWorkspaceContext(request)
 
       // Fetch all deletion records for this workspace
       const { data: deletions, error } = await supabase
         .from('ai_image_deletions')
         .select('image_id')
-        .eq('workspace_id', workspaceId)
+        .eq('workspace_id', context.workspaceId)
 
       // If table doesn't exist, return empty list (client will use localStorage fallback)
       if (error?.code === 'PGRST205' || error?.message?.includes('not found')) {
@@ -154,14 +146,11 @@ export async function deletionRoutes(app: FastifyInstance) {
   })
 
   // Schedule permanent deletion of a trashed image (deletion in 3 days)
+  // SECURITY: Validates user can permanently delete images in this workspace
   app.post<{ Body: { image_id: string } }>('/permanently-delete', async (request, reply) => {
     try {
-      const workspaceId = request.headers['x-workspace-id'] as string
+      const context = await getCurrentWorkspaceContext(request)
       const { image_id } = request.body
-
-      if (!workspaceId) {
-        return reply.status(400).send({ error: 'Missing workspace ID' })
-      }
 
       if (!image_id) {
         return reply.status(400).send({ error: 'Missing image_id' })
@@ -173,7 +162,7 @@ export async function deletionRoutes(app: FastifyInstance) {
       const { error } = await supabase
         .from('ai_image_deletions')
         .update({ scheduled_for_deletion_at: scheduledDeletionTime })
-        .eq('workspace_id', workspaceId)
+        .eq('workspace_id', context.workspaceId)
         .eq('image_id', image_id)
 
       if (error?.code === 'PGRST205' || error?.message?.includes('not found')) {

@@ -1,22 +1,17 @@
 import type { FastifyInstance } from 'fastify'
 import { supabase } from '../../lib/supabase.js'
 import { sendCampaignBatch, type CampaignRecipient } from '../../services/resend-campaign.service.js'
+import { getCurrentWorkspaceContext } from '../../lib/workspace-context.js'
 
 export async function emailCampaignRoutes(fastify: FastifyInstance) {
   /**
    * POST /email/campaigns/:id/send
-   * Fetches eligible recipients, creates batches, fires sending.
-   * Called by the dashboard server action after the user clicks Send.
-   * Protected by service-role key header.
+   * SECURITY: Validates user can send campaigns from this workspace
    */
   fastify.post<{ Params: { id: string } }>(
     '/campaigns/:id/send',
     async (request, reply) => {
-      const serviceKey = request.headers['x-service-key'] as string | undefined
-      if (serviceKey !== process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        return reply.status(401).send({ error: 'Unauthorised' })
-      }
-
+      const context = await getCurrentWorkspaceContext(request)
       const campaignId = request.params.id
 
       // Load campaign
@@ -24,6 +19,7 @@ export async function emailCampaignRoutes(fastify: FastifyInstance) {
         .from('email_campaigns')
         .select('*')
         .eq('id', campaignId)
+        .eq('workspace_id', context.workspaceId)
         .single()
 
       if (cErr || !campaign) return reply.status(404).send({ error: 'Campaign not found' })
@@ -59,6 +55,7 @@ export async function emailCampaignRoutes(fastify: FastifyInstance) {
    * GET /email/unsubscribe
    * Public one-click unsubscribe link included in every campaign email.
    * ?rid=<recipientId> — marks the contact opted-out and shows a confirmation page.
+   * SECURITY: Recipient lookup prevents cross-workspace unsubscribe manipulation
    */
   fastify.get<{ Querystring: { rid?: string } }>(
     '/unsubscribe',
@@ -73,24 +70,34 @@ export async function emailCampaignRoutes(fastify: FastifyInstance) {
         .maybeSingle()
 
       if (recipient) {
-        const now = new Date().toISOString()
-        await supabase.from('email_campaign_recipients').update({
-          status:          'unsubscribed',
-          unsubscribed_at: now,
-        }).eq('id', recipientId)
+        // SECURITY: Verify recipient belongs to the campaign's workspace
+        const { data: campaign } = await supabase
+          .from('email_campaigns')
+          .select('workspace_id')
+          .eq('id', recipient.campaign_id)
+          .single()
 
-        await supabase.from('email_campaigns').select('unsubscribed_count').eq('id', recipient.campaign_id).single()
-          .then(async ({ data }) => {
-            if (data) {
-              await supabase.from('email_campaigns').update({
-                unsubscribed_count: ((data as { unsubscribed_count: number }).unsubscribed_count ?? 0) + 1,
-                updated_at:         now,
-              }).eq('id', recipient.campaign_id)
-            }
-          })
+        // Only process if campaign exists and workspace matches
+        if (campaign && campaign.workspace_id === recipient.workspace_id) {
+          const now = new Date().toISOString()
+          await supabase.from('email_campaign_recipients').update({
+            status:          'unsubscribed',
+            unsubscribed_at: now,
+          }).eq('id', recipientId).eq('workspace_id', recipient.workspace_id)
 
-        if (recipient.contact_id) {
-          await supabase.from('sage_contacts').update({ email_opt_out: true }).eq('id', recipient.contact_id)
+          await supabase.from('email_campaigns').select('unsubscribed_count').eq('id', recipient.campaign_id).eq('workspace_id', recipient.workspace_id).single()
+            .then(async ({ data }) => {
+              if (data) {
+                await supabase.from('email_campaigns').update({
+                  unsubscribed_count: ((data as { unsubscribed_count: number }).unsubscribed_count ?? 0) + 1,
+                  updated_at:         now,
+                }).eq('id', recipient.campaign_id).eq('workspace_id', recipient.workspace_id)
+              }
+            })
+
+          if (recipient.contact_id) {
+            await supabase.from('sage_contacts').update({ email_opt_out: true }).eq('id', recipient.contact_id).eq('workspace_id', recipient.workspace_id)
+          }
         }
       }
 
@@ -110,14 +117,12 @@ h1{font-size:1.25rem;color:#111;margin-bottom:8px;}p{color:#666;font-size:.875re
   /**
    * GET /email/campaigns/:id/stats
    * Returns live aggregate stats for a campaign.
+   * SECURITY: Validates user can view stats from this workspace
    */
   fastify.get<{ Params: { id: string } }>(
     '/campaigns/:id/stats',
     async (request, reply) => {
-      const serviceKey = request.headers['x-service-key'] as string | undefined
-      if (serviceKey !== process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        return reply.status(401).send({ error: 'Unauthorised' })
-      }
+      const context = await getCurrentWorkspaceContext(request)
 
       const { data, error } = await supabase
         .from('email_campaigns')
@@ -128,6 +133,7 @@ h1{font-size:1.25rem;color:#111;margin-bottom:8px;}p{color:#666;font-size:.875re
           complained_count, unsubscribed_count, failed_count
         `)
         .eq('id', request.params.id)
+        .eq('workspace_id', context.workspaceId)
         .single()
 
       if (error || !data) return reply.status(404).send({ error: 'Campaign not found' })

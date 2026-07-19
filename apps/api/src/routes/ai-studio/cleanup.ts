@@ -1,23 +1,31 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { supabase } from '../../lib/supabase.js'
+import { getCurrentWorkspaceContext } from '../../lib/workspace-context.js'
 
 export async function cleanupRoutes(app: FastifyInstance) {
   // Delete all mock images (SVG data URLs) from a workspace
+  // SECURITY: Validates user can cleanup this workspace
   app.delete<{ Params: { workspaceId: string } }>('/cleanup/mock-images/:workspaceId', async (request, reply) => {
     try {
+      const context = await getCurrentWorkspaceContext(request)
       const { workspaceId } = request.params
 
       if (!workspaceId) {
         return reply.status(400).send({ error: 'Workspace ID required' })
       }
 
-      console.log('[Cleanup] Removing mock images for workspace:', workspaceId)
+      // SECURITY: Verify user can cleanup this workspace
+      if (context.workspaceId !== workspaceId) {
+        return reply.status(403).send({ error: 'Access denied to this workspace' })
+      }
+
+      console.log('[Cleanup] Removing mock images for workspace:', context.workspaceId)
 
       // First, fetch all mock images
       const { data: mockImages, error: fetchError } = await supabase
         .from('ai_image_generations')
         .select('id')
-        .eq('workspace_id', workspaceId)
+        .eq('workspace_id', context.workspaceId)
         .or("output_url.like.%data:image/svg+xml%,output_urls.like.%data:image/svg+xml%")
 
       if (fetchError) {
