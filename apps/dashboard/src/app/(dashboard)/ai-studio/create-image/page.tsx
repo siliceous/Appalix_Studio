@@ -341,7 +341,7 @@ export default function CreateImagePage() {
     // Smart cleanup: deduplicate, validate, and keep recent images
     if (typeof window !== 'undefined') {
       try {
-        const savedHistory = localStorage.getItem('imageGenerationHistory')
+        const savedHistory = localStorage.getItem(`imageGenerationHistory-${wId}`)
         if (savedHistory) {
           const parsed = JSON.parse(savedHistory)
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -375,7 +375,7 @@ export default function CreateImagePage() {
 
             if (deduped.length < parsed.length) {
               console.log('[Load] Saved to localStorage. Total:', deduped.length, 'images')
-              localStorage.setItem('imageGenerationHistory', JSON.stringify(deduped))
+              localStorage.setItem(`imageGenerationHistory-${wId}`, JSON.stringify(deduped))
             }
 
             console.log('[Load] Loaded', deduped.length, 'valid images from localStorage')
@@ -683,11 +683,11 @@ export default function CreateImagePage() {
                   console.log('- Size:', sizeKB, 'KB')
                   console.log('- URL length of first image:', updated[0]?.image?.length || 0)
 
-                  localStorage.setItem('imageGenerationHistory', jsonStr)
+                  localStorage.setItem(`imageGenerationHistory-${wId}`, jsonStr)
                   console.log('✅ Successfully saved to localStorage')
 
                   // Verify it was saved
-                  const verified = localStorage.getItem('imageGenerationHistory')
+                  const verified = localStorage.getItem(`imageGenerationHistory-${wId}`)
                   console.log('✅ Verified in localStorage:', verified?.length || 0, 'bytes')
                 } catch (err) {
                   console.error('❌ localStorage save error:', err)
@@ -744,7 +744,7 @@ export default function CreateImagePage() {
       
       // Persist to localStorage immediately
       try {
-        localStorage.setItem('imageGenerationHistory', JSON.stringify(updated))
+        localStorage.setItem(`imageGenerationHistory-${workspaceId}`, JSON.stringify(updated))
         console.log('[Delete] ✓ Persisted to localStorage')
       } catch (err) {
         console.error('[Delete] ✗ Failed to persist:', err)
@@ -791,7 +791,7 @@ export default function CreateImagePage() {
     setIsRefreshing(true)
     try {
       if (typeof window !== 'undefined') {
-        const savedHistory = localStorage.getItem('imageGenerationHistory')
+        const savedHistory = localStorage.getItem(`imageGenerationHistory-${workspaceId}`)
         console.log('[Refresh] Loading from localStorage...')
         if (savedHistory) {
           const parsed = JSON.parse(savedHistory)
@@ -845,7 +845,7 @@ export default function CreateImagePage() {
     if (typeof window === 'undefined') return
 
     try {
-      const savedHistory = localStorage.getItem('imageGenerationHistory')
+      const savedHistory = localStorage.getItem(`imageGenerationHistory-${workspaceId}`)
       if (!savedHistory) return
 
       const parsed = JSON.parse(savedHistory)
@@ -863,7 +863,7 @@ export default function CreateImagePage() {
       const removed = parsed.length - validImages.length
       if (removed > 0) {
         console.log(`[Cleanup] Removed ${removed} broken images`)
-        localStorage.setItem('imageGenerationHistory', JSON.stringify(validImages))
+        localStorage.setItem(`imageGenerationHistory-${workspaceId}`, JSON.stringify(validImages))
         setHistory(validImages)
         return { removed, remaining: validImages.length }
       }
