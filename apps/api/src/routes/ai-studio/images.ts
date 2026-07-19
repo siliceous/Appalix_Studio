@@ -361,7 +361,7 @@ export async function imageRoutes(app: FastifyInstance) {
             // Optimize images: Convert to WebP and upload to Supabase Storage
             const optimizedImages = await imageOptimization.optimizeAndStoreMultiple(
               status.imageUrls,
-              workspaceId,
+              context.workspaceId,
               id
             )
 

@@ -33,7 +33,7 @@ export async function notificationRoutes(fastify: FastifyInstance) {
       )
 
     if (error) {
-      fastify.log.error({ err: error, userId }, 'Failed to upsert push token')
+      fastify.log.error({ err: error, userId: context.userId }, 'Failed to upsert push token')
       return reply.status(500).send({ error: 'Failed to register token' })
     }
 

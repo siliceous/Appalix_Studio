@@ -70,7 +70,7 @@ export async function getCurrentWorkspaceContext(
     // CRITICAL: Verify user is actually a member of this workspace
     const { data: membership, error: memberError } = await supabase
       .from('workspace_members')
-      .select('role, workspace:workspaces(isMaster)')
+      .select('role, workspace:workspaces(isMaster, owner_email)')
       .eq('workspace_id', workspaceId)
       .eq('user_id', user.id)
       .single()
@@ -80,9 +80,10 @@ export async function getCurrentWorkspaceContext(
     }
 
     const role = (membership.role as WorkspaceRole) || 'member'
-    const isMasterWorkspace = membership.workspace?.isMaster ||
-                              membership.workspace?.owner_email === 'info@gorank.com.au' ||
-                              membership.workspace?.owner_email === 'sales@appalix.ai'
+    const workspace = membership.workspace as any
+    const isMasterWorkspace = workspace?.isMaster ||
+                              workspace?.owner_email === 'info@gorank.com.au' ||
+                              workspace?.owner_email === 'sales@appalix.ai'
     const isAdmin = role === 'admin' || role === 'owner'
 
     return {

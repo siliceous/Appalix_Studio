@@ -9,8 +9,8 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
-import type { WorkspaceContext } from './workspace-context'
-import { MASTER_WORKSPACE_ID } from './workspace-context'
+import type { WorkspaceContext } from './workspace-context.js'
+import { MASTER_WORKSPACE_ID } from './workspace-context.js'
 
 function getSupabase() {
   return createClient(
