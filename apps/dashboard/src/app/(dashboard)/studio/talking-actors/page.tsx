@@ -300,6 +300,12 @@ export default function TalkingActors() {
       try {
         console.log('[TalkingActors] Fetching saved actors from database...')
 
+        // Skip database fetch on production - use localStorage only
+        if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+          console.log('[TalkingActors] Running on production, skipping database fetch')
+          return
+        }
+
         // Fetch both workspace-specific and preset actors
         const [workspaceRes, presetsRes] = await Promise.all([
           fetch(`/api/talking-actors/workspace/${workspaceId}`, {
