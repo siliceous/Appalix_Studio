@@ -511,6 +511,8 @@ export default function TalkingActors() {
     try {
       for (const image of selectedImages) {
         const actorName = image.prompt?.split(' ').slice(0, 5).join(' ') || `Actor ${saved + 1}`
+        const ratio = image.aspectRatio || '1:1'
+        console.log(`[BulkSave] Image ${saved + 1}: aspectRatio=${ratio}, id=${image.id}`)
 
         const response = await fetch('/api/talking-actors/save-actor', {
           method: 'POST',
@@ -523,7 +525,7 @@ export default function TalkingActors() {
             name: actorName,
             imageUrl: image.image,
             description: image.prompt,
-            aspectRatio: image.aspectRatio || '1:1',
+            aspectRatio: ratio,
           }),
         })
 
