@@ -43,6 +43,25 @@ export async function getMasterWorkspaceId(): Promise<string> {
   return data.id
 }
 
+/**
+ * Get all master workspace IDs (info@gorank.com.au and sales@appalix.ai)
+ * These workspaces can publish global actors
+ */
+export async function getMasterWorkspaceIds(): Promise<string[]> {
+  const supabase = getSupabase()
+  const { data, error } = await supabase
+    .from('workspaces')
+    .select('id')
+    .or('owner_email.eq.info@gorank.com.au,owner_email.eq.sales@appalix.ai')
+
+  if (error || !data) {
+    console.error('[getMasterWorkspaceIds] Failed to find master workspaces:', error)
+    return []
+  }
+
+  return data.map(w => w.id)
+}
+
 // ============================================================================
 // Assets & Media
 // ============================================================================
@@ -231,21 +250,33 @@ export async function getWorkspaceActors(context: WorkspaceContext) {
  */
 export async function getAvailableActors(context: WorkspaceContext) {
   const supabase = getSupabase()
-  const masterWorkspaceId = await getMasterWorkspaceId()
+  const masterWorkspaceIds = await getMasterWorkspaceIds()
 
-  const { data, error } = await supabase
+  // Fetch private actors from current workspace
+  const { data: privateActors, error: privateError } = await supabase
     .from('talking_actors')
     .select('*')
+    .eq('workspace_id', context.workspaceId)
+    .eq('is_global', false)
     .eq('is_active', true)
-    .or(
-      `and(workspace_id.eq.${context.workspaceId},is_global.eq.false),and(workspace_id.eq.${masterWorkspaceId},is_global.eq.true)`
-    )
-    .order('is_global', { ascending: false })
     .order('created_at', { ascending: false })
 
-  if (error) throw error
+  if (privateError) throw privateError
 
-  return data || []
+  // Fetch global actors from all master workspaces
+  const { data: globalActors, error: globalError } = await supabase
+    .from('talking_actors')
+    .select('*')
+    .in('workspace_id', masterWorkspaceIds)
+    .eq('is_global', true)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+
+  if (globalError) throw globalError
+
+  // Combine and sort: global actors first, then by creation date
+  const allActors = [...(globalActors || []), ...(privateActors || [])]
+  return allActors
 }
 
 /**
@@ -253,12 +284,12 @@ export async function getAvailableActors(context: WorkspaceContext) {
  */
 export async function getGlobalActors() {
   const supabase = getSupabase()
-  const masterWorkspaceId = await getMasterWorkspaceId()
+  const masterWorkspaceIds = await getMasterWorkspaceIds()
 
   const { data, error } = await supabase
     .from('talking_actors')
     .select('*')
-    .eq('workspace_id', masterWorkspaceId)
+    .in('workspace_id', masterWorkspaceIds)
     .eq('is_global', true)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
@@ -270,19 +301,30 @@ export async function getGlobalActors() {
 
 export async function getActor(context: WorkspaceContext, actorId: string) {
   const supabase = getSupabase()
-  const masterWorkspaceId = await getMasterWorkspaceId()
+  const masterWorkspaceIds = await getMasterWorkspaceIds()
 
-  const { data, error } = await supabase
+  // First try user's own workspace (private actors)
+  const { data: ownActor, error: ownError } = await supabase
     .from('talking_actors')
     .select('*')
     .eq('id', actorId)
-    .or(
-      `and(workspace_id.eq.${context.workspaceId}),and(workspace_id.eq.${masterWorkspaceId},is_global.eq.true)`
-    )
+    .eq('workspace_id', context.workspaceId)
     .single()
 
-  if (error) throw new Error(`Actor not found: ${actorId}`)
-  return data
+  if (ownActor) return ownActor
+
+  // If not found, try master workspaces (global actors)
+  const { data: globalActor, error: globalError } = await supabase
+    .from('talking_actors')
+    .select('*')
+    .eq('id', actorId)
+    .eq('is_global', true)
+    .in('workspace_id', masterWorkspaceIds)
+    .single()
+
+  if (globalActor) return globalActor
+
+  throw new Error(`Actor not found: ${actorId}`)
 }
 
 // ============================================================================

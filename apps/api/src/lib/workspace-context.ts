@@ -80,7 +80,9 @@ export async function getCurrentWorkspaceContext(
     }
 
     const role = (membership.role as WorkspaceRole) || 'member'
-    const isMasterWorkspace = membership.workspace?.isMaster || false
+    const isMasterWorkspace = membership.workspace?.isMaster ||
+                              membership.workspace?.owner_email === 'info@gorank.com.au' ||
+                              membership.workspace?.owner_email === 'sales@appalix.ai'
     const isAdmin = role === 'admin' || role === 'owner'
 
     return {

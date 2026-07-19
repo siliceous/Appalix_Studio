@@ -272,7 +272,7 @@ export default function TalkingActors() {
         const response = await fetch('/api/workspaces', { headers: { 'x-workspace-id': workspaceId, ...(authHeader ? { 'Authorization': authHeader } : {}) } })
         if (response.ok) {
           const data = await response.json()
-          setIsMainWorkspace(data.owner_email === 'info@gorank.com.au')
+          setIsMainWorkspace(data.owner_email === 'info@gorank.com.au' || data.owner_email === 'sales@appalix.ai')
         }
       } catch (error) {
         console.error('Error checking workspace:', error)
