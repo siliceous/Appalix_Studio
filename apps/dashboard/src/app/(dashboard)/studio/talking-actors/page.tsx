@@ -193,11 +193,12 @@ export default function TalkingActors() {
   }, [])
 
   useEffect(() => {
+    if (!workspaceId) return
     console.log("[TalkingActors] Initializing - loading saved images and checking for imports...")
 
     // Step 1: Load persisted images from localStorage
     let savedImages: GeneratedImage[] = []
-    const saved = localStorage.getItem(`talkingActorsImages-${wId}`)
+    const saved = localStorage.getItem(`talkingActorsImages-${workspaceId}`)
     if (saved) {
       try {
         savedImages = JSON.parse(saved)
@@ -232,7 +233,7 @@ export default function TalkingActors() {
         const merged = [...uniqueNewImages, ...savedImages]
 
         // Persist to localStorage
-        localStorage.setItem(`talkingActorsImages-${wId}`, JSON.stringify(merged))
+        localStorage.setItem(`talkingActorsImages-${workspaceId}`, JSON.stringify(merged))
         console.log("[TalkingActors] ✓ Saved", merged.length, "total images to localStorage")
 
         // Update state with merged data (this is the only setImages call)
@@ -249,7 +250,7 @@ export default function TalkingActors() {
       // No imports, just load saved images
       setImages(savedImages)
     }
-  }, [])
+  }, [workspaceId])
 
 
   useEffect(() => {
