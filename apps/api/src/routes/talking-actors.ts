@@ -23,12 +23,17 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
     async (req: FastifyRequest<{ Params: { workspaceId: string } }>, reply: FastifyReply) => {
       try {
         const { workspaceId } = req.params as any
+        const sb = getSupabase()
 
-        const { data: actors, error } = await supabase
+        console.log('[TalkingActors] Fetching actors for workspace:', workspaceId)
+
+        const { data: actors, error } = await sb
           .from('talking_actors')
           .select('*')
           .eq('workspace_id', workspaceId)
           .order('created_at', { ascending: false })
+
+        console.log('[TalkingActors] Query result:', { error: error?.message, count: actors?.length })
 
         if (error) throw error
 
@@ -38,6 +43,7 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
           count: actors?.length || 0,
         })
       } catch (error) {
+        console.error('[TalkingActors] Error fetching actors:', error)
         reply.status(500).send({
           error: error instanceof Error ? error.message : 'Failed to fetch actors',
         })
@@ -53,8 +59,9 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
     async (req: FastifyRequest<{ Params: { actorId: string } }>, reply: FastifyReply) => {
       try {
         const { actorId } = req.params as any
+        const sb = getSupabase()
 
-        const { data: actor, error } = await supabase
+        const { data: actor, error } = await sb
           .from('talking_actors')
           .select('*')
           .eq('id', actorId)
@@ -148,7 +155,8 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
         const fileUrl = signedUrlData?.signedUrl
 
         // Create database record
-        const { data: actor, error: dbError } = await supabase
+        const sb = getSupabase()
+        const { data: actor, error: dbError } = await sb
           .from('talking_actors')
           .insert({
             workspace_id: workspaceId,
@@ -187,6 +195,7 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
     try {
       const { actorId } = req.params as { actorId: string }
       const { actorName } = req.body as { actorName?: string }
+      const sb = getSupabase()
 
       if (!actorName) {
         return reply.status(400).send({
@@ -194,7 +203,7 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
         })
       }
 
-      const { data: actor, error } = await supabase
+      const { data: actor, error } = await sb
         .from('talking_actors')
         .update({
           actor_name: actorName,
@@ -281,7 +290,8 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
         const { actorId } = req.params as { actorId: string }
 
         // Get actor to find file paths
-        const { data: actor, error: fetchError } = await supabase
+        const sb = getSupabase()
+        const { data: actor, error: fetchError } = await sb
           .from('talking_actors')
           .select('image_url, video_url')
           .eq('id', actorId)
@@ -292,16 +302,16 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
         // Delete files from storage
         if (actor?.image_url) {
           const imagePath = actor.image_url.split('/').slice(-2).join('/')
-          await getSupabase().storage.from('actor-images').remove([imagePath])
+          await sb.storage.from('actor-images').remove([imagePath])
         }
 
         if (actor?.video_url) {
           const videoPath = actor.video_url.split('/').slice(-2).join('/')
-          await getSupabase().storage.from('actor-videos').remove([videoPath])
+          await sb.storage.from('actor-videos').remove([videoPath])
         }
 
         // Delete database record
-        const { error: deleteError } = await supabase
+        const { error: deleteError } = await sb
           .from('talking_actors')
           .delete()
           .eq('id', actorId)
