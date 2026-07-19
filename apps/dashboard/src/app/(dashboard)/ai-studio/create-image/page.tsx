@@ -418,8 +418,8 @@ export default function CreateImagePage() {
 
           if (supabaseImages.length > 0) {
             setHistory(prev => {
-              const seen = new Set(prev.map(img => img.id))
-              const newImages = supabaseImages.filter(img => !seen.has(img.id))
+              const seen = new Set(prev.map((img: any) => img.id))
+              const newImages = supabaseImages.filter((img: any) => !seen.has(img.id))
               return [...prev, ...newImages]
             })
             console.log('[Load] Added', supabaseImages.length, 'images from Supabase')
