@@ -49,17 +49,29 @@ export async function getMasterWorkspaceId(): Promise<string> {
  */
 export async function getMasterWorkspaceIds(): Promise<string[]> {
   const supabase = getSupabase()
-  const { data, error } = await supabase
-    .from('workspaces')
-    .select('id')
-    .or('owner_email.eq.info@gorank.com.au,owner_email.eq.sales@appalix.ai')
 
-  if (error || !data) {
-    console.error('[getMasterWorkspaceIds] Failed to find master workspaces:', error)
+  // Get all workspace owners
+  const { data: owners, error: ownersError } = await supabase
+    .from('workspace_members')
+    .select('workspace_id, user_id')
+    .eq('role', 'owner')
+
+  if (ownersError || !owners) {
+    console.error('[getMasterWorkspaceIds] Failed to find workspace owners:', ownersError)
     return []
   }
 
-  return data.map(w => w.id)
+  // Filter for master accounts
+  const masterWorkspaceIds: string[] = []
+  for (const owner of owners) {
+    const { data: { user } } = await supabase.auth.admin.getUserById(owner.user_id)
+    if (user && (user.email === 'info@gorank.com.au' || user.email === 'sales@appalix.ai')) {
+      masterWorkspaceIds.push(owner.workspace_id)
+    }
+  }
+
+  console.log('[getMasterWorkspaceIds] Found master workspaces:', masterWorkspaceIds)
+  return masterWorkspaceIds
 }
 
 // ============================================================================
