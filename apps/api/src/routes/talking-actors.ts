@@ -27,12 +27,22 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
 
         console.log('[TalkingActors] Fetching actors for workspace:', workspaceId)
 
-        // Get main workspace (info@gorank.com.au)
-        const { data: mainWorkspace, error: wsError } = await sb
+        // Fetch all workspaces to find the main one
+        const { data: workspaces, error: wsListError } = await sb
           .from('workspaces')
-          .select('id')
-          .eq('owner_email', 'info@gorank.com.au')
-          .single()
+          .select('id, name')
+
+        if (wsListError) {
+          console.error('[TalkingActors] Error fetching workspaces:', wsListError)
+        }
+
+        // Find main workspace (look for one with name containing 'gorank' or 'info')
+        const mainWorkspace = workspaces?.find((w: any) =>
+          w.name?.toLowerCase().includes('gorank') ||
+          w.name?.toLowerCase().includes('info')
+        )
+
+        console.log('[TalkingActors] Main workspace:', mainWorkspace?.id)
 
         // Fetch workspace-specific actors
         const { data: workspaceActors, error: wsActorsError } = await sb
@@ -47,14 +57,18 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
 
         // If this is not the main workspace, also fetch main workspace actors
         if (mainWorkspace && mainWorkspace.id !== workspaceId) {
+          console.log('[TalkingActors] Fetching main workspace actors from:', mainWorkspace.id)
           const { data: mainActors, error: mainActorsError } = await sb
             .from('talking_actors')
             .select('*')
             .eq('workspace_id', mainWorkspace.id)
             .order('created_at', { ascending: false })
 
-          if (mainActorsError) throw mainActorsError
-          allActors = [...(mainActors || []), ...allActors]
+          if (mainActorsError) {
+            console.error('[TalkingActors] Error fetching main actors:', mainActorsError)
+          } else {
+            allActors = [...(mainActors || []), ...allActors]
+          }
         }
 
         console.log('[TalkingActors] Query result:', { workspaceCount: workspaceActors?.length, totalCount: allActors.length })
