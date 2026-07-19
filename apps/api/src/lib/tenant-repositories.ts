@@ -50,28 +50,43 @@ export async function getMasterWorkspaceId(): Promise<string> {
 export async function getMasterWorkspaceIds(): Promise<string[]> {
   const supabase = getSupabase()
 
-  // Get all workspace owners
-  const { data: owners, error: ownersError } = await supabase
-    .from('workspace_members')
-    .select('workspace_id, user_id')
-    .eq('role', 'owner')
+  try {
+    // Get all workspace owners
+    const { data: owners, error: ownersError } = await supabase
+      .from('workspace_members')
+      .select('workspace_id, user_id')
+      .eq('role', 'owner')
 
-  if (ownersError || !owners) {
-    console.error('[getMasterWorkspaceIds] Failed to find workspace owners:', ownersError)
+    if (ownersError) {
+      console.error('[getMasterWorkspaceIds] Error fetching owners:', ownersError)
+      return []
+    }
+
+    if (!owners || owners.length === 0) {
+      console.warn('[getMasterWorkspaceIds] No workspace owners found')
+      return []
+    }
+
+    // Filter for master accounts by checking email
+    const masterWorkspaceIds: string[] = []
+    for (const owner of owners) {
+      try {
+        const { data: { user } } = await supabase.auth.admin.getUserById(owner.user_id)
+        if (user && (user.email === 'info@gorank.com.au' || user.email === 'sales@appalix.ai')) {
+          masterWorkspaceIds.push(owner.workspace_id)
+          console.log('[getMasterWorkspaceIds] Found master workspace:', owner.workspace_id, 'owner:', user.email)
+        }
+      } catch (e) {
+        console.error('[getMasterWorkspaceIds] Error checking user:', owner.user_id, e)
+      }
+    }
+
+    console.log('[getMasterWorkspaceIds] Found', masterWorkspaceIds.length, 'master workspaces:', masterWorkspaceIds)
+    return masterWorkspaceIds
+  } catch (e) {
+    console.error('[getMasterWorkspaceIds] Unexpected error:', e)
     return []
   }
-
-  // Filter for master accounts
-  const masterWorkspaceIds: string[] = []
-  for (const owner of owners) {
-    const { data: { user } } = await supabase.auth.admin.getUserById(owner.user_id)
-    if (user && (user.email === 'info@gorank.com.au' || user.email === 'sales@appalix.ai')) {
-      masterWorkspaceIds.push(owner.workspace_id)
-    }
-  }
-
-  console.log('[getMasterWorkspaceIds] Found master workspaces:', masterWorkspaceIds)
-  return masterWorkspaceIds
 }
 
 // ============================================================================
