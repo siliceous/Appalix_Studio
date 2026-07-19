@@ -1124,25 +1124,15 @@ export default function TalkingActors() {
                 </button>
 
                 {selectionMode && selectedActorIds.size > 0 && (
-                  <>
-                    <button
-                      onClick={handleBulkSaveActors}
-                      disabled={isSavingBulk}
-                      className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 disabled:bg-green-400 border border-green-500 transition-colors"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      {isSavingBulk ? 'Saving...' : `Save ${selectedActorIds.size} Actor${selectedActorIds.size !== 1 ? 's' : ''}`}
-                    </button>
                     <button
                       onClick={handlePublishAsPresets}
                       disabled={isPublishing}
-                      className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 border border-orange-500 transition-colors"
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 disabled:bg-green-400 border border-green-500 transition-colors"
                       title="Publish as presets available to all workspaces"
                     >
                       <Sparkles className="w-4 h-4" />
-                      {isPublishing ? 'Publishing...' : `Publish ${selectedActorIds.size}`}
+                      {isPublishing ? 'Publishing...' : `Publish ${selectedActorIds.size} Actor${selectedActorIds.size !== 1 ? 's' : ''}`}
                     </button>
-                  </>
                 )}
 
               </div>
