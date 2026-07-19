@@ -169,6 +169,7 @@ export default function TalkingActors() {
   const [isSavingBulk, setIsSavingBulk] = useState(false)
   const [selectionMode, setSelectionMode] = useState(false)
   const [presetImageIds, setPresetImageIds] = useState<Set<string>>(new Set())
+  const [isMainWorkspace, setIsMainWorkspace] = useState(false)
 
   useEffect(() => {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
@@ -260,6 +261,22 @@ export default function TalkingActors() {
     }
   }, [workspaceId])
 
+
+  useEffect(() => {
+    if (!workspaceId) return
+    const checkIsMainWorkspace = async () => {
+      try {
+        const response = await fetch('/api/workspaces', { headers: { 'x-workspace-id': workspaceId } })
+        if (response.ok) {
+          const data = await response.json()
+          setIsMainWorkspace(data.owner_email === 'info@gorank.com.au')
+        }
+      } catch (error) {
+        console.error('Error checking workspace:', error)
+      }
+    }
+    checkIsMainWorkspace()
+  }, [workspaceId])
 
   useEffect(() => {
     if (!workspaceId) return
@@ -1029,24 +1046,26 @@ export default function TalkingActors() {
                   </select>
                 </div>
                 <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-white/10 border border-white/20">{credits} Credits</div>
-                <button
-                  onClick={() => {
-                    setSelectionMode(!selectionMode)
-                    if (selectionMode) {
-                      // Exiting selection mode, clear selections
-                      setSelectedActorIds(new Set())
-                    }
-                  }}
-                  className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                    selectionMode
-                      ? 'bg-purple-700 border border-purple-400 text-white'
-                      : 'bg-purple-600 border border-purple-500 hover:bg-purple-700 text-white'
-                  }`}
-                  title={selectionMode ? "Exit selection mode" : "Click to select actors"}
-                >
-                  <Sparkles className="w-4 h-4" />
-                  {selectionMode ? `Select Actors (${selectedActorIds.size})` : `Select Actors`}
-                </button>
+                {isMainWorkspace && (
+                  <button
+                    onClick={() => {
+                      setSelectionMode(!selectionMode)
+                      if (selectionMode) {
+                        // Exiting selection mode, clear selections
+                        setSelectedActorIds(new Set())
+                      }
+                    }}
+                    className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                      selectionMode
+                        ? 'bg-purple-700 border border-purple-400 text-white'
+                        : 'bg-purple-600 border border-purple-500 hover:bg-purple-700 text-white'
+                    }`}
+                    title={selectionMode ? "Exit selection mode" : "Click to select actors"}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    {selectionMode ? `Select Actors (${selectedActorIds.size})` : `Select Actors`}
+                  </button>
+                )}
                 <button
                   onClick={() => setShowTrash(!showTrash)}
                   className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors text-white ${
