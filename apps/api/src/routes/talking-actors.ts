@@ -232,7 +232,8 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
           })
         }
 
-        const { data: actor, error } = await supabase
+        const sb = getSupabase()
+        const { data: actor, error } = await sb
           .from('talking_actors')
           .insert({
             workspace_id: workspaceId,
