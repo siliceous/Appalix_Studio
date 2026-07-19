@@ -361,10 +361,11 @@ export default function TalkingActors() {
           // Get auth token from Supabase session
           const supabase = createSupabaseClient()
           const { data: { session } } = await supabase.auth.getSession()
-          const authHeader: string | undefined = session?.access_token ? `Bearer ${session.access_token}` : undefined
+          const token = session?.access_token
+          const authHeader = typeof token === 'string' ? `Bearer ${token}` : undefined
 
           // Fetch both workspace-specific and preset actors on localhost
-          [workspaceRes, presetsRes] = await Promise.all([
+          const [res1, res2] = await Promise.all([
             fetch(`/api/talking-actors/workspace/${workspaceId}`, {
               headers: { 'x-workspace-id': workspaceId, ...(authHeader ? { 'Authorization': authHeader } : {}) }
             }),
@@ -372,6 +373,8 @@ export default function TalkingActors() {
               headers: { 'x-workspace-id': workspaceId, ...(authHeader ? { 'Authorization': authHeader } : {}) }
             })
           ])
+          workspaceRes = res1
+          presetsRes = res2
         } else {
           console.log('[TalkingActors] Running on production, using localStorage only')
         }
