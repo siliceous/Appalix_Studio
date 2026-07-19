@@ -48,61 +48,56 @@ export async function getMasterWorkspaceId(): Promise<string> {
  * These workspaces can publish global actors
  */
 export async function getMasterWorkspaceIds(): Promise<string[]> {
+  console.log('[getMasterWorkspaceIds] Starting lookup...')
+
   const supabase = getSupabase()
+  const masterEmails = ['info@gorank.com.au', 'sales@appalix.ai']
+  const masterWorkspaceIds: string[] = []
 
   try {
-    // Query auth.users table directly to find master accounts
-    // Then get their workspace membership
-    const masterEmails = ['info@gorank.com.au', 'sales@appalix.ai']
-    const masterWorkspaceIds: string[] = []
+    // Use auth admin API to find users by email
+    const { data: { users: allUsers }, error: listError } = await supabase.auth.admin.listUsers()
 
+    if (listError) {
+      console.error('[getMasterWorkspaceIds] Error listing users:', listError)
+      return []
+    }
+
+    console.log('[getMasterWorkspaceIds] Found', allUsers?.length, 'total users')
+
+    // Find master account users
     for (const email of masterEmails) {
-      try {
-        const { data: users, error: userError } = await supabase
-          .from('auth.users')
-          .select('id')
-          .eq('email', email)
+      const masterUser = allUsers?.find((u: any) => u.email === email)
+      if (!masterUser) {
+        console.log('[getMasterWorkspaceIds] User not found:', email)
+        continue
+      }
 
-        if (userError) {
-          console.log('[getMasterWorkspaceIds] Could not query auth.users for', email, '- trying auth API')
-          // Fall back to auth API if direct query fails
-          const { data: { users: authUsers } } = await supabase.auth.admin.listUsers()
-          const user = authUsers?.find((u: any) => u.email === email)
-          if (user) {
-            // Get their workspace membership
-            const { data: membership } = await supabase
-              .from('workspace_members')
-              .select('workspace_id')
-              .eq('user_id', user.id)
-              .eq('role', 'owner')
+      console.log('[getMasterWorkspaceIds] Found user:', email, 'id:', masterUser.id)
 
-            if (membership && membership.length > 0) {
-              masterWorkspaceIds.push(membership[0].workspace_id)
-              console.log('[getMasterWorkspaceIds] Found workspace for', email, ':', membership[0].workspace_id)
-            }
-          }
-        } else if (users && users.length > 0) {
-          // Get their workspace membership
-          const { data: membership } = await supabase
-            .from('workspace_members')
-            .select('workspace_id')
-            .eq('user_id', users[0].id)
-            .eq('role', 'owner')
+      // Get their owner workspace
+      const { data: membership, error: memberError } = await supabase
+        .from('workspace_members')
+        .select('workspace_id')
+        .eq('user_id', masterUser.id)
+        .eq('role', 'owner')
+        .single()
 
-          if (membership && membership.length > 0) {
-            masterWorkspaceIds.push(membership[0].workspace_id)
-            console.log('[getMasterWorkspaceIds] Found workspace for', email, ':', membership[0].workspace_id)
-          }
-        }
-      } catch (e) {
-        console.error('[getMasterWorkspaceIds] Error processing', email, ':', e)
+      if (memberError) {
+        console.log('[getMasterWorkspaceIds] No owner workspace for', email, ':', memberError.message)
+        continue
+      }
+
+      if (membership) {
+        masterWorkspaceIds.push(membership.workspace_id)
+        console.log('[getMasterWorkspaceIds] Added workspace:', membership.workspace_id)
       }
     }
 
-    console.log('[getMasterWorkspaceIds] Found', masterWorkspaceIds.length, 'master workspaces:', masterWorkspaceIds)
+    console.log('[getMasterWorkspaceIds] Final result:', masterWorkspaceIds)
     return masterWorkspaceIds
   } catch (e) {
-    console.error('[getMasterWorkspaceIds] Unexpected error:', e)
+    console.error('[getMasterWorkspaceIds] Error:', e)
     return []
   }
 }
