@@ -435,23 +435,48 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
 
         const sb = getSupabase()
 
-        const { data: actors, error } = await sb
+        let query = sb
           .from('talking_actors')
           .select('*')
-          .eq('is_global', true)
-          .eq('is_active', true)
           .in('workspace_id', masterWorkspaceIds)
-          .order('created_at', { ascending: false })
 
-        console.log('[Presets] Query result:', { error: error?.message, count: actors?.length })
+        // Try to filter by is_global and is_active if the columns exist
+        try {
+          const { data: actors, error } = await query
+            .eq('is_global', true)
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
 
-        if (error) throw error
+          console.log('[Presets] Query result:', { error: error?.message, count: actors?.length })
 
-        reply.send({
-          success: true,
-          presets: actors || [],
-          count: actors?.length || 0,
-        })
+          if (error) {
+            // If is_global/is_active don't exist, fall back to is_preset
+            console.log('[Presets] is_global filter failed, trying is_preset fallback')
+            const { data: fallbackActors, error: fallbackError } = await sb
+              .from('talking_actors')
+              .select('*')
+              .in('workspace_id', masterWorkspaceIds)
+              .eq('is_preset', true)
+              .order('created_at', { ascending: false })
+
+            if (fallbackError) throw fallbackError
+
+            return reply.send({
+              success: true,
+              presets: fallbackActors || [],
+              count: fallbackActors?.length || 0,
+            })
+          }
+
+          reply.send({
+            success: true,
+            presets: actors || [],
+            count: actors?.length || 0,
+          })
+        } catch (e) {
+          console.error('[Presets] Error in primary query:', e)
+          throw e
+        }
       } catch (error) {
         console.error('[Presets] Error:', error)
         reply.status(500).send({
