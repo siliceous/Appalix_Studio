@@ -51,33 +51,51 @@ export async function getMasterWorkspaceIds(): Promise<string[]> {
   const supabase = getSupabase()
 
   try {
-    // Get all workspace owners
-    const { data: owners, error: ownersError } = await supabase
-      .from('workspace_members')
-      .select('workspace_id, user_id')
-      .eq('role', 'owner')
-
-    if (ownersError) {
-      console.error('[getMasterWorkspaceIds] Error fetching owners:', ownersError)
-      return []
-    }
-
-    if (!owners || owners.length === 0) {
-      console.warn('[getMasterWorkspaceIds] No workspace owners found')
-      return []
-    }
-
-    // Filter for master accounts by checking email
+    // Query auth.users table directly to find master accounts
+    // Then get their workspace membership
+    const masterEmails = ['info@gorank.com.au', 'sales@appalix.ai']
     const masterWorkspaceIds: string[] = []
-    for (const owner of owners) {
+
+    for (const email of masterEmails) {
       try {
-        const { data: { user } } = await supabase.auth.admin.getUserById(owner.user_id)
-        if (user && (user.email === 'info@gorank.com.au' || user.email === 'sales@appalix.ai')) {
-          masterWorkspaceIds.push(owner.workspace_id)
-          console.log('[getMasterWorkspaceIds] Found master workspace:', owner.workspace_id, 'owner:', user.email)
+        const { data: users, error: userError } = await supabase
+          .from('auth.users')
+          .select('id')
+          .eq('email', email)
+
+        if (userError) {
+          console.log('[getMasterWorkspaceIds] Could not query auth.users for', email, '- trying auth API')
+          // Fall back to auth API if direct query fails
+          const { data: { users: authUsers } } = await supabase.auth.admin.listUsers()
+          const user = authUsers?.find((u: any) => u.email === email)
+          if (user) {
+            // Get their workspace membership
+            const { data: membership } = await supabase
+              .from('workspace_members')
+              .select('workspace_id')
+              .eq('user_id', user.id)
+              .eq('role', 'owner')
+
+            if (membership && membership.length > 0) {
+              masterWorkspaceIds.push(membership[0].workspace_id)
+              console.log('[getMasterWorkspaceIds] Found workspace for', email, ':', membership[0].workspace_id)
+            }
+          }
+        } else if (users && users.length > 0) {
+          // Get their workspace membership
+          const { data: membership } = await supabase
+            .from('workspace_members')
+            .select('workspace_id')
+            .eq('user_id', users[0].id)
+            .eq('role', 'owner')
+
+          if (membership && membership.length > 0) {
+            masterWorkspaceIds.push(membership[0].workspace_id)
+            console.log('[getMasterWorkspaceIds] Found workspace for', email, ':', membership[0].workspace_id)
+          }
         }
       } catch (e) {
-        console.error('[getMasterWorkspaceIds] Error checking user:', owner.user_id, e)
+        console.error('[getMasterWorkspaceIds] Error processing', email, ':', e)
       }
     }
 
