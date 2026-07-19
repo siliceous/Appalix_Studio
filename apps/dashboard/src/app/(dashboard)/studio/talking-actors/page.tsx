@@ -127,6 +127,7 @@ function parseImageMetadata(prompt: string) {
 }
 
 export default function TalkingActors() {
+  console.log('[TalkingActors] Component mounted')
   const router = useRouter()
   const imageContainerRef = useRef<HTMLDivElement>(null)
   const [images, setImages] = useState<GeneratedImage[]>([])
