@@ -109,7 +109,7 @@ export default function AIStudio() {
         }
 
         // Also load localStorage (for recently generated images not yet in Supabase)
-        const savedHistory = localStorage.getItem('imageGenerationHistory')
+        const savedHistory = localStorage.getItem(`imageGenerationHistory-${wId}`)
         console.log('localStorage history exists:', !!savedHistory, 'size:', savedHistory?.length || 0)
 
         if (savedHistory) {
@@ -277,7 +277,7 @@ export default function AIStudio() {
   const handleDelete = async (imageId: string) => {
     setImages(images.map(img => img.id === imageId ? { ...img, deletedAt: Date.now() } : img))
     const remaining = images.filter(img => img.id !== imageId)
-    localStorage.setItem('imageGenerationHistory', JSON.stringify(remaining))
+    localStorage.setItem(`imageGenerationHistory-${workspaceId}`, JSON.stringify(remaining))
 
     // Sync deletion to server
     try {
@@ -298,7 +298,7 @@ export default function AIStudio() {
   const handleRestore = async (imageId: string) => {
     setImages(images.map(img => img.id === imageId ? { ...img, deletedAt: undefined } : img))
     const updated = images.map(img => img.id === imageId ? { ...img, deletedAt: undefined } : img)
-    localStorage.setItem('imageGenerationHistory', JSON.stringify(updated))
+    localStorage.setItem(`imageGenerationHistory-${workspaceId}`, JSON.stringify(updated))
 
     // Sync restoration to server
     try {

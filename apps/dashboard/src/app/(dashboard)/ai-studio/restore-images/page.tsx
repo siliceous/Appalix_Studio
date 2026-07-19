@@ -74,7 +74,7 @@ export default function RestoreImagesPage() {
         setMessage(`Saving ${restoredImages.length} images to browser storage...`)
 
         // Save to localStorage
-        localStorage.setItem('imageGenerationHistory', JSON.stringify(restoredImages))
+        localStorage.setItem(`imageGenerationHistory-${workspaceId}`, JSON.stringify(restoredImages))
 
         setRestoredCount(restoredImages.length)
         setStatus('success')

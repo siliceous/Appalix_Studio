@@ -343,22 +343,22 @@ export default function TalkingActors() {
     localStorage.setItem(`talkingActorsImages-${workspaceId}`, JSON.stringify(updated))
 
     try {
-      const savedHistory = localStorage.getItem('imageGenerationHistory')
+      const savedHistory = localStorage.getItem(`imageGenerationHistory-${workspaceId}`)
       if (savedHistory) {
         const parsed = JSON.parse(savedHistory)
         const updatedHistory = parsed.map((img: any) => img.id === imageId ? { ...img, deletedAt: Date.now() } : img)
-        localStorage.setItem('imageGenerationHistory', JSON.stringify(updatedHistory))
+        localStorage.setItem(`imageGenerationHistory-${workspaceId}`, JSON.stringify(updatedHistory))
       }
     } catch (e) {
       console.error('Error updating localStorage:', e)
     }
 
     try {
-      const talkingAdHistory = localStorage.getItem('talkingAdHistory')
+      const talkingAdHistory = localStorage.getItem(`talkingAdHistory-${workspaceId}`)
       if (talkingAdHistory) {
         const parsed = JSON.parse(talkingAdHistory)
         const updatedHistory = parsed.map((v: any) => v.id === imageId ? { ...v, deletedAt: Date.now() } : v)
-        localStorage.setItem('talkingAdHistory', JSON.stringify(updatedHistory))
+        localStorage.setItem(`talkingAdHistory-${workspaceId}`, JSON.stringify(updatedHistory))
       }
     } catch (e) {
       console.error('Error updating talking ad history:', e)
@@ -386,11 +386,11 @@ export default function TalkingActors() {
     localStorage.setItem(`talkingActorsImages-${workspaceId}`, JSON.stringify(updated))
 
     try {
-      const savedHistory = localStorage.getItem('imageGenerationHistory')
+      const savedHistory = localStorage.getItem(`imageGenerationHistory-${workspaceId}`)
       if (savedHistory) {
         const parsed = JSON.parse(savedHistory)
         const updatedHistory = parsed.map((img: any) => img.id === imageId ? { ...img, deletedAt: undefined } : img)
-        localStorage.setItem('imageGenerationHistory', JSON.stringify(updatedHistory))
+        localStorage.setItem(`imageGenerationHistory-${workspaceId}`, JSON.stringify(updatedHistory))
       }
     } catch (e) {
       console.error('Error updating localStorage:', e)

@@ -183,7 +183,7 @@ export default function AIStudioLibrary() {
     ))
     // Update localStorage
     const remaining = images.filter(img => img.id !== imageId)
-    localStorage.setItem('imageGenerationHistory', JSON.stringify(remaining))
+    localStorage.setItem(`imageGenerationHistory-${workspaceId}`, JSON.stringify(remaining))
   }
 
   const handleCreateProject = async () => {

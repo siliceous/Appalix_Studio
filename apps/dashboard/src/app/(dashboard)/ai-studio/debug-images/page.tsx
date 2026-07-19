@@ -14,7 +14,8 @@ export default function DebugImagesPage() {
     if (typeof window === 'undefined') return
 
     try {
-      const data = localStorage.getItem('imageGenerationHistory')
+      const wId = localStorage.getItem('workspaceId') || ''
+      const data = localStorage.getItem(`imageGenerationHistory-${wId}`)
       setStorageData(data || 'No data in localStorage')
 
       if (data) {

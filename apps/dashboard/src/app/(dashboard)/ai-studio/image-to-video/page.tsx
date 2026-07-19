@@ -41,7 +41,7 @@ export default function ImageToVideoPage() {
       const wId = localStorage.getItem('workspaceId') || ''
       setWorkspaceId(wId)
 
-      const savedHistory = localStorage.getItem('imageGenerationHistory')
+      const savedHistory = localStorage.getItem(`imageGenerationHistory-${wId}`)
       if (savedHistory) {
         const parsed = JSON.parse(savedHistory)
         if (Array.isArray(parsed)) {

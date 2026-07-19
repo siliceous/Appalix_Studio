@@ -12,7 +12,8 @@ export default function CheckStoragePage() {
     if (typeof window === 'undefined') return
 
     try {
-      const data = localStorage.getItem('imageGenerationHistory')
+      const wId = localStorage.getItem('workspaceId') || ''
+      const data = localStorage.getItem(`imageGenerationHistory-${wId}`)
 
       if (!data) {
         setStatus('❌ NO DATA in localStorage')

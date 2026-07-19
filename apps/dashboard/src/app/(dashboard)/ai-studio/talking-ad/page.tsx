@@ -42,7 +42,7 @@ export default function TalkingAdPage() {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
     setWorkspaceId(wId)
 
-    const savedHistory = localStorage.getItem('talkingAdHistory')
+    const savedHistory = localStorage.getItem(`talkingAdHistory-${wId}`)
     if (savedHistory) {
       setHistory(JSON.parse(savedHistory))
     }
@@ -87,7 +87,7 @@ export default function TalkingAdPage() {
 
       const updatedHistory = [newVideo, ...history]
       setHistory(updatedHistory)
-      localStorage.setItem('talkingAdHistory', JSON.stringify(updatedHistory))
+      localStorage.setItem(`talkingAdHistory-${workspaceId}`, JSON.stringify(updatedHistory))
       setSelectedVideo(newVideo)
       alert('Video generated successfully!')
     } catch (error) {

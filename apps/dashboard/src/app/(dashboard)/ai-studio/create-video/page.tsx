@@ -145,7 +145,7 @@ export default function CreateVideoPage() {
     setLibraryLoading(true)
     try {
       if (typeof window !== 'undefined') {
-        const savedHistory = localStorage.getItem('imageGenerationHistory')
+        const savedHistory = localStorage.getItem(`imageGenerationHistory-${workspaceId}`)
         console.log('[Library] Storage keys:', Object.keys(localStorage))
         console.log('[Library] Raw saved history:', savedHistory)
 
