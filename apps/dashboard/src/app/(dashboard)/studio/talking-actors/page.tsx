@@ -1169,7 +1169,7 @@ export default function TalkingActors() {
                     </div>
                   </div>
                 ) : (
-                  <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+                  <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
                     {filteredImages.map((image, idx) => {
                       const isSelected = selectedActorIds.has(image.id)
                       const isPreset = presetImageIds.has(image.id)
