@@ -1169,28 +1169,15 @@ export default function TalkingActors() {
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-5 gap-3">
+                  <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
                     {filteredImages.map((image, idx) => {
-                      const getAspectRatio = (ratio?: string) => {
-                        const ratios: Record<string, string> = {
-                          '1:1': 'aspect-square',
-                          '16:9': 'aspect-video',
-                          '9:16': 'aspect-[9/16]',
-                          '3:4': 'aspect-[3/4]',
-                          '4:3': 'aspect-[4/3]',
-                          '21:9': 'aspect-[21/9]',
-                          '2:3': 'aspect-[2/3]',
-                        }
-                        return ratios[ratio || '9:16'] || 'aspect-[9/16]'
-                      }
-
                       const isSelected = selectedActorIds.has(image.id)
                       const isPreset = presetImageIds.has(image.id)
 
                       return (
                         <div
                           key={image.id}
-                          className={`group relative rounded-lg overflow-hidden border-2 transition-all block w-full cursor-pointer bg-gray-200 ${getAspectRatio(image.aspectRatio)} ${
+                          className={`group relative rounded-lg overflow-hidden border-2 transition-all block w-full aspect-[9/16] cursor-pointer bg-gray-200 ${
                             isSelected
                               ? 'border-green-500 shadow-lg shadow-green-500/50'
                               : image.id === fullscreenImage?.id
