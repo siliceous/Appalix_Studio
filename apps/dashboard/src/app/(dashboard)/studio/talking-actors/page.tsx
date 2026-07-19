@@ -249,6 +249,35 @@ export default function TalkingActors() {
         localStorage.setItem(`talkingActorsImages-${workspaceId}`, JSON.stringify(merged))
         console.log("[TalkingActors] ✓ Saved", merged.length, "total images to localStorage")
 
+        // Also save new imported images to Supabase so they appear on all workspaces
+        const supabase = createSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const authHeader = session?.access_token ? `Bearer ${session.access_token}` : undefined
+        
+        for (const img of uniqueNewImages) {
+          try {
+            const actorName = img.prompt?.split(' ').slice(0, 5).join(' ') || 'Imported Actor'
+            await fetch('/api/talking-actors/save-actor', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-workspace-id': workspaceId,
+                ...(authHeader ? { 'Authorization': authHeader } : {})
+              },
+              body: JSON.stringify({
+                workspaceId,
+                name: actorName,
+                imageUrl: img.image,
+                description: img.prompt,
+                aspectRatio: img.aspectRatio || '1:1',
+              }),
+            })
+            console.log('[TalkingActors] Saved to Supabase:', actorName)
+          } catch (e) {
+            console.error('[TalkingActors] Error saving to Supabase:', e)
+          }
+        }
+
         // Update state with merged data (this is the only setImages call)
         setImages(merged)
 
