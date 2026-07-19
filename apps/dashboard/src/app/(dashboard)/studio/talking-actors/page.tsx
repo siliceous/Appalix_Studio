@@ -168,6 +168,7 @@ export default function TalkingActors() {
   const [selectedActorIds, setSelectedActorIds] = useState<Set<string>>(new Set())
   const [isSavingBulk, setIsSavingBulk] = useState(false)
   const [selectionMode, setSelectionMode] = useState(false)
+  const [presetImageIds, setPresetImageIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
@@ -293,6 +294,7 @@ export default function TalkingActors() {
         ])
 
         let allDbActors: any[] = []
+        let presetIds = new Set<string>()
 
         // Get workspace-specific actors
         if (workspaceRes.ok) {
@@ -305,6 +307,10 @@ export default function TalkingActors() {
         if (presetsRes.ok) {
           const data = await presetsRes.json()
           console.log('[TalkingActors] Loaded', data.presets?.length || 0, 'preset actors')
+          // Track which ones are presets
+          data.presets?.forEach((preset: any) => {
+            presetIds.add(preset.id)
+          })
           allDbActors.push(...(data.presets || []))
         }
 
@@ -336,6 +342,7 @@ export default function TalkingActors() {
           const combined = [...newDbActors, ...savedImages]
 
           setImages(combined)
+          setPresetImageIds(presetIds)
         }
       } catch (error) {
         console.error('[TalkingActors] Error fetching saved actors:', error)
@@ -536,10 +543,11 @@ export default function TalkingActors() {
   }
 
   const handlePublishAsPresets = async () => {
-    const selectedImages = filteredImages.filter(img => selectedActorIds.has(img.id))
+    // Only allow publishing non-preset actors
+    const selectedImages = filteredImages.filter(img => selectedActorIds.has(img.id) && !presetImageIds.has(img.id))
 
     if (selectedImages.length === 0) {
-      alert('Please select at least one actor to publish')
+      alert('Please select at least one non-preset actor to publish')
       return
     }
 
@@ -620,6 +628,10 @@ export default function TalkingActors() {
   }
 
   const toggleActorSelection = (imageId: string) => {
+    // Don't allow selecting preset actors
+    if (presetImageIds.has(imageId)) {
+      return
+    }
     const newSelected = new Set(selectedActorIds)
     if (newSelected.has(imageId)) {
       newSelected.delete(imageId)
@@ -1159,6 +1171,7 @@ export default function TalkingActors() {
                       }
 
                       const isSelected = selectedActorIds.has(image.id)
+                      const isPreset = presetImageIds.has(image.id)
 
                       return (
                         <div
@@ -1166,14 +1179,16 @@ export default function TalkingActors() {
                           className={`group relative rounded-lg overflow-hidden border-2 transition-all block w-full cursor-pointer bg-gray-200 ${
                             isSelected
                               ? 'border-green-500 shadow-lg shadow-green-500/50'
+                              : isPreset
+                              ? 'border-orange-500 shadow-lg shadow-orange-500/30'
                               : image.id === fullscreenImage?.id
                               ? 'border-blue-500 shadow-lg shadow-blue-500/50'
                               : 'border-gray-600 hover:border-gray-500 shadow-md'
                           }`}
                           onClick={() => { setFullscreenImage(image); setFullscreenImageIndex(idx); setImageZoom(0.5) }}
                         >
-                          {/* Selection checkbox - only show in selection mode */}
-                          {selectionMode && (
+                          {/* Selection checkbox - only show in selection mode for non-presets */}
+                          {selectionMode && !isPreset && (
                             <div className="absolute top-2 left-2 z-10 pointer-events-auto" onClick={(e) => { e.stopPropagation(); toggleActorSelection(image.id) }}>
                               <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
                                 isSelected
@@ -1182,6 +1197,12 @@ export default function TalkingActors() {
                               }`}>
                                 {isSelected && <span className="text-white font-bold text-xs">✓</span>}
                               </div>
+                            </div>
+                          )}
+                          {/* Preset indicator */}
+                          {isPreset && (
+                            <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-orange-600 rounded text-xs text-white font-semibold">
+                              Preset
                             </div>
                           )}
                           <img
