@@ -35,9 +35,10 @@
   }
 
   /* Lock document-level scroll on dashboard/auth pages.
-     Marketing pages use .marketing-site wrapper which re-enables scroll. */
-  html:not(:has(.marketing-site)),
-  html:not(:has(.marketing-site)) body {
+     Marketing pages use .marketing-site wrapper which re-enables scroll.
+     Onboarding pages need scroll for longer forms. */
+  html:not(:has(.marketing-site)):not(:has(.onboarding-page)),
+  html:not(:has(.marketing-site)):not(:has(.onboarding-page)) body {
     overflow: hidden;
     height: 100%;
   }
