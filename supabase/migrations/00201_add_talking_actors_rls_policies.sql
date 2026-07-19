@@ -1,26 +1,21 @@
--- Add RLS policies for talking_actors table
+-- Add basic RLS policies for talking_actors table
 
 -- Drop existing policies if they exist
 DROP POLICY IF EXISTS "Users can view actors in their workspace" ON talking_actors;
 DROP POLICY IF EXISTS "Users can view actors in their workspace and main workspace" ON talking_actors;
+DROP POLICY IF EXISTS "Users can view talking actors in their workspace" ON talking_actors;
 DROP POLICY IF EXISTS "Admins can insert actors in their workspace" ON talking_actors;
 DROP POLICY IF EXISTS "Admins can update actors in their workspace" ON talking_actors;
 DROP POLICY IF EXISTS "Admins can delete actors in their workspace" ON talking_actors;
 
--- Allow workspace members to view their own workspace's actors + main workspace actors
-CREATE POLICY "Users can view actors in their workspace and main workspace"
+-- Allow users to view talking actors if they're a member of that workspace
+CREATE POLICY "Users can view talking actors in their workspace"
   ON talking_actors FOR SELECT
   USING (
     EXISTS (
       SELECT 1 FROM workspace_members wm
       WHERE wm.workspace_id = talking_actors.workspace_id
       AND wm.user_id = auth.uid()
-    )
-    OR
-    EXISTS (
-      SELECT 1 FROM workspaces w
-      WHERE w.id = talking_actors.workspace_id
-      AND w.owner_email = 'info@gorank.com.au'
     )
   );
 
