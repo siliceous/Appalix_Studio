@@ -209,6 +209,10 @@ export default function TalkingActors() {
     if (!workspaceId) return
     console.log("[TalkingActors] Initializing - loading saved images and checking for imports...")
 
+    // TEMP: Clear all localStorage for this workspace (reset)
+    localStorage.removeItem(`talkingActorsImages-${workspaceId}`);
+    sessionStorage.removeItem("selectedActorImages");
+
     // Step 1: Load persisted images from localStorage
     let savedImages: GeneratedImage[] = []
     const saved = localStorage.getItem(`talkingActorsImages-${workspaceId}`)
