@@ -197,7 +197,7 @@ export default function TalkingActors() {
 
     // Step 1: Load persisted images from localStorage
     let savedImages: GeneratedImage[] = []
-    const saved = localStorage.getItem("talkingActorsImages")
+    const saved = localStorage.getItem(`talkingActorsImages-${wId}`)
     if (saved) {
       try {
         savedImages = JSON.parse(saved)
@@ -232,7 +232,7 @@ export default function TalkingActors() {
         const merged = [...uniqueNewImages, ...savedImages]
 
         // Persist to localStorage
-        localStorage.setItem("talkingActorsImages", JSON.stringify(merged))
+        localStorage.setItem(`talkingActorsImages-${wId}`, JSON.stringify(merged))
         console.log("[TalkingActors] ✓ Saved", merged.length, "total images to localStorage")
 
         // Update state with merged data (this is the only setImages call)
@@ -340,7 +340,7 @@ export default function TalkingActors() {
   const handleDelete = async (imageId: string) => {
     const updated = images.map(img => img.id === imageId ? { ...img, deletedAt: Date.now() } : img)
     setImages(updated)
-    localStorage.setItem("talkingActorsImages", JSON.stringify(updated))
+    localStorage.setItem(`talkingActorsImages-${workspaceId}`, JSON.stringify(updated))
 
     try {
       const savedHistory = localStorage.getItem('imageGenerationHistory')
@@ -383,7 +383,7 @@ export default function TalkingActors() {
   const handleRestore = async (imageId: string) => {
     const updated = images.map(img => img.id === imageId ? { ...img, deletedAt: undefined } : img)
     setImages(updated)
-    localStorage.setItem("talkingActorsImages", JSON.stringify(updated))
+    localStorage.setItem(`talkingActorsImages-${workspaceId}`, JSON.stringify(updated))
 
     try {
       const savedHistory = localStorage.getItem('imageGenerationHistory')
