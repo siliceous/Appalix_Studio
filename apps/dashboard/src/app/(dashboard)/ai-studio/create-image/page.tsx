@@ -400,6 +400,36 @@ export default function CreateImagePage() {
       }
     }
 
+    const fetchSupabaseImages = async () => {
+      try {
+        const response = await fetch('/api/ai-studio/all-images', {
+          headers: { 'x-workspace-id': wId }
+        })
+        if (response.ok) {
+          const data = await response.json()
+          const supabaseImages = (data.images || []).map((img: any) => ({
+            id: img.id,
+            image: img.output_url || '',
+            prompt: img.prompt || '',
+            timestamp: new Date(img.created_at).getTime(),
+            aspectRatio: img.aspect_ratio,
+            deletedAt: undefined,
+          })).filter((img: any) => img.image)
+
+          if (supabaseImages.length > 0) {
+            setHistory(prev => {
+              const seen = new Set(prev.map(img => img.id))
+              const newImages = supabaseImages.filter(img => !seen.has(img.id))
+              return [...prev, ...newImages]
+            })
+            console.log('[Load] Added', supabaseImages.length, 'images from Supabase')
+          }
+        }
+      } catch (e) {
+        console.warn('[Load] Supabase fetch failed:', e)
+      }
+    }
+
     const fetchModels = async () => {
       try {
         const response = await fetch('/api/ai-studio/models/image')
@@ -429,6 +459,7 @@ export default function CreateImagePage() {
     }
 
     fetchModels()
+    fetchSupabaseImages()
   }, [])
 
   // Load projects after workspace ID is available
