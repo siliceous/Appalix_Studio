@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Download, Trash2, Search, Loader2, X, ChevronLeft, ChevronRight, Plus, Eye, Save, Sparkles } from 'lucide-react'
+import { Download, Trash2, Search, Loader2, X, ChevronLeft, ChevronRight, Plus, Eye, Save, Sparkles, Heart } from 'lucide-react'
 import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 
 interface GeneratedImage {
