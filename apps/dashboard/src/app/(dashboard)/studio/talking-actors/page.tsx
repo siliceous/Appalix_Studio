@@ -1190,7 +1190,7 @@ export default function TalkingActors() {
                       return (
                         <div
                           key={image.id}
-                          className={`group relative rounded-lg overflow-hidden border-2 transition-all block w-full cursor-pointer bg-gray-200 ${
+                          className={`group relative rounded-lg overflow-hidden border-2 transition-all block w-full cursor-pointer bg-gray-200 ${getAspectRatio(image.aspectRatio)} ${
                             isSelected
                               ? 'border-green-500 shadow-lg shadow-green-500/50'
                               : image.id === fullscreenImage?.id
@@ -1214,7 +1214,7 @@ export default function TalkingActors() {
                           <img
                             src={image.image}
                             alt={image.prompt}
-                            className={`w-full h-full object-cover ${getAspectRatio(image.aspectRatio)}`}
+                            className="w-full h-full object-cover"
                             onLoad={() => {
                               console.log('[TalkingActors] Image loaded:', image.id)
                             }}
