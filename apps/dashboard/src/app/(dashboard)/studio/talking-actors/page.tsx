@@ -266,7 +266,11 @@ export default function TalkingActors() {
 
 
   useEffect(() => {
-    if (!workspaceId) return
+    console.log('[TalkingActors] checkIsMainWorkspace useEffect fired, workspaceId:', workspaceId)
+    if (!workspaceId) {
+      console.log('[TalkingActors] workspaceId is empty, skipping')
+      return
+    }
     const checkIsMainWorkspace = async () => {
       try {
         const supabase = createSupabaseClient()
