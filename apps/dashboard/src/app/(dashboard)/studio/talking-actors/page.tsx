@@ -165,6 +165,8 @@ export default function TalkingActors() {
   const [showPresets, setShowPresets] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false)
   const [selectedImageForPreset, setSelectedImageForPreset] = useState<GeneratedImage | null>(null)
+  const [selectedActorIds, setSelectedActorIds] = useState<Set<string>>(new Set())
+  const [isSavingBulk, setIsSavingBulk] = useState(false)
 
   useEffect(() => {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
@@ -417,6 +419,61 @@ export default function TalkingActors() {
       console.error('Error saving actor:', error)
       alert('Error saving actor to database')
     }
+  }
+
+  const handleBulkSaveActors = async () => {
+    const selectedImages = filteredImages.filter(img => selectedActorIds.has(img.id))
+
+    if (selectedImages.length === 0) {
+      alert('Please select at least one actor to save')
+      return
+    }
+
+    setIsSavingBulk(true)
+    let saved = 0
+
+    try {
+      for (const image of selectedImages) {
+        const actorName = image.prompt?.split(' ').slice(0, 5).join(' ') || `Actor ${saved + 1}`
+
+        const response = await fetch('/api/talking-actors/save-actor', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-workspace-id': workspaceId,
+          },
+          body: JSON.stringify({
+            workspaceId,
+            name: actorName,
+            imageUrl: image.image,
+            description: image.prompt,
+          }),
+        })
+
+        if (response.ok) {
+          saved++
+          console.log(`[BulkSave] Saved ${saved}/${selectedImages.length}`)
+        }
+      }
+
+      alert(`✅ Successfully saved ${saved}/${selectedImages.length} actors to database`)
+      setSelectedActorIds(new Set())
+    } catch (error) {
+      console.error('Error bulk saving actors:', error)
+      alert(`❌ Error saving actors. Saved ${saved}/${selectedImages.length} before error`)
+    } finally {
+      setIsSavingBulk(false)
+    }
+  }
+
+  const toggleActorSelection = (imageId: string) => {
+    const newSelected = new Set(selectedActorIds)
+    if (newSelected.has(imageId)) {
+      newSelected.delete(imageId)
+    } else {
+      newSelected.add(imageId)
+    }
+    setSelectedActorIds(newSelected)
   }
 
   const deletedImages = images.filter((img) => img.deletedAt).sort((a, b) => (b.deletedAt || 0) - (a.deletedAt || 0))
@@ -825,6 +882,17 @@ export default function TalkingActors() {
                   Select to Import
                 </button>
 
+                {selectedActorIds.size > 0 && (
+                  <button
+                    onClick={handleBulkSaveActors}
+                    disabled={isSavingBulk}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 disabled:bg-green-400 border border-green-500 transition-colors"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    {isSavingBulk ? 'Saving...' : `Save ${selectedActorIds.size} Actor${selectedActorIds.size !== 1 ? 's' : ''}`}
+                  </button>
+                )}
+
               </div>
             </div>
 
@@ -919,16 +987,30 @@ export default function TalkingActors() {
                         return ratios[ratio || '1:1'] || 'aspect-square'
                       }
 
+                      const isSelected = selectedActorIds.has(image.id)
+
                       return (
                         <div
                           key={image.id}
                           className={`group relative rounded-lg overflow-hidden border-2 transition-all block w-full cursor-pointer bg-gray-200 ${
-                            image.id === fullscreenImage?.id
+                            isSelected
+                              ? 'border-green-500 shadow-lg shadow-green-500/50'
+                              : image.id === fullscreenImage?.id
                               ? 'border-blue-500 shadow-lg shadow-blue-500/50'
                               : 'border-gray-600 hover:border-gray-500 shadow-md'
                           }`}
                           onClick={() => { setFullscreenImage(image); setFullscreenImageIndex(idx); setImageZoom(0.5) }}
                         >
+                          {/* Selection checkbox */}
+                          <div className="absolute top-2 left-2 z-10 pointer-events-auto" onClick={(e) => { e.stopPropagation(); toggleActorSelection(image.id) }}>
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                              isSelected
+                                ? 'bg-green-500 border-green-600'
+                                : 'bg-white/80 border-gray-400 hover:bg-white'
+                            }`}>
+                              {isSelected && <span className="text-white font-bold text-xs">✓</span>}
+                            </div>
+                          </div>
                           <img
                             src={image.image}
                             alt={image.prompt}
