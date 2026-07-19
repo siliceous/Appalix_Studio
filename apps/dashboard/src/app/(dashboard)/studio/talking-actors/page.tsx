@@ -295,7 +295,8 @@ export default function TalkingActors() {
       try {
         const supabase = createSupabaseClient()
         const { data: { session } } = await supabase.auth.getSession()
-        const authHeader: string | undefined = session?.access_token ? `Bearer ${session.access_token}` : undefined
+        let authHeader: string | undefined
+        authHeader = session?.access_token ? `Bearer ${session.access_token}` : undefined
 
         const response = await fetch('/api/projects', { headers: { 'x-workspace-id': workspaceId, ...(authHeader ? { 'Authorization': authHeader } : {}) } })
         if (response.ok) {
@@ -322,7 +323,8 @@ export default function TalkingActors() {
         // Get auth token from Supabase session
         const supabase = createSupabaseClient()
         const { data: { session } } = await supabase.auth.getSession()
-        const authHeader: string | undefined = session?.access_token ? `Bearer ${session.access_token}` : undefined
+        let authHeader: string | undefined
+        authHeader = session?.access_token ? `Bearer ${session.access_token}` : undefined
 
           // Fetch both workspace-specific and preset actors on localhost
           [workspaceRes, presetsRes] = await Promise.all([
@@ -414,7 +416,8 @@ export default function TalkingActors() {
       try {
         const supabase = createSupabaseClient()
         const { data: { session } } = await supabase.auth.getSession()
-        const authHeader: string | undefined = session?.access_token ? `Bearer ${session.access_token}` : undefined
+        let authHeader: string | undefined
+        authHeader = session?.access_token ? `Bearer ${session.access_token}` : undefined
         const response = await fetch('/api/ai-studio/actor-folders', { headers: { 'x-workspace-id': workspaceId, ...(authHeader ? { 'Authorization': authHeader } : {}) } })
         if (response.ok) {
           const data = await response.json()
