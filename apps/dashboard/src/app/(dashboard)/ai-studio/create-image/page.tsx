@@ -683,11 +683,11 @@ export default function CreateImagePage() {
                   console.log('- Size:', sizeKB, 'KB')
                   console.log('- URL length of first image:', updated[0]?.image?.length || 0)
 
-                  localStorage.setItem(`imageGenerationHistory-${wId}`, jsonStr)
+                  localStorage.setItem(`imageGenerationHistory-${workspaceId}`, jsonStr)
                   console.log('✅ Successfully saved to localStorage')
 
                   // Verify it was saved
-                  const verified = localStorage.getItem(`imageGenerationHistory-${wId}`)
+                  const verified = localStorage.getItem(`imageGenerationHistory-${workspaceId}`)
                   console.log('✅ Verified in localStorage:', verified?.length || 0, 'bytes')
                 } catch (err) {
                   console.error('❌ localStorage save error:', err)
