@@ -19,6 +19,30 @@ function getSupabase() {
   )
 }
 
+/**
+ * Get master workspace ID dynamically by looking up info@gorank.com.au workspace
+ * Fallback to MASTER_WORKSPACE_ID env var if available
+ */
+export async function getMasterWorkspaceId(): Promise<string> {
+  if (MASTER_WORKSPACE_ID) {
+    return MASTER_WORKSPACE_ID
+  }
+
+  const supabase = getSupabase()
+  const { data, error } = await supabase
+    .from('workspaces')
+    .select('id')
+    .eq('owner_email', 'info@gorank.com.au')
+    .single()
+
+  if (error || !data) {
+    console.error('[getMasterWorkspaceId] Failed to find master workspace:', error)
+    return ''
+  }
+
+  return data.id
+}
+
 // ============================================================================
 // Assets & Media
 // ============================================================================
@@ -207,13 +231,14 @@ export async function getWorkspaceActors(context: WorkspaceContext) {
  */
 export async function getAvailableActors(context: WorkspaceContext) {
   const supabase = getSupabase()
+  const masterWorkspaceId = await getMasterWorkspaceId()
 
   const { data, error } = await supabase
     .from('talking_actors')
     .select('*')
     .eq('is_active', true)
     .or(
-      `and(workspace_id.eq.${context.workspaceId},is_global.eq.false),and(workspace_id.eq.${MASTER_WORKSPACE_ID},is_global.eq.true)`
+      `and(workspace_id.eq.${context.workspaceId},is_global.eq.false),and(workspace_id.eq.${masterWorkspaceId},is_global.eq.true)`
     )
     .order('is_global', { ascending: false })
     .order('created_at', { ascending: false })
@@ -228,11 +253,12 @@ export async function getAvailableActors(context: WorkspaceContext) {
  */
 export async function getGlobalActors() {
   const supabase = getSupabase()
+  const masterWorkspaceId = await getMasterWorkspaceId()
 
   const { data, error } = await supabase
     .from('talking_actors')
     .select('*')
-    .eq('workspace_id', MASTER_WORKSPACE_ID)
+    .eq('workspace_id', masterWorkspaceId)
     .eq('is_global', true)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
@@ -244,13 +270,14 @@ export async function getGlobalActors() {
 
 export async function getActor(context: WorkspaceContext, actorId: string) {
   const supabase = getSupabase()
+  const masterWorkspaceId = await getMasterWorkspaceId()
 
   const { data, error } = await supabase
     .from('talking_actors')
     .select('*')
     .eq('id', actorId)
     .or(
-      `and(workspace_id.eq.${context.workspaceId}),and(workspace_id.eq.${MASTER_WORKSPACE_ID},is_global.eq.true)`
+      `and(workspace_id.eq.${context.workspaceId}),and(workspace_id.eq.${masterWorkspaceId},is_global.eq.true)`
     )
     .single()
 

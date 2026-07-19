@@ -20,7 +20,7 @@ export default async function OnboardingPage() {
   if (existing) redirect('/dashboard')
 
   return (
-    <div className="onboarding-page min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
+    <div className="onboarding-page w-full h-auto min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12" style={{ overflow: 'auto' }}>
       <div className="w-full max-w-lg">
 
         {/* Logo */}
