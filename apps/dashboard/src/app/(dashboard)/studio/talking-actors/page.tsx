@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Download, Trash2, Search, Loader2, X, ChevronLeft, ChevronRight, Plus, Eye, Save, Sparkles, Heart } from 'lucide-react'
+import { createClient as createSupabaseClient } from '@/lib/supabase/client'
+
 import { SageToolbar } from '@/components/dashboard/sage-toolbar'
 
 interface GeneratedImage {
@@ -267,7 +269,7 @@ export default function TalkingActors() {
     if (!workspaceId) return
     const checkIsMainWorkspace = async () => {
       try {
-        const response = await fetch('/api/workspaces', { headers: { 'x-workspace-id': workspaceId } })
+        const response = await fetch('/api/workspaces', { headers: { 'x-workspace-id': workspaceId, ...(authHeader ? { 'Authorization': authHeader } : {}) } })
         if (response.ok) {
           const data = await response.json()
           setIsMainWorkspace(data.owner_email === 'info@gorank.com.au')
@@ -283,7 +285,7 @@ export default function TalkingActors() {
     if (!workspaceId) return
     const fetchProjects = async () => {
       try {
-        const response = await fetch('/api/projects', { headers: { 'x-workspace-id': workspaceId } })
+        const response = await fetch('/api/projects', { headers: { 'x-workspace-id': workspaceId, ...(authHeader ? { 'Authorization': authHeader } : {}) } })
         if (response.ok) {
           const data = await response.json()
           setProjects(data.projects || [])
@@ -305,13 +307,18 @@ export default function TalkingActors() {
         const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
 
         if (!isProduction) {
+        // Get auth token from Supabase session
+        const supabase = createSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const authHeader = session?.access_token ? `Bearer ${session.access_token}` : undefined
+
           // Fetch both workspace-specific and preset actors on localhost
           [workspaceRes, presetsRes] = await Promise.all([
             fetch(`/api/talking-actors/workspace/${workspaceId}`, {
-              headers: { 'x-workspace-id': workspaceId }
+              headers: { 'x-workspace-id': workspaceId, ...(authHeader ? { 'Authorization': authHeader } : {}) }
             }),
             fetch(`/api/talking-actors/presets`, {
-              headers: { 'x-workspace-id': workspaceId }
+              headers: { 'x-workspace-id': workspaceId, ...(authHeader ? { 'Authorization': authHeader } : {}) }
             })
           ])
         } else {
@@ -393,7 +400,7 @@ export default function TalkingActors() {
     if (!workspaceId) return
     const fetchFolders = async () => {
       try {
-        const response = await fetch('/api/ai-studio/actor-folders', { headers: { 'x-workspace-id': workspaceId } })
+        const response = await fetch('/api/ai-studio/actor-folders', { headers: { 'x-workspace-id': workspaceId, ...(authHeader ? { 'Authorization': authHeader } : {}) } })
         if (response.ok) {
           const data = await response.json()
           setFolders(data.folders || [])
