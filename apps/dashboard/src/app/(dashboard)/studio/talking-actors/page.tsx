@@ -1317,22 +1317,16 @@ export default function TalkingActors() {
             </div>
 
             <div className="flex flex-col gap-2 pt-4 border-t border-gray-700 flex-shrink-0">
-              <button onClick={() => handleSaveToFolder(fullscreenImage)} className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><Save className="w-4 h-4" /> Save to Folder</button>
               <button
-                onClick={() => handleSaveActorToDatabase(fullscreenImage)}
-                className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                onClick={() => {
+                  sessionStorage.setItem('selectedActor', JSON.stringify(fullscreenImage))
+                  router.push('/ai-studio/create-video')
+                }}
+                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
               >
-                <Sparkles className="w-4 h-4" /> Save as Actor
+                <Plus className="w-4 h-4" /> Use this Actor
               </button>
-              {workspaceId === 'info@gorank.com.au' && (
-                <button
-                  onClick={() => handlePublishAsPreset(fullscreenImage.id)}
-                  disabled={isPublishing}
-                  className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                >
-                  <Sparkles className="w-4 h-4" /> {isPublishing ? 'Publishing...' : 'Publish as Preset'}
-                </button>
-              )}
+              <button onClick={() => handleSaveToFolder(fullscreenImage)} className="w-full px-4 py-2 bg-white/80 hover:bg-white text-gray-900 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><Save className="w-4 h-4" /> Save to Folder</button>
               <button onClick={() => { handleDelete(fullscreenImage.id); setFullscreenImage(null); setImageZoom(0.5) }} className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><Trash2 className="w-4 h-4" /> Delete</button>
             </div>
           </div>
