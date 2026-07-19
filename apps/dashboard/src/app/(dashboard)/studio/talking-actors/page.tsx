@@ -1229,37 +1229,37 @@ export default function TalkingActors() {
 
                             }}
                           />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-colors flex flex-col items-center justify-center gap-3 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
                                 sessionStorage.setItem('selectedActor', JSON.stringify(image))
                                 router.push('/ai-studio/create-video')
                               }}
-                              className="p-2 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors"
-                              title="Use this Actor"
+                              className="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors text-white text-sm font-medium flex items-center gap-2"
                             >
-                              <Plus className="w-4 h-4 text-white" />
+                              <Plus className="w-4 h-4" />
+                              Use this Actor
                             </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
                                 handleSaveToFolder(image)
                               }}
-                              className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
-                              title="Save to Folder"
+                              className="px-4 py-2 bg-white/80 rounded-lg hover:bg-white transition-colors text-gray-900 text-sm font-medium flex items-center gap-2"
                             >
-                              <Save className="w-4 h-4 text-gray-700" />
+                              <Save className="w-4 h-4" />
+                              Save to Folder
                             </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
                                 handleDelete(image.id)
                               }}
-                              className="p-2 bg-white rounded-full hover:bg-gray-200 transition-colors"
-                              title="Delete"
+                              className="px-4 py-2 bg-red-600 rounded-lg hover:bg-red-700 transition-colors text-white text-sm font-medium flex items-center gap-2"
                             >
-                              <Trash2 className="w-4 h-4 text-gray-700" />
+                              <Trash2 className="w-4 h-4" />
+                              Delete
                             </button>
                           </div>
                         </div>
