@@ -229,13 +229,13 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
   /**
    * Save actor from imported image (no file upload)
    */
-  server.post<{ Body: { workspaceId: string; name: string; imageUrl: string; description?: string } }>(
+  server.post<{ Body: { workspaceId: string; name: string; imageUrl: string; description?: string; aspectRatio?: string } }>(
     '/save-actor',
-    async (req: FastifyRequest<{ Body: { workspaceId: string; name: string; imageUrl: string; description?: string } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest<{ Body: { workspaceId: string; name: string; imageUrl: string; description?: string; aspectRatio?: string } }>, reply: FastifyReply) => {
       try {
-        const { workspaceId, name, imageUrl, description } = req.body
+        const { workspaceId, name, imageUrl, description, aspectRatio } = req.body
 
-        console.log('[SaveActor] Request body:', { workspaceId, name, imageUrl: imageUrl?.substring(0, 50) })
+        console.log('[SaveActor] Request body:', { workspaceId, name, imageUrl: imageUrl?.substring(0, 50), aspectRatio })
 
         if (!workspaceId || !name || !imageUrl) {
           return reply.status(400).send({
@@ -253,6 +253,7 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
             name: name.trim(),
             image_url: imageUrl,
             description: description || '',
+            aspect_ratio: aspectRatio || '1:1',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })

@@ -322,7 +322,7 @@ export default function TalkingActors() {
             prompt: actor.description || actor.name || '',
             model: 'saved-actor',
             timestamp: actor.created_at,
-            aspectRatio: '1:1'
+            aspectRatio: actor.aspect_ratio || '1:1'
           }))
 
           // Merge with localStorage images
@@ -523,6 +523,7 @@ export default function TalkingActors() {
             name: actorName,
             imageUrl: image.image,
             description: image.prompt,
+            aspectRatio: image.aspectRatio || '1:1',
           }),
         })
 
@@ -574,6 +575,7 @@ export default function TalkingActors() {
               name: actorName,
               imageUrl: image.image,
               description: image.prompt,
+              aspectRatio: image.aspectRatio || '1:1',
             }),
           })
 
