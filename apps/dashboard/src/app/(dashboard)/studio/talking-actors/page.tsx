@@ -300,28 +300,29 @@ export default function TalkingActors() {
       try {
         console.log('[TalkingActors] Fetching saved actors from database...')
 
-        // Skip database fetch on production - use localStorage only
-        if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-          console.log('[TalkingActors] Running on production, skipping database fetch')
-          return
-        }
+        let workspaceRes, presetsRes
+        const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
 
-        // Fetch both workspace-specific and preset actors
-        const [workspaceRes, presetsRes] = await Promise.all([
-          fetch(`/api/talking-actors/workspace/${workspaceId}`, {
-            headers: { 'x-workspace-id': workspaceId }
-          }),
-          fetch(`/api/talking-actors/presets`, {
-            headers: { 'x-workspace-id': workspaceId }
-          })
-        ])
+        if (!isProduction) {
+          // Fetch both workspace-specific and preset actors on localhost
+          [workspaceRes, presetsRes] = await Promise.all([
+            fetch(`/api/talking-actors/workspace/${workspaceId}`, {
+              headers: { 'x-workspace-id': workspaceId }
+            }),
+            fetch(`/api/talking-actors/presets`, {
+              headers: { 'x-workspace-id': workspaceId }
+            })
+          ])
+        } else {
+          console.log('[TalkingActors] Running on production, using localStorage only')
+        }
 
         let allDbActors: any[] = []
         let presetIds = new Set<string>()
         const seenIds = new Set<string>()
 
-        // Get workspace-specific actors
-        if (workspaceRes.ok) {
+        // Get workspace-specific actors (only on localhost)
+        if (workspaceRes?.ok) {
           const data = await workspaceRes.json()
           console.log('[TalkingActors] Loaded', data.actors?.length || 0, 'workspace actors', data)
           data.actors?.forEach((actor: any) => {
@@ -330,13 +331,13 @@ export default function TalkingActors() {
               allDbActors.push(actor)
             }
           })
-        } else {
+        } else if (workspaceRes) {
           const error = await workspaceRes.text()
           console.error('[TalkingActors] Workspace fetch failed:', workspaceRes.status, error)
         }
 
-        // Get published preset actors (available to all)
-        if (presetsRes.ok) {
+        // Get published preset actors (available to all - only on localhost)
+        if (presetsRes?.ok) {
           const data = await presetsRes.json()
           console.log('[TalkingActors] Loaded', data.presets?.length || 0, 'preset actors')
           // Track which ones are presets and deduplicate
