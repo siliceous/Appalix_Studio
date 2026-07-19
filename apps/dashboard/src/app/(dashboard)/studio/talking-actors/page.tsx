@@ -273,10 +273,10 @@ export default function TalkingActors() {
         const { data: { session } } = await supabase.auth.getSession()
         const authHeader = session?.access_token ? `Bearer ${session.access_token}` : undefined
 
-        const response = await fetch('/api/workspaces', { headers: { 'x-workspace-id': workspaceId, ...(authHeader ? { 'Authorization': authHeader } : {}) } })
+        const response = await fetch('/api/talking-actors/workspace-info', { headers: { 'x-workspace-id': workspaceId, ...(authHeader ? { 'Authorization': authHeader } : {}) } })
         if (response.ok) {
           const data = await response.json()
-          setIsMainWorkspace(data.owner_email === 'info@gorank.com.au' || data.owner_email === 'sales@appalix.ai')
+          setIsMainWorkspace(data.isMasterWorkspace || data.ownerEmail === 'info@gorank.com.au' || data.ownerEmail === 'sales@appalix.ai')
         }
       } catch (error) {
         console.error('Error checking workspace:', error)

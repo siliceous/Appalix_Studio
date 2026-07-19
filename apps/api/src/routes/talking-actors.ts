@@ -19,6 +19,47 @@ function getSupabase() {
 
 export async function talkingActorsRoutes(server: FastifyInstance) {
   /**
+   * Get workspace info (for checking if it's a master workspace)
+   * Returns workspace details including owner info
+   */
+  server.get(
+    '/workspace-info',
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const context = await getCurrentWorkspaceContext(req)
+        const sb = getSupabase()
+
+        // Get the owner of this workspace
+        const { data: ownerMembership } = await sb
+          .from('workspace_members')
+          .select('user_id')
+          .eq('workspace_id', context.workspaceId)
+          .eq('role', 'owner')
+          .single()
+
+        // Get owner's email from auth
+        let ownerEmail = ''
+        if (ownerMembership?.user_id) {
+          const { data: user } = await sb.auth.admin.getUserById(ownerMembership.user_id)
+          ownerEmail = user?.email || ''
+        }
+
+        reply.send({
+          success: true,
+          workspaceId: context.workspaceId,
+          isMasterWorkspace: context.isMasterWorkspace,
+          ownerEmail,
+        })
+      } catch (error) {
+        console.error('[WorkspaceInfo] Error:', error)
+        reply.status(403).send({
+          error: error instanceof Error ? error.message : 'Failed to get workspace info',
+        })
+      }
+    }
+  )
+
+  /**
    * List all actors available to workspace
    * Returns: workspace's private actors + global master actors
    * SECURITY: Validates user workspace membership before returning data
