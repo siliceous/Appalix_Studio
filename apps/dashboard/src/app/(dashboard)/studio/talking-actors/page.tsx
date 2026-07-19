@@ -295,23 +295,32 @@ export default function TalkingActors() {
 
         let allDbActors: any[] = []
         let presetIds = new Set<string>()
+        const seenIds = new Set<string>()
 
         // Get workspace-specific actors
         if (workspaceRes.ok) {
           const data = await workspaceRes.json()
           console.log('[TalkingActors] Loaded', data.actors?.length || 0, 'workspace actors')
-          allDbActors.push(...(data.actors || []))
+          data.actors?.forEach((actor: any) => {
+            if (!seenIds.has(actor.id)) {
+              seenIds.add(actor.id)
+              allDbActors.push(actor)
+            }
+          })
         }
 
         // Get published preset actors (available to all)
         if (presetsRes.ok) {
           const data = await presetsRes.json()
           console.log('[TalkingActors] Loaded', data.presets?.length || 0, 'preset actors')
-          // Track which ones are presets
+          // Track which ones are presets and deduplicate
           data.presets?.forEach((preset: any) => {
             presetIds.add(preset.id)
+            if (!seenIds.has(preset.id)) {
+              seenIds.add(preset.id)
+              allDbActors.push(preset)
+            }
           })
-          allDbActors.push(...(data.presets || []))
         }
 
         if (allDbActors.length > 0) {
@@ -336,9 +345,10 @@ export default function TalkingActors() {
             }
           }
 
-          // Combine database actors + localStorage images (avoid duplicates by image URL)
+          // Combine database actors + localStorage images (avoid duplicates by ID and URL)
+          const existingIds = new Set(savedImages.map(img => img.id))
           const existingUrls = new Set(savedImages.map(img => img.image))
-          const newDbActors = dbActors.filter((actor: any) => !existingUrls.has(actor.image))
+          const newDbActors = dbActors.filter((actor: any) => !existingIds.has(actor.id) && !existingUrls.has(actor.image))
           const combined = [...newDbActors, ...savedImages]
 
           setImages(combined)
