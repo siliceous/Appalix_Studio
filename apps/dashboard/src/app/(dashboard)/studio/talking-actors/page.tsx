@@ -1203,12 +1203,6 @@ export default function TalkingActors() {
                               </div>
                             </div>
                           )}
-                          {/* Preset indicator */}
-                          {isPreset && (
-                            <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-orange-600 rounded text-xs text-white font-semibold">
-                              Preset
-                            </div>
-                          )}
                           <img
                             src={image.image}
                             alt={image.prompt}
