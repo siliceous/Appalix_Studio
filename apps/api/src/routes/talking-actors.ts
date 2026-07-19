@@ -360,7 +360,7 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
   )
 
   /**
-   * Publish actor as preset (only from info@gorank workspace)
+   * Publish actor as preset
    */
   server.post<{ Body: { actorId: string; workspaceId: string } }>(
     '/publish-preset',
@@ -369,50 +369,45 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
         const { actorId, workspaceId } = req.body
         const sb = getSupabase()
 
-        // Verify this is from info@gorank workspace
-        const { data: workspace, error: wsError } = await sb
-          .from('workspaces')
-          .select('id, owner_email')
-          .eq('id', workspaceId)
-          .single()
+        console.log('[PublishPreset] Request:', { actorId, workspaceId })
 
-        if (wsError || workspace?.owner_email !== 'info@gorank.com.au') {
-          return reply.status(403).send({
-            error: 'Only info@gorank.com.au workspace can publish presets',
-          })
-        }
-
-        // Get the actor
+        // Get the actor first (no workspace filter, it should exist)
         const { data: actor, error: actorError } = await sb
           .from('talking_actors')
           .select('*')
           .eq('id', actorId)
-          .eq('workspace_id', workspaceId)
           .single()
+
+        console.log('[PublishPreset] Actor lookup:', { error: actorError?.message, found: !!actor })
 
         if (actorError || !actor) {
           return reply.status(404).send({
-            error: 'Actor not found',
+            error: `Actor not found: ${actorError?.message || 'unknown'}`,
           })
         }
 
-        // Publish as preset
-        const { error: updateError } = await sb
+        // Publish as preset (set is_preset to true)
+        const { data: updated, error: updateError } = await sb
           .from('talking_actors')
           .update({
             is_preset: true,
-            preset_created_by: workspace?.owner_email,
+            preset_created_by: workspaceId,
           })
           .eq('id', actorId)
+          .select()
+          .single()
+
+        console.log('[PublishPreset] Update result:', { error: updateError?.message, updated: !!updated })
 
         if (updateError) throw updateError
 
         reply.send({
           success: true,
           message: 'Actor published as preset',
-          actor: { ...actor, is_preset: true, preset_created_by: workspace?.owner_email },
+          actor: updated,
         })
       } catch (error) {
+        console.error('[PublishPreset] Error:', error)
         reply.status(500).send({
           error: error instanceof Error ? error.message : 'Failed to publish preset',
         })

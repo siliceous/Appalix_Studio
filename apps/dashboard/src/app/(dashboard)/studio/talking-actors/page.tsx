@@ -554,6 +554,7 @@ export default function TalkingActors() {
         // Save to database if not already saved (check if has database ID)
         let actorId = image.id
         if (image.model !== 'saved-actor') {
+          console.log('[PublishPreset] Saving new actor:', actorName)
           const saveRes = await fetch('/api/talking-actors/save-actor', {
             method: 'POST',
             headers: {
@@ -570,11 +571,22 @@ export default function TalkingActors() {
 
           if (saveRes.ok) {
             const saveData = await saveRes.json()
-            actorId = saveData.actor.id
+            actorId = saveData.actor?.id
+            console.log('[PublishPreset] Saved, got ID:', actorId)
+
+            if (!actorId) {
+              console.error('[PublishPreset] Save returned no actor ID')
+              continue
+            }
+          } else {
+            const error = await saveRes.json()
+            console.error('[PublishPreset] Save failed:', error)
+            continue
           }
         }
 
         // Now publish as preset
+        console.log('[PublishPreset] Publishing actor:', { actorId, workspaceId })
         const response = await fetch('/api/talking-actors/publish-preset', {
           method: 'POST',
           headers: {
@@ -588,8 +600,12 @@ export default function TalkingActors() {
         })
 
         if (response.ok) {
+          const data = await response.json()
+          console.log('[PublishPreset] Success:', data)
           published++
-          console.log(`[PublishPreset] Published ${published}/${selectedImages.length}`)
+        } else {
+          const error = await response.json()
+          console.error('[PublishPreset] Publish failed:', error)
         }
       }
 
