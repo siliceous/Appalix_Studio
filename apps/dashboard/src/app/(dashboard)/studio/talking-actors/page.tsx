@@ -294,19 +294,26 @@ export default function TalkingActors() {
   useEffect(() => {
     const fetchPresets = async () => {
       try {
+        console.log('[Presets] Fetching presets...')
         const response = await fetch('/api/talking-actors/presets')
+        console.log('[Presets] Response status:', response.status)
         if (response.ok) {
           const data = await response.json()
+          console.log('[Presets] Loaded:', data.presets?.length || 0, 'presets')
           setPresetActors(data.presets || [])
+        } else {
+          const error = await response.text()
+          console.error('[Presets] Error response:', response.status, error)
         }
       } catch (error) {
-        console.error('Error fetching presets:', error)
+        console.error('[Presets] Fetch error:', error)
       }
     }
     fetchPresets()
   }, [])
 
   const handlePublishAsPreset = async (imageId: string) => {
+    console.log('[Publish] workspaceId:', workspaceId)
     if (workspaceId !== 'info@gorank.com.au') {
       alert('Only info@gorank.com.au workspace can publish presets')
       return
@@ -317,6 +324,7 @@ export default function TalkingActors() {
 
     setIsPublishing(true)
     try {
+      console.log('[Publish] Publishing actor:', imageId)
       const response = await fetch('/api/talking-actors/publish-preset', {
         method: 'POST',
         headers: {
@@ -752,7 +760,10 @@ export default function TalkingActors() {
                 </div>
                 <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-white/10 border border-white/20">{credits} Credits</div>
                 <button
-                  onClick={() => setShowPresets(!showPresets)}
+                  onClick={() => {
+                    console.log('[UI] Presets button clicked, current showPresets:', showPresets)
+                    setShowPresets(!showPresets)
+                  }}
                   className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-purple-600 border border-purple-500 hover:bg-purple-700 transition-colors"
                   title="View and copy preset actors"
                 >
