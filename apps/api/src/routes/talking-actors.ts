@@ -2,7 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { createClient } from '@supabase/supabase-js'
 import { v4 as uuidv4 } from 'uuid'
 import { getCurrentWorkspaceContext, MASTER_WORKSPACE_ID } from '../lib/workspace-context.js'
-import { getActor, getAvailableActors, getWorkspaceActors, getGlobalActors } from '../lib/tenant-repositories.js'
+import { getActor, getAvailableActors, getWorkspaceActors, getGlobalActors, getMasterWorkspaceIds } from '../lib/tenant-repositories.js'
 import { STORAGE_PATHS, generatePublicUrl, deleteStorageObject } from '../lib/storage-isolation.js'
 
 let supabase: any
@@ -373,17 +373,21 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
   )
 
   /**
-   * Get preset actors (available to all workspaces)
+   * Get global preset actors (available to all workspaces)
    */
   server.get(
     '/presets',
     async (req: FastifyRequest, reply: FastifyReply) => {
       try {
+        const masterWorkspaceIds = await getMasterWorkspaceIds()
         const sb = getSupabase()
+
         const { data: actors, error } = await sb
           .from('talking_actors')
           .select('*')
-          .eq('is_preset', true)
+          .eq('is_global', true)
+          .eq('is_active', true)
+          .in('workspace_id', masterWorkspaceIds)
           .order('created_at', { ascending: false })
 
         if (error) throw error
