@@ -385,6 +385,40 @@ export default function TalkingActors() {
     }
   }
 
+  const handleSaveActorToDatabase = async (image: GeneratedImage) => {
+    const actorName = prompt('Enter actor name:', image.prompt?.split(' ').slice(0, 3).join(' ') || 'Actor')
+    if (!actorName) return
+
+    try {
+      console.log('[SaveActor] Saving actor to database:', actorName)
+      const response = await fetch('/api/talking-actors/save-actor', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-workspace-id': workspaceId,
+        },
+        body: JSON.stringify({
+          workspaceId,
+          name: actorName,
+          imageUrl: image.image,
+          description: image.prompt,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        alert('✅ Actor saved to database!')
+        console.log('[SaveActor] Saved:', data.actor)
+      } else {
+        const error = await response.json()
+        alert('❌ ' + (error.error || 'Failed to save'))
+      }
+    } catch (error) {
+      console.error('Error saving actor:', error)
+      alert('Error saving actor to database')
+    }
+  }
+
   const deletedImages = images.filter((img) => img.deletedAt).sort((a, b) => (b.deletedAt || 0) - (a.deletedAt || 0))
 
   const filteredImages = images.filter((img) => {
@@ -996,6 +1030,12 @@ export default function TalkingActors() {
 
             <div className="flex flex-col gap-2 pt-4 border-t border-gray-700 flex-shrink-0">
               <button onClick={() => handleSaveToFolder(fullscreenImage)} className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"><Save className="w-4 h-4" /> Save to Folder</button>
+              <button
+                onClick={() => handleSaveActorToDatabase(fullscreenImage)}
+                className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" /> Save as Actor
+              </button>
               {workspaceId === 'info@gorank.com.au' && (
                 <button
                   onClick={() => handlePublishAsPreset(fullscreenImage.id)}

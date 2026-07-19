@@ -218,6 +218,49 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
   })
 
   /**
+   * Save actor from imported image (no file upload)
+   */
+  server.post<{ Body: { workspaceId: string; name: string; imageUrl: string; description?: string } }>(
+    '/save-actor',
+    async (req: FastifyRequest<{ Body: { workspaceId: string; name: string; imageUrl: string; description?: string } }>, reply: FastifyReply) => {
+      try {
+        const { workspaceId, name, imageUrl, description } = req.body
+
+        if (!workspaceId || !name || !imageUrl) {
+          return reply.status(400).send({
+            error: 'Missing required fields: workspaceId, name, imageUrl',
+          })
+        }
+
+        const { data: actor, error } = await supabase
+          .from('talking_actors')
+          .insert({
+            workspace_id: workspaceId,
+            name: name.trim(),
+            image_url: imageUrl,
+            description: description || '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .select()
+          .single()
+
+        if (error) throw error
+
+        reply.send({
+          success: true,
+          actor,
+          message: 'Actor saved to database',
+        })
+      } catch (error) {
+        reply.status(500).send({
+          error: error instanceof Error ? error.message : 'Failed to save actor',
+        })
+      }
+    }
+  )
+
+  /**
    * Delete actor
    */
   server.delete<{ Params: { actorId: string } }>(
