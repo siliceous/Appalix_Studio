@@ -87,7 +87,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER IF NOT EXISTS talking_actors_updated_at
-  BEFORE UPDATE ON talking_actors
-  FOR EACH ROW
-  EXECUTE FUNCTION update_talking_actors_updated_at();
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'talking_actors_updated_at') THEN
+    CREATE TRIGGER talking_actors_updated_at
+      BEFORE UPDATE ON talking_actors
+      FOR EACH ROW
+      EXECUTE FUNCTION update_talking_actors_updated_at();
+  END IF;
+END
+$$;
