@@ -1181,7 +1181,7 @@ export default function TalkingActors() {
                           '21:9': 'aspect-[21/9]',
                           '2:3': 'aspect-[2/3]',
                         }
-                        return ratios[ratio || '1:1'] || 'aspect-square'
+                        return ratios[ratio || '9:16'] || 'aspect-[9/16]'
                       }
 
                       const isSelected = selectedActorIds.has(image.id)
@@ -1193,8 +1193,6 @@ export default function TalkingActors() {
                           className={`group relative rounded-lg overflow-hidden border-2 transition-all block w-full cursor-pointer bg-gray-200 ${
                             isSelected
                               ? 'border-green-500 shadow-lg shadow-green-500/50'
-                              : isPreset
-                              ? 'border-orange-500 shadow-lg shadow-orange-500/30'
                               : image.id === fullscreenImage?.id
                               ? 'border-blue-500 shadow-lg shadow-blue-500/50'
                               : 'border-gray-600 hover:border-gray-500 shadow-md'
