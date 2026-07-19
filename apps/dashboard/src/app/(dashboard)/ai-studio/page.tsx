@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 import { Download, Trash2, Search, Loader2, X, ChevronLeft, ChevronRight, Plus, ImagePlay, Eye, Save } from 'lucide-react'
 import { SageToolbar } from '@/components/dashboard/sage-toolbar'
+import { createSupabaseClient } from '@/lib/supabase-client'
 
 interface GeneratedImage {
   id: string
@@ -82,8 +83,18 @@ export default function AIStudio() {
         // Get Supabase images
         if (wId) {
           try {
+            // Get auth token from Supabase session
+            const supabase = createSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const authHeader = session?.access_token ? `Bearer ${session.access_token}` : undefined
+
+            const headers: Record<string, string> = { 'x-workspace-id': wId }
+            if (authHeader) {
+              headers['Authorization'] = authHeader
+            }
+
             const response = await fetch('/api/ai-studio/all-images', {
-              headers: { 'x-workspace-id': wId }
+              headers
             })
 
             if (response.ok) {

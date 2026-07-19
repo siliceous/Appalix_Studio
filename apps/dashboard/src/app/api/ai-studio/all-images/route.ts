@@ -5,17 +5,24 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http:
 export async function GET(request: NextRequest) {
   try {
     const workspaceId = request.headers.get('x-workspace-id')
+    const authHeader = request.headers.get('authorization')
 
     if (!workspaceId) {
       return NextResponse.json({ error: 'Missing workspace ID' }, { status: 400 })
     }
 
+    const headerObj: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'x-workspace-id': workspaceId,
+    }
+
+    if (authHeader) {
+      headerObj['Authorization'] = authHeader
+    }
+
     const response = await fetch(`${API_URL}/api/ai-studio/all-images`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-workspace-id': workspaceId,
-      },
+      headers: headerObj,
     })
 
     if (!response.ok) {

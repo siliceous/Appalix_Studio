@@ -563,7 +563,10 @@ export async function imageRoutes(app: FastifyInstance) {
         total: images.length,
       })
     } catch (error) {
-      console.error('[Image Generation] All images endpoint error:', error)
+      console.error('[Image Generation] All images endpoint error:', error instanceof Error ? error.message : String(error))
+      if (error instanceof Error) {
+        console.error('[Image Generation] Stack:', error.stack)
+      }
       return reply.status(500).send({ error: 'Internal server error' })
     }
   })
