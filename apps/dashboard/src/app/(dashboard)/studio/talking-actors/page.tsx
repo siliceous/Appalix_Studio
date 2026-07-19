@@ -278,6 +278,55 @@ export default function TalkingActors() {
 
   useEffect(() => {
     if (!workspaceId) return
+    const fetchSavedActors = async () => {
+      try {
+        console.log('[TalkingActors] Fetching saved actors from database...')
+        const response = await fetch(`/api/talking-actors/workspace/${workspaceId}`, {
+          headers: { 'x-workspace-id': workspaceId }
+        })
+        if (response.ok) {
+          const data = await response.json()
+          console.log('[TalkingActors] Loaded', data.actors?.length || 0, 'actors from database')
+
+          if (data.actors && data.actors.length > 0) {
+            // Convert database actors to GeneratedImage format for display
+            const dbActors = data.actors.map((actor: any) => ({
+              id: actor.id,
+              image: actor.image_url,
+              prompt: actor.description || actor.name || '',
+              model: 'saved-actor',
+              timestamp: actor.created_at,
+              aspectRatio: '1:1'
+            }))
+
+            // Merge with localStorage images
+            let savedImages: GeneratedImage[] = []
+            const saved = localStorage.getItem(`talkingActorsImages-${workspaceId}`)
+            if (saved) {
+              try {
+                savedImages = JSON.parse(saved)
+              } catch (e) {
+                console.error('[TalkingActors] Error parsing localStorage:', e)
+              }
+            }
+
+            // Combine database actors + localStorage images (avoid duplicates by image URL)
+            const existingUrls = new Set(savedImages.map(img => img.image))
+            const newDbActors = dbActors.filter((actor: any) => !existingUrls.has(actor.image))
+            const combined = [...newDbActors, ...savedImages]
+
+            setImages(combined)
+          }
+        }
+      } catch (error) {
+        console.error('[TalkingActors] Error fetching saved actors:', error)
+      }
+    }
+    fetchSavedActors()
+  }, [workspaceId])
+
+  useEffect(() => {
+    if (!workspaceId) return
     const fetchFolders = async () => {
       try {
         const response = await fetch('/api/ai-studio/actor-folders', { headers: { 'x-workspace-id': workspaceId } })
