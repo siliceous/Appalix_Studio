@@ -269,6 +269,10 @@ export default function TalkingActors() {
     if (!workspaceId) return
     const checkIsMainWorkspace = async () => {
       try {
+        const supabase = createSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const authHeader = session?.access_token ? `Bearer ${session.access_token}` : undefined
+
         const response = await fetch('/api/workspaces', { headers: { 'x-workspace-id': workspaceId, ...(authHeader ? { 'Authorization': authHeader } : {}) } })
         if (response.ok) {
           const data = await response.json()
