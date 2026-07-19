@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { v4 as uuidv4 } from 'uuid'
 import { getCurrentWorkspaceContext, MASTER_WORKSPACE_ID } from '../lib/workspace-context.js'
 import { getActor, getAvailableActors, getWorkspaceActors, getGlobalActors } from '../lib/tenant-repositories.js'
+import { STORAGE_PATHS, generatePublicUrl, deleteStorageObject } from '../lib/storage-isolation.js'
 
 let supabase: any
 
@@ -140,30 +141,26 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
           })
         }
 
-        // Upload to Supabase Storage
+        // Upload to Supabase Storage with workspace-scoped path
         const fileId = uuidv4()
         const fileExt = data.filename.split('.').pop()
-        const filePath = `${context.workspaceId}/${fileId}.${fileExt}`
         const bucketName = uploadType === 'image' ? 'actor-images' : 'actor-videos'
+
+        // SECURITY: Use workspace-scoped path format
+        const storagePath = `${STORAGE_PATHS.actorUploads(context.workspaceId)}/${fileId}.${fileExt}`
 
         const { error: uploadError } = await getSupabase().storage
           .from(bucketName)
-          .upload(filePath, buffer, {
+          .upload(storagePath, buffer, {
             contentType: data.mimetype,
-            cacheControl: '3600',
+            cacheControl: '31536000', // 1 year cache
             upsert: false,
           })
 
         if (uploadError) throw uploadError
 
-        // Get signed URL
-        const { data: signedUrlData, error: urlError } = await getSupabase().storage
-          .from(bucketName)
-          .createSignedUrl(filePath, 365 * 24 * 60 * 60) // 1 year
-
-        if (urlError) throw urlError
-
-        const fileUrl = signedUrlData?.signedUrl
+        // Generate permanent public URL (stored in database for permanent access)
+        const fileUrl = generatePublicUrl(context.workspaceId, bucketName, storagePath)
 
         // Create database record
         const sb = getSupabase()
@@ -331,19 +328,30 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
           })
         }
 
-        // Delete files from storage
-        const sb = getSupabase()
+        // Delete files from storage using workspace-scoped isolation
         if (actor?.image_url) {
-          const imagePath = actor.image_url.split('/').slice(-2).join('/')
-          await sb.storage.from('actor-images').remove([imagePath])
+          try {
+            // Extract storage path from URL
+            const urlParts = actor.image_url.split('/').slice(-3).join('/')
+            const storagePath = `${STORAGE_PATHS.actorUploads(context.workspaceId)}/${urlParts.split('/').slice(-1)[0]}`
+            await deleteStorageObject(context, 'actor-images', storagePath)
+          } catch (err) {
+            console.warn('[TalkingActors] Failed to delete image from storage:', err)
+          }
         }
 
         if (actor?.video_url) {
-          const videoPath = actor.video_url.split('/').slice(-2).join('/')
-          await sb.storage.from('actor-videos').remove([videoPath])
+          try {
+            const urlParts = actor.video_url.split('/').slice(-3).join('/')
+            const storagePath = `${STORAGE_PATHS.actorUploads(context.workspaceId)}/${urlParts.split('/').slice(-1)[0]}`
+            await deleteStorageObject(context, 'actor-videos', storagePath)
+          } catch (err) {
+            console.warn('[TalkingActors] Failed to delete video from storage:', err)
+          }
         }
 
         // Delete database record with workspace filter
+        const sb = getSupabase()
         const { error: deleteError } = await sb
           .from('talking_actors')
           .delete()
