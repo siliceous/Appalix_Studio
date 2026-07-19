@@ -63,6 +63,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/widget-config') ||
     pathname.startsWith('/api/embed/') ||
     pathname.startsWith('/api/ai-studio/') ||
+    pathname.startsWith('/api/talking-actors/') ||
     pathname.startsWith('/api/sage/automation-scheduler')
 
   if (!user && !isPublic) {
