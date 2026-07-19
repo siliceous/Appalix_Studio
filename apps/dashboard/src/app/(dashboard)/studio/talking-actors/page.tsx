@@ -1239,7 +1239,14 @@ export default function TalkingActors() {
                               ? 'border-blue-500 shadow-lg shadow-blue-500/50'
                               : 'border-gray-600 hover:border-gray-500 shadow-md'
                           }`}
-                          onClick={() => { setFullscreenImage(image); setFullscreenImageIndex(idx); setImageZoom(0.5) }}
+                          onClick={(e) => {
+                            if (selectionMode && !isPreset) {
+                              e.preventDefault()
+                              toggleActorSelection(image.id)
+                            } else {
+                              setFullscreenImage(image); setFullscreenImageIndex(idx); setImageZoom(0.5)
+                            }
+                          }}
                         >
                           {/* Selection checkbox - only show in selection mode for non-presets */}
                           {selectionMode && !isPreset && (
