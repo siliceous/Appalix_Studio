@@ -281,42 +281,61 @@ export default function TalkingActors() {
     const fetchSavedActors = async () => {
       try {
         console.log('[TalkingActors] Fetching saved actors from database...')
-        const response = await fetch(`/api/talking-actors/workspace/${workspaceId}`, {
-          headers: { 'x-workspace-id': workspaceId }
-        })
-        if (response.ok) {
-          const data = await response.json()
-          console.log('[TalkingActors] Loaded', data.actors?.length || 0, 'actors from database')
 
-          if (data.actors && data.actors.length > 0) {
-            // Convert database actors to GeneratedImage format for display
-            const dbActors = data.actors.map((actor: any) => ({
-              id: actor.id,
-              image: actor.image_url,
-              prompt: actor.description || actor.name || '',
-              model: 'saved-actor',
-              timestamp: actor.created_at,
-              aspectRatio: '1:1'
-            }))
+        // Fetch both workspace-specific and preset actors
+        const [workspaceRes, presetsRes] = await Promise.all([
+          fetch(`/api/talking-actors/workspace/${workspaceId}`, {
+            headers: { 'x-workspace-id': workspaceId }
+          }),
+          fetch(`/api/talking-actors/presets`, {
+            headers: { 'x-workspace-id': workspaceId }
+          })
+        ])
 
-            // Merge with localStorage images
-            let savedImages: GeneratedImage[] = []
-            const saved = localStorage.getItem(`talkingActorsImages-${workspaceId}`)
-            if (saved) {
-              try {
-                savedImages = JSON.parse(saved)
-              } catch (e) {
-                console.error('[TalkingActors] Error parsing localStorage:', e)
-              }
+        let allDbActors: any[] = []
+
+        // Get workspace-specific actors
+        if (workspaceRes.ok) {
+          const data = await workspaceRes.json()
+          console.log('[TalkingActors] Loaded', data.actors?.length || 0, 'workspace actors')
+          allDbActors.push(...(data.actors || []))
+        }
+
+        // Get published preset actors (available to all)
+        if (presetsRes.ok) {
+          const data = await presetsRes.json()
+          console.log('[TalkingActors] Loaded', data.presets?.length || 0, 'preset actors')
+          allDbActors.push(...(data.presets || []))
+        }
+
+        if (allDbActors.length > 0) {
+          // Convert database actors to GeneratedImage format for display
+          const dbActors = allDbActors.map((actor: any) => ({
+            id: actor.id,
+            image: actor.image_url,
+            prompt: actor.description || actor.name || '',
+            model: 'saved-actor',
+            timestamp: actor.created_at,
+            aspectRatio: '1:1'
+          }))
+
+          // Merge with localStorage images
+          let savedImages: GeneratedImage[] = []
+          const saved = localStorage.getItem(`talkingActorsImages-${workspaceId}`)
+          if (saved) {
+            try {
+              savedImages = JSON.parse(saved)
+            } catch (e) {
+              console.error('[TalkingActors] Error parsing localStorage:', e)
             }
-
-            // Combine database actors + localStorage images (avoid duplicates by image URL)
-            const existingUrls = new Set(savedImages.map(img => img.image))
-            const newDbActors = dbActors.filter((actor: any) => !existingUrls.has(actor.image))
-            const combined = [...newDbActors, ...savedImages]
-
-            setImages(combined)
           }
+
+          // Combine database actors + localStorage images (avoid duplicates by image URL)
+          const existingUrls = new Set(savedImages.map(img => img.image))
+          const newDbActors = dbActors.filter((actor: any) => !existingUrls.has(actor.image))
+          const combined = [...newDbActors, ...savedImages]
+
+          setImages(combined)
         }
       } catch (error) {
         console.error('[TalkingActors] Error fetching saved actors:', error)
@@ -513,6 +532,74 @@ export default function TalkingActors() {
       alert(`❌ Error saving actors. Saved ${saved}/${selectedImages.length} before error`)
     } finally {
       setIsSavingBulk(false)
+    }
+  }
+
+  const handlePublishAsPresets = async () => {
+    const selectedImages = filteredImages.filter(img => selectedActorIds.has(img.id))
+
+    if (selectedImages.length === 0) {
+      alert('Please select at least one actor to publish')
+      return
+    }
+
+    setIsPublishing(true)
+    let published = 0
+
+    try {
+      for (const image of selectedImages) {
+        // First, ensure actor is saved to database
+        const actorName = image.prompt?.split(' ').slice(0, 5).join(' ') || `Actor ${published + 1}`
+
+        // Save to database if not already saved (check if has database ID)
+        let actorId = image.id
+        if (image.model !== 'saved-actor') {
+          const saveRes = await fetch('/api/talking-actors/save-actor', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-workspace-id': workspaceId,
+            },
+            body: JSON.stringify({
+              workspaceId,
+              name: actorName,
+              imageUrl: image.image,
+              description: image.prompt,
+            }),
+          })
+
+          if (saveRes.ok) {
+            const saveData = await saveRes.json()
+            actorId = saveData.actor.id
+          }
+        }
+
+        // Now publish as preset
+        const response = await fetch('/api/talking-actors/publish-preset', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-workspace-id': workspaceId,
+          },
+          body: JSON.stringify({
+            actorId: actorId,
+            workspaceId: workspaceId,
+          }),
+        })
+
+        if (response.ok) {
+          published++
+          console.log(`[PublishPreset] Published ${published}/${selectedImages.length}`)
+        }
+      }
+
+      alert(`✅ Successfully published ${published}/${selectedImages.length} actors as presets`)
+      setSelectedActorIds(new Set())
+    } catch (error) {
+      console.error('Error publishing presets:', error)
+      alert(`❌ Error publishing presets. Published ${published}/${selectedImages.length} before error`)
+    } finally {
+      setIsPublishing(false)
     }
   }
 
@@ -940,14 +1027,25 @@ export default function TalkingActors() {
                 </button>
 
                 {selectionMode && selectedActorIds.size > 0 && (
-                  <button
-                    onClick={handleBulkSaveActors}
-                    disabled={isSavingBulk}
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 disabled:bg-green-400 border border-green-500 transition-colors"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    {isSavingBulk ? 'Saving...' : `Save ${selectedActorIds.size} Actor${selectedActorIds.size !== 1 ? 's' : ''}`}
-                  </button>
+                  <>
+                    <button
+                      onClick={handleBulkSaveActors}
+                      disabled={isSavingBulk}
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 disabled:bg-green-400 border border-green-500 transition-colors"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      {isSavingBulk ? 'Saving...' : `Save ${selectedActorIds.size} Actor${selectedActorIds.size !== 1 ? 's' : ''}`}
+                    </button>
+                    <button
+                      onClick={handlePublishAsPresets}
+                      disabled={isPublishing}
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 border border-orange-500 transition-colors"
+                      title="Publish as presets available to all workspaces"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      {isPublishing ? 'Publishing...' : `Publish ${selectedActorIds.size}`}
+                    </button>
+                  </>
                 )}
 
               </div>
