@@ -317,13 +317,16 @@ export default function TalkingActors() {
         // Get workspace-specific actors
         if (workspaceRes.ok) {
           const data = await workspaceRes.json()
-          console.log('[TalkingActors] Loaded', data.actors?.length || 0, 'workspace actors')
+          console.log('[TalkingActors] Loaded', data.actors?.length || 0, 'workspace actors', data)
           data.actors?.forEach((actor: any) => {
             if (!seenIds.has(actor.id)) {
               seenIds.add(actor.id)
               allDbActors.push(actor)
             }
           })
+        } else {
+          const error = await workspaceRes.text()
+          console.error('[TalkingActors] Workspace fetch failed:', workspaceRes.status, error)
         }
 
         // Get published preset actors (available to all)
