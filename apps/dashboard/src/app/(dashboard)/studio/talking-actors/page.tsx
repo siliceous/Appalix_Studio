@@ -167,6 +167,7 @@ export default function TalkingActors() {
   const [selectedImageForPreset, setSelectedImageForPreset] = useState<GeneratedImage | null>(null)
   const [selectedActorIds, setSelectedActorIds] = useState<Set<string>>(new Set())
   const [isSavingBulk, setIsSavingBulk] = useState(false)
+  const [selectionMode, setSelectionMode] = useState(false)
 
   useEffect(() => {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') || '' : ''
@@ -852,14 +853,21 @@ export default function TalkingActors() {
                 <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-white/10 border border-white/20">{credits} Credits</div>
                 <button
                   onClick={() => {
-                    console.log('[UI] Presets button clicked, current showPresets:', showPresets)
-                    setShowPresets(!showPresets)
+                    setSelectionMode(!selectionMode)
+                    if (selectionMode) {
+                      // Exiting selection mode, clear selections
+                      setSelectedActorIds(new Set())
+                    }
                   }}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-purple-600 border border-purple-500 hover:bg-purple-700 transition-colors"
-                  title="View and copy preset actors"
+                  className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                    selectionMode
+                      ? 'bg-purple-700 border border-purple-400 text-white'
+                      : 'bg-purple-600 border border-purple-500 hover:bg-purple-700 text-white'
+                  }`}
+                  title={selectionMode ? "Exit selection mode" : "Click to select actors"}
                 >
                   <Sparkles className="w-4 h-4" />
-                  Presets ({presetActors.length})
+                  {selectionMode ? `Select Actors (${selectedActorIds.size})` : `Select Actors`}
                 </button>
                 <button
                   onClick={() => setShowTrash(!showTrash)}
@@ -882,7 +890,7 @@ export default function TalkingActors() {
                   Select to Import
                 </button>
 
-                {selectedActorIds.size > 0 && (
+                {selectionMode && selectedActorIds.size > 0 && (
                   <button
                     onClick={handleBulkSaveActors}
                     disabled={isSavingBulk}
@@ -1001,16 +1009,18 @@ export default function TalkingActors() {
                           }`}
                           onClick={() => { setFullscreenImage(image); setFullscreenImageIndex(idx); setImageZoom(0.5) }}
                         >
-                          {/* Selection checkbox */}
-                          <div className="absolute top-2 left-2 z-10 pointer-events-auto" onClick={(e) => { e.stopPropagation(); toggleActorSelection(image.id) }}>
-                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                              isSelected
-                                ? 'bg-green-500 border-green-600'
-                                : 'bg-white/80 border-gray-400 hover:bg-white'
-                            }`}>
-                              {isSelected && <span className="text-white font-bold text-xs">✓</span>}
+                          {/* Selection checkbox - only show in selection mode */}
+                          {selectionMode && (
+                            <div className="absolute top-2 left-2 z-10 pointer-events-auto" onClick={(e) => { e.stopPropagation(); toggleActorSelection(image.id) }}>
+                              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                                isSelected
+                                  ? 'bg-green-500 border-green-600'
+                                  : 'bg-white/80 border-gray-400 hover:bg-white'
+                              }`}>
+                                {isSelected && <span className="text-white font-bold text-xs">✓</span>}
+                              </div>
                             </div>
-                          </div>
+                          )}
                           <img
                             src={image.image}
                             alt={image.prompt}
