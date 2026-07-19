@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import { VideoGenerationService } from '../modules/video-generation/video-generation.service.js';
+import { getCurrentWorkspaceContext } from '../lib/workspace-context.js';
 
 interface GenerateVideoBody {
   prompt: string;
@@ -39,20 +40,21 @@ export async function videoRoutes(app: FastifyInstance) {
     },
     async (request: FastifyRequest<{ Body: GenerateVideoBody }>, reply: FastifyReply) => {
       try {
+        const context = await getCurrentWorkspaceContext(request);
         const body = request.body as GenerateVideoBody;
         const { prompt, video_type, workspace_id, quality_mode, duration_seconds, aspect_ratio, source_image_url } = body;
-        const userId = (request.headers['x-user-id'] as string) || '';
 
-        if (!userId) {
-          return reply.status(401).send({ error: 'Unauthorized' });
+        // SECURITY: Verify user can generate videos in this workspace
+        if (context.workspaceId !== workspace_id) {
+          return reply.status(403).send({ error: 'Access denied to this workspace' });
         }
 
         const service = new VideoGenerationService();
         const result = await service.generateVideo({
           prompt,
           video_type,
-          workspace_id,
-          user_id: userId,
+          workspace_id: context.workspaceId,
+          user_id: context.userId,
           quality_mode,
           duration_seconds,
           aspect_ratio: (aspect_ratio || '9:16') as any,
@@ -99,19 +101,20 @@ export async function videoRoutes(app: FastifyInstance) {
     },
     async (request: FastifyRequest<{ Querystring: { workspace_id: string; status?: string; limit?: string; offset?: string } }>, reply: FastifyReply) => {
       try {
+        const context = await getCurrentWorkspaceContext(request);
         const query = request.query as { workspace_id: string; status?: string; limit?: string; offset?: string };
         const workspace_id = query.workspace_id;
         const status = query.status;
         const limit = parseInt(query.limit || '20', 10);
         const offset = parseInt(query.offset || '0', 10);
 
-        const userId = (request.headers['x-user-id'] as string) || '';
-        if (!userId) {
-          return reply.status(401).send({ error: 'Unauthorized' });
+        // SECURITY: Verify user can list videos from this workspace
+        if (context.workspaceId !== workspace_id) {
+          return reply.status(403).send({ error: 'Access denied to this workspace' });
         }
 
         const service = new VideoGenerationService();
-        const videos = await service.listVideos(workspace_id, {
+        const videos = await service.listVideos(context.workspaceId, {
           status,
           limit,
           offset,
@@ -144,17 +147,18 @@ export async function videoRoutes(app: FastifyInstance) {
     },
     async (request: FastifyRequest<{ Params: { video_id: string } }>, reply: FastifyReply) => {
       try {
+        const context = await getCurrentWorkspaceContext(request);
         const { video_id } = request.params as { video_id: string };
         const query = request.query as { workspace_id: string };
         const workspace_id = query.workspace_id;
 
-        const userId = (request.headers['x-user-id'] as string) || '';
-        if (!userId) {
-          return reply.status(401).send({ error: 'Unauthorized' });
+        // SECURITY: Verify user can access videos from this workspace
+        if (context.workspaceId !== workspace_id) {
+          return reply.status(403).send({ error: 'Access denied to this workspace' });
         }
 
         const service = new VideoGenerationService();
-        const video = await service.getVideo(video_id, workspace_id);
+        const video = await service.getVideo(video_id, context.workspaceId);
         return reply.status(200).send(video);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
@@ -174,17 +178,18 @@ export async function videoRoutes(app: FastifyInstance) {
     },
     async (request: FastifyRequest<{ Params: { video_id: string } }>, reply: FastifyReply) => {
       try {
+        const context = await getCurrentWorkspaceContext(request);
         const { video_id } = request.params as { video_id: string };
         const query = request.query as { workspace_id: string };
         const workspace_id = query.workspace_id;
 
-        const userId = (request.headers['x-user-id'] as string) || '';
-        if (!userId) {
-          return reply.status(401).send({ error: 'Unauthorized' });
+        // SECURITY: Verify user can delete videos from this workspace
+        if (context.workspaceId !== workspace_id) {
+          return reply.status(403).send({ error: 'Access denied to this workspace' });
         }
 
         const service = new VideoGenerationService();
-        await service.deleteVideo(video_id, workspace_id);
+        await service.deleteVideo(video_id, context.workspaceId);
         return reply.status(200).send({ success: true });
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';

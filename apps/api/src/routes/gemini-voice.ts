@@ -1,5 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { geminiVoiceService } from '../services/gemini-voice.service.js'
+import { getCurrentWorkspaceContext } from '../lib/workspace-context.js'
+import { getActor } from '../lib/tenant-repositories.js'
 
 export async function geminiVoiceRoutes(server: FastifyInstance) {
   /**
@@ -94,22 +96,33 @@ export async function geminiVoiceRoutes(server: FastifyInstance) {
 
   /**
    * Link Gemini voice to talking actor
+   * SECURITY: Only links voices to actors in user's workspace
    */
   server.post(
     '/actors/:actorId/voices/:voiceId',
     async (req: FastifyRequest<{ Params: { actorId: string; voiceId: string }; Body: { workspaceId: string; lipSyncStrength?: number } }>, reply: FastifyReply) => {
       try {
+        const context = await getCurrentWorkspaceContext(req)
         const { actorId, voiceId } = req.params
         const { workspaceId, lipSyncStrength = 0.8 } = req.body
 
-        if (!workspaceId) {
-          return reply.status(400).send({
-            error: 'workspaceId is required',
+        // SECURITY: Can only link voices to actors in user's workspace
+        if (context.workspaceId !== workspaceId) {
+          return reply.status(403).send({
+            error: 'Cannot link voices to actors in other workspaces',
+          })
+        }
+
+        // SECURITY: Verify actor exists and belongs to user's workspace
+        const actor = await getActor(context, actorId)
+        if (!actor) {
+          return reply.status(404).send({
+            error: 'Actor not found or access denied',
           })
         }
 
         const link = await geminiVoiceService.linkVoiceToActor(
-          workspaceId,
+          context.workspaceId,
           actorId,
           voiceId,
           lipSyncStrength
@@ -177,17 +190,27 @@ export async function geminiVoiceRoutes(server: FastifyInstance) {
 
   /**
    * Update lip-sync strength for actor-voice combination
+   * SECURITY: Only updates settings for actors in user's workspace
    */
   server.patch(
     '/actors/:actorId/voices/:voiceId/lip-sync',
     async (req: FastifyRequest<{ Params: { actorId: string; voiceId: string }; Body: { lipSyncStrength: number } }>, reply: FastifyReply) => {
       try {
+        const context = await getCurrentWorkspaceContext(req)
         const { actorId, voiceId } = req.params
         const { lipSyncStrength } = req.body
 
         if (typeof lipSyncStrength !== 'number' || lipSyncStrength < 0 || lipSyncStrength > 1) {
           return reply.status(400).send({
             error: 'lipSyncStrength must be a number between 0 and 1',
+          })
+        }
+
+        // SECURITY: Verify actor belongs to user's workspace
+        const actor = await getActor(context, actorId)
+        if (!actor) {
+          return reply.status(404).send({
+            error: 'Actor not found or access denied',
           })
         }
 
@@ -212,12 +235,22 @@ export async function geminiVoiceRoutes(server: FastifyInstance) {
 
   /**
    * Unlink voice from actor
+   * SECURITY: Only unlinks voices from actors in user's workspace
    */
   server.delete(
     '/actors/:actorId/voices/:voiceId',
     async (req: FastifyRequest<{ Params: { actorId: string; voiceId: string } }>, reply: FastifyReply) => {
       try {
+        const context = await getCurrentWorkspaceContext(req)
         const { actorId, voiceId } = req.params
+
+        // SECURITY: Verify actor belongs to user's workspace
+        const actor = await getActor(context, actorId)
+        if (!actor) {
+          return reply.status(404).send({
+            error: 'Actor not found or access denied',
+          })
+        }
 
         await geminiVoiceService.unlinkVoiceFromActor(actorId, voiceId)
 
@@ -235,16 +268,26 @@ export async function geminiVoiceRoutes(server: FastifyInstance) {
 
   /**
    * Synthesize speech with lip-sync data
+   * SECURITY: Only synthesizes with actors in user's workspace
    */
   server.post(
     '/synthesize-with-lipsync',
     async (req: FastifyRequest<{ Body: { script: string; geminiVoiceId: string; talkingActorId: string } }>, reply: FastifyReply) => {
       try {
+        const context = await getCurrentWorkspaceContext(req)
         const { script, geminiVoiceId, talkingActorId } = req.body
 
         if (!script || !geminiVoiceId || !talkingActorId) {
           return reply.status(400).send({
             error: 'script, geminiVoiceId, and talkingActorId are required',
+          })
+        }
+
+        // SECURITY: Verify actor belongs to user's workspace
+        const actor = await getActor(context, talkingActorId)
+        if (!actor) {
+          return reply.status(404).send({
+            error: 'Actor not found or access denied',
           })
         }
 

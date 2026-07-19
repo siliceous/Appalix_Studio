@@ -1,6 +1,8 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { createClient } from '@supabase/supabase-js'
 import { v4 as uuidv4 } from 'uuid'
+import { getCurrentWorkspaceContext, MASTER_WORKSPACE_ID } from '../lib/workspace-context.js'
+import { getActor, getAvailableActors, getWorkspaceActors, getGlobalActors } from '../lib/tenant-repositories.js'
 
 let supabase: any
 
@@ -16,71 +18,40 @@ function getSupabase() {
 
 export async function talkingActorsRoutes(server: FastifyInstance) {
   /**
-   * List all actors for workspace (includes actors from main workspace)
+   * List all actors available to workspace
+   * Returns: workspace's private actors + global master actors
+   * SECURITY: Validates user workspace membership before returning data
    */
   server.get<{ Params: { workspaceId: string } }>(
     '/workspace/:workspaceId',
     async (req: FastifyRequest<{ Params: { workspaceId: string } }>, reply: FastifyReply) => {
       try {
-        const { workspaceId } = req.params as any
+        const context = await getCurrentWorkspaceContext(req)
         const sb = getSupabase()
 
-        console.log('[TalkingActors] Fetching actors for workspace:', workspaceId)
-
-        // Fetch all workspaces to find the main one
-        const { data: workspaces, error: wsListError } = await sb
-          .from('workspaces')
-          .select('id, name')
-
-        if (wsListError) {
-          console.error('[TalkingActors] Error fetching workspaces:', wsListError)
+        // SECURITY: Verify the requested workspace matches authenticated user's workspace
+        // (user cannot list actors from other workspaces)
+        if (context.workspaceId !== req.params.workspaceId) {
+          return reply.status(403).send({
+            error: 'Access denied to this workspace',
+          })
         }
 
-        // Find main workspace (look for one with name containing 'gorank' or 'info')
-        const mainWorkspace = workspaces?.find((w: any) =>
-          w.name?.toLowerCase().includes('gorank') ||
-          w.name?.toLowerCase().includes('info')
-        )
+        console.log('[TalkingActors] Fetching available actors for workspace:', context.workspaceId)
 
-        console.log('[TalkingActors] Main workspace:', mainWorkspace?.id)
+        // Fetch workspace-specific actors AND global master actors
+        const actors = await getAvailableActors(context)
 
-        // Fetch workspace-specific actors
-        const { data: workspaceActors, error: wsActorsError } = await sb
-          .from('talking_actors')
-          .select('*')
-          .eq('workspace_id', workspaceId)
-          .order('created_at', { ascending: false })
-
-        if (wsActorsError) throw wsActorsError
-
-        let allActors = workspaceActors || []
-
-        // If this is not the main workspace, also fetch main workspace actors
-        if (mainWorkspace && mainWorkspace.id !== workspaceId) {
-          console.log('[TalkingActors] Fetching main workspace actors from:', mainWorkspace.id)
-          const { data: mainActors, error: mainActorsError } = await sb
-            .from('talking_actors')
-            .select('*')
-            .eq('workspace_id', mainWorkspace.id)
-            .order('created_at', { ascending: false })
-
-          if (mainActorsError) {
-            console.error('[TalkingActors] Error fetching main actors:', mainActorsError)
-          } else {
-            allActors = [...(mainActors || []), ...allActors]
-          }
-        }
-
-        console.log('[TalkingActors] Query result:', { workspaceCount: workspaceActors?.length, totalCount: allActors.length })
+        console.log('[TalkingActors] Query result:', { total: actors.length })
 
         reply.send({
           success: true,
-          actors: allActors,
-          count: allActors.length,
+          actors,
+          count: actors.length,
         })
       } catch (error) {
         console.error('[TalkingActors] Error fetching actors:', error)
-        reply.status(500).send({
+        reply.status(403).send({
           error: error instanceof Error ? error.message : 'Failed to fetch actors',
         })
       }
@@ -89,21 +60,16 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
 
   /**
    * Get single actor
+   * SECURITY: Only returns actors user has access to (private or global)
    */
   server.get<{ Params: { actorId: string } }>(
     '/:actorId',
     async (req: FastifyRequest<{ Params: { actorId: string } }>, reply: FastifyReply) => {
       try {
+        const context = await getCurrentWorkspaceContext(req)
         const { actorId } = req.params as any
-        const sb = getSupabase()
 
-        const { data: actor, error } = await sb
-          .from('talking_actors')
-          .select('*')
-          .eq('id', actorId)
-          .single()
-
-        if (error) throw error
+        const actor = await getActor(context, actorId)
 
         reply.send({
           success: true,
@@ -111,7 +77,7 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
         })
       } catch (error) {
         reply.status(404).send({
-          error: 'Actor not found',
+          error: 'Actor not found or access denied',
         })
       }
     }
@@ -119,11 +85,13 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
 
   /**
    * Upload new actor
+   * SECURITY: Validates user can upload to the requested workspace
    */
   server.post<{ Body: { workspaceId: string; actorName: string; uploadType: 'image' | 'video' } }>(
     '/upload',
     async (req: FastifyRequest<{ Body: { workspaceId: string; actorName: string; uploadType: 'image' | 'video' } }>, reply: FastifyReply) => {
       try {
+        const context = await getCurrentWorkspaceContext(req)
         const data = await (req.file() as any)
 
         if (!data) {
@@ -133,13 +101,20 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
         }
 
         const { fields } = data
-        const workspaceId = (fields as any).workspaceId?.value as string
+        const requestedWorkspaceId = (fields as any).workspaceId?.value as string
         const actorName = (fields as any).actorName?.value as string
         const uploadType = (fields as any).uploadType?.value as 'image' | 'video'
 
-        if (!workspaceId || !actorName || !uploadType) {
+        if (!requestedWorkspaceId || !actorName || !uploadType) {
           return reply.status(400).send({
             error: 'Missing required fields: workspaceId, actorName, uploadType',
+          })
+        }
+
+        // SECURITY: Verify user can upload to this workspace
+        if (context.workspaceId !== requestedWorkspaceId) {
+          return reply.status(403).send({
+            error: 'Cannot upload to other workspaces',
           })
         }
 
@@ -168,7 +143,7 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
         // Upload to Supabase Storage
         const fileId = uuidv4()
         const fileExt = data.filename.split('.').pop()
-        const filePath = `${workspaceId}/${fileId}.${fileExt}`
+        const filePath = `${context.workspaceId}/${fileId}.${fileExt}`
         const bucketName = uploadType === 'image' ? 'actor-images' : 'actor-videos'
 
         const { error: uploadError } = await getSupabase().storage
@@ -195,7 +170,7 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
         const { data: actor, error: dbError } = await sb
           .from('talking_actors')
           .insert({
-            workspace_id: workspaceId,
+            workspace_id: context.workspaceId,
             actor_name: actorName,
             [uploadType === 'image' ? 'image_url' : 'video_url']: fileUrl,
             type: 'custom',
@@ -220,6 +195,7 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
 
   /**
    * Update actor
+   * SECURITY: Only updates actors in user's workspace
    */
   server.patch<{
     Params: { actorId: string }
@@ -229,6 +205,7 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
     Body: { actorName?: string }
   }>, reply: FastifyReply) => {
     try {
+      const context = await getCurrentWorkspaceContext(req)
       const { actorId } = req.params as { actorId: string }
       const { actorName } = req.body as { actorName?: string }
       const sb = getSupabase()
@@ -239,6 +216,14 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
         })
       }
 
+      // SECURITY: Verify actor belongs to user's workspace before updating
+      const existingActor = await getActor(context, actorId)
+      if (!existingActor) {
+        return reply.status(404).send({
+          error: 'Actor not found or access denied',
+        })
+      }
+
       const { data: actor, error } = await sb
         .from('talking_actors')
         .update({
@@ -246,6 +231,7 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
           updated_at: new Date().toISOString(),
         })
         .eq('id', actorId)
+        .eq('workspace_id', context.workspaceId)
         .select()
         .single()
 
@@ -264,28 +250,37 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
 
   /**
    * Save actor from imported image (no file upload)
+   * SECURITY: Only saves to user's workspace
    */
   server.post<{ Body: { workspaceId: string; name: string; imageUrl: string; description?: string; aspectRatio?: string } }>(
     '/save-actor',
     async (req: FastifyRequest<{ Body: { workspaceId: string; name: string; imageUrl: string; description?: string; aspectRatio?: string } }>, reply: FastifyReply) => {
       try {
+        const context = await getCurrentWorkspaceContext(req)
         const { workspaceId, name, imageUrl, description, aspectRatio } = req.body
 
-        console.log('[SaveActor] Request body:', { workspaceId, name, imageUrl: imageUrl?.substring(0, 50), aspectRatio })
+        console.log('[SaveActor] Request body:', { name, imageUrl: imageUrl?.substring(0, 50), aspectRatio })
 
-        if (!workspaceId || !name || !imageUrl) {
+        if (!name || !imageUrl) {
           return reply.status(400).send({
-            error: 'Missing required fields: workspaceId, name, imageUrl',
+            error: 'Missing required fields: name, imageUrl',
+          })
+        }
+
+        // SECURITY: Verify user can save to this workspace
+        if (context.workspaceId !== workspaceId) {
+          return reply.status(403).send({
+            error: 'Cannot save to other workspaces',
           })
         }
 
         const sb = getSupabase()
-        console.log('[SaveActor] Supabase client initialized')
+        console.log('[SaveActor] Saving actor to workspace:', context.workspaceId)
 
         const { data: actor, error } = await sb
           .from('talking_actors')
           .insert({
-            workspace_id: workspaceId,
+            workspace_id: context.workspaceId,
             name: name.trim(),
             image_url: imageUrl,
             description: description || '',
@@ -319,24 +314,25 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
 
   /**
    * Delete actor
+   * SECURITY: Only deletes actors from user's workspace
    */
   server.delete<{ Params: { actorId: string } }>(
     '/:actorId',
     async (req: FastifyRequest<{ Params: { actorId: string } }>, reply: FastifyReply) => {
       try {
+        const context = await getCurrentWorkspaceContext(req)
         const { actorId } = req.params as { actorId: string }
 
-        // Get actor to find file paths
-        const sb = getSupabase()
-        const { data: actor, error: fetchError } = await sb
-          .from('talking_actors')
-          .select('image_url, video_url')
-          .eq('id', actorId)
-          .single()
-
-        if (fetchError) throw fetchError
+        // SECURITY: Verify actor belongs to user's workspace before deleting
+        const actor = await getActor(context, actorId)
+        if (!actor) {
+          return reply.status(404).send({
+            error: 'Actor not found or access denied',
+          })
+        }
 
         // Delete files from storage
+        const sb = getSupabase()
         if (actor?.image_url) {
           const imagePath = actor.image_url.split('/').slice(-2).join('/')
           await sb.storage.from('actor-images').remove([imagePath])
@@ -347,11 +343,12 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
           await sb.storage.from('actor-videos').remove([videoPath])
         }
 
-        // Delete database record
+        // Delete database record with workspace filter
         const { error: deleteError } = await sb
           .from('talking_actors')
           .delete()
           .eq('id', actorId)
+          .eq('workspace_id', context.workspaceId)
 
         if (deleteError) throw deleteError
 
@@ -397,40 +394,51 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
   )
 
   /**
-   * Publish actor as preset
+   * Publish actor as preset (MASTER WORKSPACE ONLY)
+   * SECURITY: Only info@gorank.com.au admin can publish presets
    */
   server.post<{ Body: { actorId: string; workspaceId: string } }>(
     '/publish-preset',
     async (req: FastifyRequest<{ Body: { actorId: string; workspaceId: string } }>, reply: FastifyReply) => {
       try {
+        const context = await getCurrentWorkspaceContext(req)
         const { actorId, workspaceId } = req.body
         const sb = getSupabase()
 
         console.log('[PublishPreset] Request:', { actorId, workspaceId })
 
-        // Get the actor first (no workspace filter, it should exist)
+        // SECURITY: Only master workspace admins can publish presets
+        if (!context.isMasterWorkspace || !context.isAdmin) {
+          return reply.status(403).send({
+            error: 'Only master workspace admins can publish presets',
+          })
+        }
+
+        // Verify actor exists and belongs to master workspace
         const { data: actor, error: actorError } = await sb
           .from('talking_actors')
           .select('*')
           .eq('id', actorId)
+          .eq('workspace_id', MASTER_WORKSPACE_ID)
           .single()
 
         console.log('[PublishPreset] Actor lookup:', { error: actorError?.message, found: !!actor })
 
         if (actorError || !actor) {
           return reply.status(404).send({
-            error: `Actor not found: ${actorError?.message || 'unknown'}`,
+            error: `Actor not found in master workspace: ${actorError?.message || 'unknown'}`,
           })
         }
 
-        // Publish as preset (set is_preset to true)
+        // Publish as global preset
         const { data: updated, error: updateError } = await sb
           .from('talking_actors')
           .update({
-            is_preset: true,
-            preset_created_by: workspaceId,
+            is_global: true,
+            updated_at: new Date().toISOString(),
           })
           .eq('id', actorId)
+          .eq('workspace_id', MASTER_WORKSPACE_ID)
           .select()
           .single()
 
@@ -440,7 +448,7 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
 
         reply.send({
           success: true,
-          message: 'Actor published as preset',
+          message: 'Actor published as global preset',
           actor: updated,
         })
       } catch (error) {
@@ -500,20 +508,30 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
 
   /**
    * Copy preset actor to workspace
+   * SECURITY: Only copies global actors to user's workspace
    */
   server.post<{ Body: { presetActorId: string; workspaceId: string; newName?: string } }>(
     '/copy-preset',
     async (req: FastifyRequest<{ Body: { presetActorId: string; workspaceId: string; newName?: string } }>, reply: FastifyReply) => {
       try {
+        const context = await getCurrentWorkspaceContext(req)
         const { presetActorId, workspaceId, newName } = req.body
         const sb = getSupabase()
 
-        // Get the preset actor
+        // SECURITY: Can only copy to user's workspace
+        if (context.workspaceId !== workspaceId) {
+          return reply.status(403).send({
+            error: 'Cannot copy to other workspaces',
+          })
+        }
+
+        // Get the global preset actor from master workspace
         const { data: presetActor, error: presetError } = await sb
           .from('talking_actors')
           .select('*')
           .eq('id', presetActorId)
-          .eq('is_preset', true)
+          .eq('workspace_id', MASTER_WORKSPACE_ID)
+          .eq('is_global', true)
           .single()
 
         if (presetError || !presetActor) {
@@ -522,7 +540,7 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
           })
         }
 
-        // Create a copy in the requesting workspace
+        // Create a copy in the user's workspace
         const newActorId = uuidv4()
         const copyName = newName || `${presetActor.name} (Copy)`
 
@@ -530,13 +548,13 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
           .from('talking_actors')
           .insert({
             id: newActorId,
-            workspace_id: workspaceId,
+            workspace_id: context.workspaceId,
             name: copyName,
             image_url: presetActor.image_url,
             video_url: presetActor.video_url,
             description: presetActor.description,
             tags: presetActor.tags,
-            preset_source_id: presetActorId, // Track which preset this came from
+            preset_source_id: presetActorId,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
