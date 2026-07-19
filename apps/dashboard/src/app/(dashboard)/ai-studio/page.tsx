@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 import { Download, Trash2, Search, Loader2, X, ChevronLeft, ChevronRight, Plus, ImagePlay, Eye, Save } from 'lucide-react'
 import { SageToolbar } from '@/components/dashboard/sage-toolbar'
-import { createSupabaseClient } from '@/lib/supabase-client'
+import { createClient as createSupabaseClient } from '@/lib/supabase/client'
 
 interface GeneratedImage {
   id: string
