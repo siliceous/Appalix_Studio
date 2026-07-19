@@ -289,6 +289,10 @@ export default function TalkingActors() {
     if (!workspaceId) return
     const fetchProjects = async () => {
       try {
+        const supabase = createSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const authHeader = session?.access_token ? `Bearer ${session.access_token}` : undefined
+
         const response = await fetch('/api/projects', { headers: { 'x-workspace-id': workspaceId, ...(authHeader ? { 'Authorization': authHeader } : {}) } })
         if (response.ok) {
           const data = await response.json()
@@ -404,6 +408,9 @@ export default function TalkingActors() {
     if (!workspaceId) return
     const fetchFolders = async () => {
       try {
+        const supabase = createSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const authHeader = session?.access_token ? `Bearer ${session.access_token}` : undefined
         const response = await fetch('/api/ai-studio/actor-folders', { headers: { 'x-workspace-id': workspaceId, ...(authHeader ? { 'Authorization': authHeader } : {}) } })
         if (response.ok) {
           const data = await response.json()
