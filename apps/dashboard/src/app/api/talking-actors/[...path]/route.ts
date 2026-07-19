@@ -2,17 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
-export async function GET(request: NextRequest, { params }: { params: Promise<any> }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> }
+) {
   try {
+    const { path } = await params
+    const pathStr = '/' + (path?.join('/') || '')
     const url = new URL(request.url)
-    // Extract path after /api/talking-actors
-    const pathname = url.pathname
-    const pathAfterPrefix = pathname.replace(/^\/api\/talking-actors/, '') || '/'
     const query = url.search
 
-    console.log('[Proxy] GET', `${API_URL}/api/talking-actors${pathAfterPrefix}${query}`)
+    console.log('[Proxy] GET', `${API_URL}/api/talking-actors${pathStr}${query}`)
 
-    const response = await fetch(`${API_URL}/api/talking-actors${pathAfterPrefix}${query}`, {
+    const response = await fetch(`${API_URL}/api/talking-actors${pathStr}${query}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -28,17 +30,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<an
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: Promise<any> }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> }
+) {
   try {
-    const url = new URL(request.url)
-    // Extract path after /api/talking-actors
-    const pathname = url.pathname
-    const pathAfterPrefix = pathname.replace(/^\/api\/talking-actors/, '') || '/'
+    const { path } = await params
+    const pathStr = '/' + (path?.join('/') || '')
     const body = await request.json()
 
-    console.log('[Proxy] POST', `${API_URL}/api/talking-actors${pathAfterPrefix}`)
+    console.log('[Proxy] POST', `${API_URL}/api/talking-actors${pathStr}`)
 
-    const response = await fetch(`${API_URL}/api/talking-actors${pathAfterPrefix}`, {
+    const response = await fetch(`${API_URL}/api/talking-actors${pathStr}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
