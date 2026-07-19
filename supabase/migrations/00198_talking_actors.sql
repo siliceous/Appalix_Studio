@@ -87,8 +87,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS talking_actors_updated_at ON talking_actors;
-CREATE TRIGGER talking_actors_updated_at
+CREATE TRIGGER IF NOT EXISTS talking_actors_updated_at
   BEFORE UPDATE ON talking_actors
   FOR EACH ROW
   EXECUTE FUNCTION update_talking_actors_updated_at();
