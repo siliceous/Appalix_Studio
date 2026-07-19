@@ -250,31 +250,37 @@ export default function TalkingActors() {
         console.log("[TalkingActors] ✓ Saved", merged.length, "total images to localStorage")
 
         // Also save new imported images to Supabase so they appear on all workspaces
-        const supabase = createSupabaseClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        const authHeader = session?.access_token ? `Bearer ${session.access_token}` : undefined
-        
-        for (const img of uniqueNewImages) {
+        if (typeof window !== 'undefined') {
           try {
-            const actorName = img.prompt?.split(' ').slice(0, 5).join(' ') || 'Imported Actor'
-            await fetch('/api/talking-actors/save-actor', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-workspace-id': workspaceId,
-                ...(authHeader ? { 'Authorization': authHeader } : {})
-              },
-              body: JSON.stringify({
-                workspaceId,
-                name: actorName,
-                imageUrl: img.image,
-                description: img.prompt,
-                aspectRatio: img.aspectRatio || '1:1',
-              }),
-            })
-            console.log('[TalkingActors] Saved to Supabase:', actorName)
+            const supabase = createSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const authHeader = session?.access_token ? `Bearer ${session.access_token}` : undefined
+            
+            for (const img of uniqueNewImages) {
+              try {
+                const actorName = img.prompt?.split(' ').slice(0, 5).join(' ') || 'Imported Actor'
+                await fetch('/api/talking-actors/save-actor', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'x-workspace-id': workspaceId,
+                    ...(authHeader ? { 'Authorization': authHeader } : {})
+                  },
+                  body: JSON.stringify({
+                    workspaceId,
+                    name: actorName,
+                    imageUrl: img.image,
+                    description: img.prompt,
+                    aspectRatio: img.aspectRatio || '1:1',
+                  }),
+                })
+                console.log('[TalkingActors] Saved to Supabase:', actorName)
+              } catch (e) {
+                console.error('[TalkingActors] Error saving to Supabase:', e)
+              }
+            }
           } catch (e) {
-            console.error('[TalkingActors] Error saving to Supabase:', e)
+            console.error('[TalkingActors] Error syncing to Supabase:', e)
           }
         }
 
