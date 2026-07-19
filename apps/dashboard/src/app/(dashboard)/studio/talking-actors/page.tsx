@@ -274,12 +274,19 @@ export default function TalkingActors() {
         const authHeader = session?.access_token ? `Bearer ${session.access_token}` : undefined
 
         const response = await fetch('/api/talking-actors/workspace-info', { headers: { 'x-workspace-id': workspaceId, ...(authHeader ? { 'Authorization': authHeader } : {}) } })
+        console.log('[TalkingActors] Workspace info response:', response.status, response.ok)
         if (response.ok) {
           const data = await response.json()
-          setIsMainWorkspace(data.isMasterWorkspace || data.ownerEmail === 'info@gorank.com.au' || data.ownerEmail === 'sales@appalix.ai')
+          console.log('[TalkingActors] Workspace info data:', data)
+          const isMain = data.isMasterWorkspace || data.ownerEmail === 'info@gorank.com.au' || data.ownerEmail === 'sales@appalix.ai'
+          console.log('[TalkingActors] isMainWorkspace:', isMain)
+          setIsMainWorkspace(isMain)
+        } else {
+          const errorText = await response.text()
+          console.error('[TalkingActors] Workspace info error:', response.status, errorText)
         }
       } catch (error) {
-        console.error('Error checking workspace:', error)
+        console.error('[TalkingActors] Error checking workspace:', error)
       }
     }
     checkIsMainWorkspace()
