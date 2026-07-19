@@ -16,7 +16,7 @@ function getSupabase() {
 
 export async function talkingActorsRoutes(server: FastifyInstance) {
   /**
-   * List all actors for workspace
+   * List all actors for workspace (includes actors from main workspace)
    */
   server.get<{ Params: { workspaceId: string } }>(
     '/workspace/:workspaceId',
@@ -27,20 +27,42 @@ export async function talkingActorsRoutes(server: FastifyInstance) {
 
         console.log('[TalkingActors] Fetching actors for workspace:', workspaceId)
 
-        const { data: actors, error } = await sb
+        // Get main workspace (info@gorank.com.au)
+        const { data: mainWorkspace, error: wsError } = await sb
+          .from('workspaces')
+          .select('id')
+          .eq('owner_email', 'info@gorank.com.au')
+          .single()
+
+        // Fetch workspace-specific actors
+        const { data: workspaceActors, error: wsActorsError } = await sb
           .from('talking_actors')
           .select('*')
           .eq('workspace_id', workspaceId)
           .order('created_at', { ascending: false })
 
-        console.log('[TalkingActors] Query result:', { error: error?.message, count: actors?.length })
+        if (wsActorsError) throw wsActorsError
 
-        if (error) throw error
+        let allActors = workspaceActors || []
+
+        // If this is not the main workspace, also fetch main workspace actors
+        if (mainWorkspace && mainWorkspace.id !== workspaceId) {
+          const { data: mainActors, error: mainActorsError } = await sb
+            .from('talking_actors')
+            .select('*')
+            .eq('workspace_id', mainWorkspace.id)
+            .order('created_at', { ascending: false })
+
+          if (mainActorsError) throw mainActorsError
+          allActors = [...(mainActors || []), ...allActors]
+        }
+
+        console.log('[TalkingActors] Query result:', { workspaceCount: workspaceActors?.length, totalCount: allActors.length })
 
         reply.send({
           success: true,
-          actors: actors || [],
-          count: actors?.length || 0,
+          actors: allActors,
+          count: allActors.length,
         })
       } catch (error) {
         console.error('[TalkingActors] Error fetching actors:', error)
