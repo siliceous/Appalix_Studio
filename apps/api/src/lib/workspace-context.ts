@@ -92,8 +92,8 @@ export async function getCurrentWorkspaceContext(
       .single()
 
     if (owner?.user_id) {
-      const { data: ownerUser } = await supabase.auth.admin.getUserById(owner.user_id)
-      if (ownerUser?.email === 'info@gorank.com.au' || ownerUser?.email === 'sales@appalix.ai') {
+      const { data: { user: ownerUser } } = await supabase.auth.admin.getUserById(owner.user_id)
+      if (ownerUser && (ownerUser.email === 'info@gorank.com.au' || ownerUser.email === 'sales@appalix.ai')) {
         isMasterWorkspace = true
       }
     }
