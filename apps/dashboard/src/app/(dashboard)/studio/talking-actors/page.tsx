@@ -483,7 +483,18 @@ export default function TalkingActors() {
     const fetchPresets = async () => {
       try {
         console.log('[Presets] Fetching presets...')
-        const response = await fetch('/api/talking-actors/presets')
+
+        // Get auth token
+        const supabase = createSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const authHeader = session?.access_token ? `Bearer ${session.access_token}` : undefined
+
+        const headers: Record<string, string> = {}
+        if (authHeader) {
+          headers['Authorization'] = authHeader
+        }
+
+        const response = await fetch('/api/talking-actors/presets', { headers })
         console.log('[Presets] Response status:', response.status)
         if (response.ok) {
           const data = await response.json()
