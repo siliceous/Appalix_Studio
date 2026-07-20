@@ -586,7 +586,6 @@ export default function CreateVideoPage() {
               )}
             </div>
           )}
-          </div>
         </div>
       </div>
 
