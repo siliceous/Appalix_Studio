@@ -369,15 +369,10 @@ export default function TalkingActors() {
           };
 
           console.log("[TalkingActors] Fetching with:", { workspaceId, hasAuth: !!requestHeaders.Authorization });
-          // Fetch both workspace-specific and preset actors
-          [workspaceRes, presetsRes] = await Promise.all([
-            fetch(`/api/talking-actors/workspace/${workspaceId}`, {
-              headers: { 'x-workspace-id': workspaceId, ...requestHeaders },
-            }),
-            fetch(`/api/talking-actors/presets`, {
-              headers: { 'x-workspace-id': workspaceId, ...requestHeaders },
-            }),
-          ]);
+          // Fetch presets only (workspace fetch needs auth debugging)
+          presetsRes = await fetch(`/api/talking-actors/presets`, {
+            headers: { 'x-workspace-id': workspaceId, ...requestHeaders },
+          });
         } else {
           console.log('[TalkingActors] Not authenticated, skipping database sync');
         }

@@ -84,7 +84,7 @@ export default function ImageViewerModal({
     }
   }
 
-  // Handle wheel zoom - more sensitive and natural
+  // Handle wheel zoom
   useEffect(() => {
     if (!allowZoom) return
     const container = containerRef.current
@@ -92,12 +92,8 @@ export default function ImageViewerModal({
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault()
-      // More granular zoom: 2% per wheel tick for better control
-      const zoomFactor = e.deltaY > 0 ? 0.98 : 1.02
-      setZoom(prev => {
-        const newZoom = Math.max(100, Math.min(1000, Math.round(prev * zoomFactor)))
-        return newZoom
-      })
+      const increment = e.deltaY > 0 ? -50 : 50
+      setZoom(prev => Math.max(100, Math.min(1000, prev + increment)))
     }
 
     container.addEventListener('wheel', handleWheel, { passive: false })
@@ -184,16 +180,6 @@ export default function ImageViewerModal({
           className="flex-1 flex items-center justify-center overflow-hidden relative bg-black"
           ref={containerRef}
           style={{ userSelect: 'none' }}
-          onWheel={(e) => {
-            if (!allowZoom) return
-            e.preventDefault()
-            const increment = e.deltaY > 0 ? -50 : 50
-            const newZoom = Math.max(100, Math.min(1000, zoom + increment))
-            setZoom(newZoom)
-            if (newZoom === 100) {
-              setPan({ x: 0, y: 0 })
-            }
-          }}
         >
           <div
             className="relative"
