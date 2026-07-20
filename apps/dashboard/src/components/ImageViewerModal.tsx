@@ -63,14 +63,8 @@ export default function ImageViewerModal({
     setZoom(prev => Math.min(1000, prev + 100))
   }
   const zoomOut = () => {
-    const newZoom = Math.max(100, zoom - 100)
-    setZoom(newZoom)
-    if (newZoom === 100) {
-      setPan({ x: 0, y: 0 })
-    } else {
-      // Reset pan when zooming out to avoid off-screen issues
-      setPan({ x: 0, y: 0 })
-    }
+    setZoom(prev => Math.max(100, prev - 100))
+    setPan({ x: 0, y: 0 })
   }
   const resetZoom = () => {
     setZoom(100)
@@ -139,15 +133,7 @@ export default function ImageViewerModal({
   }
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !allowPan) return
-    const deltaX = e.clientX - dragStart.x
-    const deltaY = e.clientY - dragStart.y
-
-    setPan(prev => ({
-      x: prev.x + deltaX,
-      y: prev.y + deltaY,
-    }))
-    setDragStart({ x: e.clientX, y: e.clientY })
+    // Pan disabled - image always stays centered
   }
 
   const handleMouseUp = () => {
