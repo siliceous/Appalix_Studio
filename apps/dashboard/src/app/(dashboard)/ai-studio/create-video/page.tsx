@@ -350,76 +350,55 @@ export default function CreateVideoPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-white p-6 flex flex-col">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Video Generator</h1>
-        <p className="text-gray-400 text-sm">Create stunning AI-powered videos with professional settings</p>
-      </div>
-
-      {/* Floating Panels */}
-      <div className="flex gap-6 flex-1 min-h-0 overflow-hidden">
+    <div className="flex h-screen bg-gray-950 text-white overflow-hidden">
       {/* Left Sidebar - Video Tools */}
-      <div className="w-72 flex flex-col">
-        <div className="bg-gray-900 rounded-t-3xl px-6 py-4 border-b border-gray-800">
+      <div className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col overflow-y-auto">
+        <div className="p-6 border-b border-gray-800">
           <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400">
             Video Generation
           </h2>
         </div>
-        <div className="bg-gray-900 rounded-b-3xl border border-gray-800 border-t-0 shadow-lg flex-1 overflow-y-auto p-6">
 
-          <div className="space-y-2">
-            {VIDEO_TOOLS.map((tool) => {
-              const Icon = tool.icon
-              const isActive = activeTool === tool.id
-              return (
-                <button
-                  key={tool.id}
-                  onClick={() => setActiveTool(tool.id)}
-                  className={`w-full px-4 py-3 rounded-lg flex items-center gap-3 transition-all border ${
-                    isActive
-                      ? 'bg-blue-600 border-blue-500 text-white'
-                      : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-600'
-                  }`}
-                >
-                  <Icon className="w-5 h-5 flex-shrink-0" />
-                  <span className="text-sm font-medium text-left flex-1">{tool.label}</span>
-                  {tool.badge && (
-                    <span className="text-xs bg-yellow-500 text-gray-900 px-2 py-0.5 rounded font-bold">
-                      {tool.badge}
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+          {VIDEO_TOOLS.map((tool) => {
+            const Icon = tool.icon
+            const isActive = activeTool === tool.id
+            return (
+              <button
+                key={tool.id}
+                onClick={() => setActiveTool(tool.id)}
+                className={`w-full px-4 py-3 rounded-lg flex items-center gap-3 transition-all border ${
+                  isActive
+                    ? 'bg-blue-600 border-blue-500 text-white'
+                    : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-600'
+                }`}
+              >
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm font-medium text-left flex-1">{tool.label}</span>
+                {tool.badge && (
+                  <span className="text-xs bg-yellow-500 text-gray-900 px-2 py-0.5 rounded font-bold">
+                    {tool.badge}
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {/* Center Workspace */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="bg-gray-900 rounded-t-3xl px-8 py-6 border-b border-gray-800">
-          <div className="flex items-center justify-between gap-8">
-            <div className="flex items-center gap-4">
-              <ChevronLeft className="w-4 h-4 cursor-pointer" />
-              <div className="flex gap-6">
-                <button className="text-sm font-medium text-gray-400 hover:text-white">Create Image</button>
-                <button className="text-sm font-semibold text-blue-400">Create Video</button>
-                <button className="text-sm font-medium text-gray-400 hover:text-white">Product Ads</button>
-                <button className="text-sm font-medium text-gray-400 hover:text-white">Talking Actors</button>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm">🤖 AI</span>
-              <span className="text-sm font-semibold">0 Credits</span>
-            </div>
-          </div>
+        <div className="border-b border-gray-800 px-8 py-6">
+          <h1 className="text-3xl font-bold mb-2">Create Video</h1>
+          <p className="text-gray-400">
+            Bring an image, subject or idea to life with Kling AI.
+          </p>
         </div>
-        <div className="bg-gray-900 rounded-b-3xl border border-gray-800 border-t-0 shadow-lg flex-1 overflow-hidden">
-          {/* Main Content */}
-          <div className="flex-1 overflow-y-auto p-8">
-            {!selectedImage ? (
+
+        {/* Main Content */}
+        <div className="flex-1 overflow-y-auto p-8">
+          {!selectedImage ? (
             // Empty State
             <div className="flex flex-col items-center justify-center h-full gap-8">
               <div className="text-center">
@@ -585,21 +564,20 @@ export default function CreateVideoPage() {
                 </div>
               )}
             </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Right Sidebar */}
-      <div className="w-80 flex flex-col overflow-hidden">
-        <div className="bg-gray-900 rounded-t-3xl px-6 py-4 border-b border-gray-800">
+      {/* Right Settings Panel */}
+      <div className="w-80 bg-gray-900 border-l border-gray-800 flex flex-col overflow-hidden">
+        <div className="border-b border-gray-800 px-6 py-4">
           <h3 className="font-bold text-sm uppercase tracking-wider text-gray-400 flex items-center gap-2">
             <Settings className="w-4 h-4" />
             Settings
           </h3>
         </div>
 
-        <div className="bg-gray-900 rounded-b-3xl border border-gray-800 border-t-0 shadow-lg flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Model */}
           <div>
             <label className="text-xs font-semibold text-gray-400 uppercase mb-2 block">
@@ -1076,9 +1054,6 @@ export default function CreateVideoPage() {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
 
             <div className="border-t border-gray-800 p-6 flex justify-end gap-2">
               <button
@@ -1101,14 +1076,14 @@ export default function CreateVideoPage() {
         className="hidden"
       />
       <input
-        ref={audioInputRef as unknown as React.RefObject<HTMLInputElement>}
+        ref={audioInputRef as any}
         type="file"
         accept="audio/*"
         onChange={handleAudioUpload}
         className="hidden"
       />
       <input
-        ref={videoInputRef as unknown as React.RefObject<HTMLInputElement>}
+        ref={videoInputRef as any}
         type="file"
         accept="video/*"
         onChange={handleVideoToAudioUpload}
