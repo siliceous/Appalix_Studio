@@ -87,17 +87,21 @@ export default function ImageViewerModal({
   // Handle wheel zoom
   useEffect(() => {
     if (!allowZoom) return
-    const container = containerRef.current
-    if (!container) return
 
     const handleWheel = (e: WheelEvent) => {
+      const container = containerRef.current
+      if (!container) return
+      const rect = container.getBoundingClientRect()
+      const isOverContainer = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom
+      if (!isOverContainer) return
+
       e.preventDefault()
       const increment = e.deltaY > 0 ? -50 : 50
       setZoom(prev => Math.max(100, Math.min(1000, prev + increment)))
     }
 
-    container.addEventListener('wheel', handleWheel, { passive: false })
-    return () => container.removeEventListener('wheel', handleWheel)
+    window.addEventListener('wheel', handleWheel, { passive: false })
+    return () => window.removeEventListener('wheel', handleWheel)
   }, [allowZoom])
 
   // Handle keyboard shortcuts
@@ -139,11 +143,9 @@ export default function ImageViewerModal({
     const deltaX = e.clientX - dragStart.x
     const deltaY = e.clientY - dragStart.y
 
-    // Constrain pan to reasonable bounds based on zoom level
-    const maxPan = 200 * (zoom / 100)
     setPan(prev => ({
-      x: Math.max(-maxPan, Math.min(maxPan, prev.x + deltaX)),
-      y: Math.max(-maxPan, Math.min(maxPan, prev.y + deltaY)),
+      x: prev.x + deltaX,
+      y: prev.y + deltaY,
     }))
     setDragStart({ x: e.clientX, y: e.clientY })
   }

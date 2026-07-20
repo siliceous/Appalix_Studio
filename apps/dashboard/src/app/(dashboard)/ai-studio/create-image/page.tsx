@@ -777,22 +777,27 @@ export default function CreateImagePage() {
   }
 
   const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const lastClickedImageRef = useRef<string | null>(null)
 
   const handleImageClick = (img: GeneratedImage) => {
-    if (clickTimeoutRef.current) {
+    if (clickTimeoutRef.current && lastClickedImageRef.current === img.id) {
       clearTimeout(clickTimeoutRef.current)
       clickTimeoutRef.current = null
-      // Double click - open in overlay
+      lastClickedImageRef.current = null
+      // Double click on same image - open in overlay
       setFullscreenImage(img.image)
       setFullscreenImageData(img)
       setImageZoom(1)
     } else {
       // Single click - display in center section
+      if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current)
+      lastClickedImageRef.current = img.id
       clickTimeoutRef.current = setTimeout(() => {
         setSelectedImage(img)
         setSelectedImageIndex(history.findIndex(h => h.id === img.id))
+        setPrompt(img.prompt)
         clickTimeoutRef.current = null
-      }, 250)
+      }, 300)
     }
   }
 
@@ -1695,6 +1700,7 @@ export default function CreateImagePage() {
               )}
             </div>
 
+
             <input
               ref={fileInputRef}
               type="file"
@@ -2160,113 +2166,6 @@ export default function CreateImagePage() {
       )}
 
       {/* Image Overlay Modal - Shows when user selects from history */}
-      {selectedImage && (
-        <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
-          onClick={() => setSelectedImage(null)}
-        >
-          <div
-            className="bg-gray-900 rounded-lg overflow-hidden max-w-6xl w-full max-h-[90vh] flex flex-row shadow-2xl relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Left Side - Image */}
-            <div className="flex-1 overflow-hidden flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800">
-                <h3 className="text-white font-semibold">Generated Image</h3>
-                <button
-                  onClick={() => setSelectedImage(null)}
-                  className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                  title="Close (Esc)"
-                >
-                  <X className="w-6 h-6 text-gray-300 hover:text-white" />
-                </button>
-              </div>
-              <div className="flex-1 overflow-hidden flex items-center justify-center p-6 bg-black/50 relative">
-                <img
-                  src={selectedImage.image}
-                  alt="Generated"
-                  className="max-w-full max-h-full object-contain rounded"
-                />
-
-                {/* Navigation Arrows */}
-                {history.filter(img => !img.deletedAt).length > 1 && (
-                  <>
-                    <button
-                      onClick={() => {
-                        const activeImages = [...history].filter(img => !img.deletedAt).reverse()
-                        const newIndex = selectedImageIndex === 0 ? activeImages.length - 1 : selectedImageIndex - 1
-                        setSelectedImage(activeImages[newIndex])
-                        setSelectedImageIndex(newIndex)
-                      }}
-                      className="absolute left-2 p-2 bg-white/20 hover:bg-white/40 rounded-full transition-colors"
-                      title="Newer images"
-                    >
-                      <ChevronLeft className="w-6 h-6 text-white" />
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        const activeImages = [...history].filter(img => !img.deletedAt).reverse()
-                        const newIndex = (selectedImageIndex + 1) % activeImages.length
-                        setSelectedImage(activeImages[newIndex])
-                        setSelectedImageIndex(newIndex)
-                      }}
-                      className="absolute right-2 p-2 bg-white/20 hover:bg-white/40 rounded-full transition-colors"
-                      title="Older images"
-                    >
-                      <ChevronRight className="w-6 h-6 text-white" />
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Right Side - Prompt and Buttons */}
-            <div className="w-80 overflow-y-auto flex flex-col bg-gray-900 border-l border-gray-700">
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                <div>
-                  <p className="text-sm text-gray-400 mb-2 font-semibold">Prompt:</p>
-                  <p className="text-sm text-white bg-gray-800 p-3 rounded">
-                    {selectedImage.prompt}
-                  </p>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-700 p-4 space-y-2">
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(selectedImage.prompt)
-                    alert('Prompt copied!')
-                  }}
-                  className="w-full px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition-colors flex items-center justify-center gap-2"
-                >
-                  <Copy className="w-4 h-4" /> Copy
-                </button>
-                <button
-                  onClick={() => {
-                    if (selectedImage) {
-                      sessionStorage.setItem('importedImage', JSON.stringify(selectedImage))
-                      router.push('/ai-studio/create-video')
-                    }
-                  }}
-                  className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors flex items-center justify-center gap-2"
-                >
-                  <Plus className="w-4 h-4" /> Create Video
-                </button>
-                <button
-                  onClick={() => {
-                    handleDeleteImage(selectedImage.id)
-                    setSelectedImage(null)
-                  }}
-                  className="w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors flex items-center justify-center gap-2"
-                >
-                  <Trash2 className="w-4 h-4" /> Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
