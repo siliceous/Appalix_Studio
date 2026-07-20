@@ -368,30 +368,31 @@ export default function CreateVideoPage() {
         </div>
         <div className="bg-gray-900 rounded-b-3xl border border-gray-800 border-t-0 shadow-lg flex-1 overflow-y-auto p-6">
 
-        <div className="space-y-2">
-          {VIDEO_TOOLS.map((tool) => {
-            const Icon = tool.icon
-            const isActive = activeTool === tool.id
-            return (
-              <button
-                key={tool.id}
-                onClick={() => setActiveTool(tool.id)}
-                className={`w-full px-4 py-3 rounded-lg flex items-center gap-3 transition-all border ${
-                  isActive
-                    ? 'bg-blue-600 border-blue-500 text-white'
-                    : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-600'
-                }`}
-              >
-                <Icon className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm font-medium text-left flex-1">{tool.label}</span>
-                {tool.badge && (
-                  <span className="text-xs bg-yellow-500 text-gray-900 px-2 py-0.5 rounded font-bold">
-                    {tool.badge}
-                  </span>
-                )}
-              </button>
-            )
-          })}
+          <div className="space-y-2">
+            {VIDEO_TOOLS.map((tool) => {
+              const Icon = tool.icon
+              const isActive = activeTool === tool.id
+              return (
+                <button
+                  key={tool.id}
+                  onClick={() => setActiveTool(tool.id)}
+                  className={`w-full px-4 py-3 rounded-lg flex items-center gap-3 transition-all border ${
+                    isActive
+                      ? 'bg-blue-600 border-blue-500 text-white'
+                      : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-600'
+                  }`}
+                >
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm font-medium text-left flex-1">{tool.label}</span>
+                  {tool.badge && (
+                    <span className="text-xs bg-yellow-500 text-gray-900 px-2 py-0.5 rounded font-bold">
+                      {tool.badge}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
 
@@ -416,10 +417,9 @@ export default function CreateVideoPage() {
           </div>
         </div>
         <div className="bg-gray-900 rounded-b-3xl border border-gray-800 border-t-0 shadow-lg flex-1 overflow-hidden">
-
           {/* Main Content */}
           <div className="flex-1 overflow-y-auto p-8">
-          {!selectedImage ? (
+            {!selectedImage ? (
             // Empty State
             <div className="flex flex-col items-center justify-center h-full gap-8">
               <div className="text-center">
@@ -585,12 +585,13 @@ export default function CreateVideoPage() {
                 </div>
               )}
             </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
       {/* Right Sidebar */}
-      <div className="w-80 flex flex-col">
+      <div className="w-80 flex flex-col overflow-hidden">
         <div className="bg-gray-900 rounded-t-3xl px-6 py-4 border-b border-gray-800">
           <h3 className="font-bold text-sm uppercase tracking-wider text-gray-400 flex items-center gap-2">
             <Settings className="w-4 h-4" />
