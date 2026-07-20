@@ -1076,6 +1076,9 @@ export default function CreateVideoPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
 
             <div className="border-t border-gray-800 p-6 flex justify-end gap-2">
               <button
