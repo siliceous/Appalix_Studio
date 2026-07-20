@@ -133,7 +133,16 @@ export default function ImageViewerModal({
   }
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    // Pan disabled - image always stays centered
+    if (!isDragging || !allowPan) return
+    const deltaX = e.clientX - dragStart.x
+    const deltaY = e.clientY - dragStart.y
+
+    const maxPan = Math.max(150, (zoom - 100) * 1.5)
+    setPan(prev => ({
+      x: Math.max(-maxPan, Math.min(maxPan, prev.x + deltaX)),
+      y: Math.max(-maxPan, Math.min(maxPan, prev.y + deltaY)),
+    }))
+    setDragStart({ x: e.clientX, y: e.clientY })
   }
 
   const handleMouseUp = () => {

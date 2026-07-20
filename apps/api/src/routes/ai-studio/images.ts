@@ -82,16 +82,16 @@ export async function imageRoutes(app: FastifyInstance) {
   app.get('/models/image', async (request, reply) => {
     try {
       console.log('[Image Models] Fetching available models...')
-      const models = await stability.getAvailableModels()
-      console.log('[Image Models] Models fetched:', models?.length || 0)
+      const stabilityModels = await stability.getAvailableModels()
+      console.log('[Image Models] Models fetched:', stabilityModels?.length || 0)
 
-      if (!models || models.length === 0) {
-        console.warn('[Image Models] No models available')
-        return reply.status(200).send({
-          models: [],
-          message: 'No models available. Check Stability API configuration.',
-        })
-      }
+      const nanoBananaModels = [
+        { id: 'nano-banana-pro', name: 'Nano Banana Pro' },
+        { id: 'nano-banana-2', name: 'Nano Banana 2' },
+        { id: 'nano-banana', name: 'Nano Banana' },
+      ]
+
+      const models = [...nanoBananaModels, ...(stabilityModels || [])]
 
       console.log('[Image Models] Returning models:', models.map(m => m.id))
       return reply.send({ models })
