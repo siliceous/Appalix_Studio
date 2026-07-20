@@ -351,8 +351,8 @@ export default function CreateVideoPage() {
 
   return (
     <div className="flex h-screen bg-gray-950 text-white overflow-hidden">
-      {/* Left Sidebar - Video Tools */}
-      <div className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col overflow-y-auto">
+      {/* Left Sidebar */}
+      <div className="flex-1 bg-gray-900 border-r border-gray-800 flex flex-col overflow-y-auto">
         <div className="p-6 border-b border-gray-800">
           <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400">
             Video Generation
@@ -387,7 +387,7 @@ export default function CreateVideoPage() {
       </div>
 
       {/* Center Workspace */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden border-r border-gray-800">
         {/* Header */}
         <div className="border-b border-gray-800 px-8 py-6">
           <h1 className="text-3xl font-bold mb-2">Create Video</h1>
@@ -568,8 +568,8 @@ export default function CreateVideoPage() {
         </div>
       </div>
 
-      {/* Right Settings Panel */}
-      <div className="w-80 bg-gray-900 border-l border-gray-800 flex flex-col overflow-hidden">
+      {/* Right Sidebar */}
+      <div className="flex-1 bg-gray-900 border-l border-gray-800 flex flex-col overflow-hidden">
         <div className="border-b border-gray-800 px-6 py-4">
           <h3 className="font-bold text-sm uppercase tracking-wider text-gray-400 flex items-center gap-2">
             <Settings className="w-4 h-4" />
