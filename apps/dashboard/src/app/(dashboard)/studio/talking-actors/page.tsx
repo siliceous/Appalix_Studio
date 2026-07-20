@@ -363,25 +363,25 @@ export default function TalkingActors() {
           const {
             data: { session },
           } = await supabase.auth.getSession();
-          const authHeader = session?.access_token
-            ? `Bearer ${session.access_token}`
-            : undefined;
 
-          const requestHeaders: HeadersInit = authHeader
-            ? {
-                Authorization: authHeader,
-              }
-            : {};
+          if (session?.access_token) {
+            const authHeader = `Bearer ${session.access_token}`;
+            const requestHeaders: HeadersInit = {
+              Authorization: authHeader,
+            };
 
-          // Fetch both workspace-specific and preset actors on localhost
-          [workspaceRes, presetsRes] = await Promise.all([
-            fetch(`/api/talking-actors/workspace/${workspaceId}`, {
-              headers: { 'x-workspace-id': workspaceId, ...requestHeaders },
-            }),
-            fetch(`/api/talking-actors/presets`, {
-              headers: { 'x-workspace-id': workspaceId, ...requestHeaders },
-            }),
-          ]);
+            // Fetch both workspace-specific and preset actors on localhost
+            [workspaceRes, presetsRes] = await Promise.all([
+              fetch(`/api/talking-actors/workspace/${workspaceId}`, {
+                headers: { 'x-workspace-id': workspaceId, ...requestHeaders },
+              }),
+              fetch(`/api/talking-actors/presets`, {
+                headers: { 'x-workspace-id': workspaceId, ...requestHeaders },
+              }),
+            ]);
+          } else {
+            console.log('[TalkingActors] Not authenticated, skipping database sync');
+          }
         } else {
           console.log('[TalkingActors] Running on production, using localStorage only')
         }
