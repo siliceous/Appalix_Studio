@@ -4,22 +4,12 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Plus,
-  UploadCloud,
-  Library,
   X,
   ChevronLeft,
   Loader,
-  Video,
-  Users,
-  Sparkles,
-  Zap,
-  Volume2,
-  FileVideo,
-  Music,
-  Edit3,
-  Mic,
+  ImageIcon,
   Grid3x3,
-  Image as ImageIcon,
+  Music,
 } from 'lucide-react'
 
 interface GeneratedImage {
@@ -220,107 +210,120 @@ export default function CreateVideoPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100 text-gray-900 overflow-hidden">
-      {/* Left Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-300 flex flex-col overflow-y-auto">
-        <div className="p-6 border-b border-gray-300 flex items-center gap-2">
-          <ChevronLeft className="w-4 h-4 cursor-pointer" />
-          <h2 className="text-sm font-bold">Video Generator</h2>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Key Frames */}
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-600 mb-3">Key Frames</h3>
-            <div className="flex gap-3">
-              <div className="flex-1 aspect-square border-2 border-dashed border-gray-400 rounded flex flex-col items-center justify-center gap-2">
-                <Plus className="w-5 h-5 text-gray-400" />
-                <span className="text-xs font-medium text-gray-600">Start</span>
-              </div>
-              <div className="flex-1 aspect-square border-2 border-dashed border-gray-400 rounded flex flex-col items-center justify-center gap-2">
-                <Plus className="w-5 h-5 text-gray-400" />
-                <span className="text-xs font-medium text-gray-600">End</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Quality */}
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Quality</h3>
-            <div className="space-y-2">
-              {[
-                { name: 'Fast', res: '720p', credits: '6 credits/sec' },
-                { name: 'Pro Cinematic', res: '1080p', credits: '12 credits/sec' },
-                { name: 'Ultra Realistic', res: '4K', credits: '18 credits/sec' },
-              ].map((q) => (
-                <button
-                  key={q.name}
-                  className={`w-full px-4 py-3 rounded text-sm font-medium transition-all border text-left ${
-                    q.name === 'Fast'
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-900 border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <p className="font-semibold text-xs">{q.name}</p>
-                  <p className="text-xs opacity-60">{q.res} · {q.credits}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Duration */}
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Duration (Seconds)</h3>
-            <div className="flex gap-2 flex-wrap">
-              {[5, 10, 15, 20, 30].map((d) => (
-                <button
-                  key={d}
-                  onClick={() => setDuration(d)}
-                  className={`px-3 py-2 rounded text-xs font-medium border transition-all ${
-                    duration === d
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  {d}s
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Aspect Ratio */}
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Aspect Ratio</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {['9:16', '16:9', '1:1', '4:3'].map((ratio) => (
-                <button
-                  key={ratio}
-                  onClick={() => setAspectRatio(ratio)}
-                  className={`px-3 py-2 rounded text-xs font-medium border transition-all ${
-                    aspectRatio === ratio
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  {ratio}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Credits */}
-          <div className="bg-blue-50 border border-blue-200 rounded p-3">
-            <p className="text-xs text-gray-700">Estimated: $7.20 (90 credits)</p>
-            <p className="text-xs text-gray-700">Balance: 0 credits</p>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 p-4 flex flex-col">
+      {/* Top Navigation */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">Video Generator</h1>
+          <p className="text-sm text-gray-600">Create stunning AI-powered videos with professional settings</p>
         </div>
       </div>
 
-      {/* Center Workspace */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-white border-r border-gray-300">
-        {/* Header */}
-        <div className="border-b border-gray-300 px-8 py-4 bg-gray-900 text-white">
-          <div className="flex items-center justify-between">
+      {/* Three Column Layout - Floating Sections */}
+      <div className="flex gap-6 flex-1 min-h-0">
+        {/* Left Panel */}
+        <div className="w-72 flex flex-col">
+          {/* Black Header */}
+          <div className="bg-gray-900 rounded-t-3xl px-6 py-4 text-white">
+            <div className="flex items-center gap-2">
+              <ChevronLeft className="w-4 h-4 cursor-pointer" />
+              <h2 className="text-sm font-bold">Video Generator</h2>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 bg-white rounded-b-3xl shadow-lg overflow-y-auto p-6 space-y-6">
+            {/* Key Frames */}
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-600 mb-3">Key Frames</h3>
+              <div className="flex gap-3">
+                <div className="flex-1 aspect-square border-2 border-dashed border-gray-400 rounded-lg flex flex-col items-center justify-center gap-2">
+                  <Plus className="w-5 h-5 text-gray-400" />
+                  <span className="text-xs font-medium text-gray-600">Start</span>
+                </div>
+                <div className="flex-1 aspect-square border-2 border-dashed border-gray-400 rounded-lg flex flex-col items-center justify-center gap-2">
+                  <Plus className="w-5 h-5 text-gray-400" />
+                  <span className="text-xs font-medium text-gray-600">End</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quality */}
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Quality</h3>
+              <div className="space-y-2">
+                {[
+                  { name: 'Fast', res: '720p', credits: '6 credits/sec' },
+                  { name: 'Pro Cinematic', res: '1080p', credits: '12 credits/sec' },
+                  { name: 'Ultra Realistic', res: '4K', credits: '18 credits/sec' },
+                ].map((q) => (
+                  <button
+                    key={q.name}
+                    className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-all border text-left ${
+                      q.name === 'Fast'
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-gray-50 text-gray-900 border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <p className="font-semibold text-xs">{q.name}</p>
+                    <p className="text-xs opacity-60">{q.res} · {q.credits}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Duration */}
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Duration (Seconds)</h3>
+              <div className="flex gap-2 flex-wrap">
+                {[5, 10, 15, 20, 30].map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => setDuration(d)}
+                    className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
+                      duration === d
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-gray-50 border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    {d}s
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Aspect Ratio */}
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Aspect Ratio</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {['9:16', '16:9', '1:1', '4:3'].map((ratio) => (
+                  <button
+                    key={ratio}
+                    onClick={() => setAspectRatio(ratio)}
+                    className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
+                      aspectRatio === ratio
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-gray-50 border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    {ratio}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Credits */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-xs text-gray-700">Estimated: $7.20 (90 credits)</p>
+              <p className="text-xs text-gray-700">Balance: 0 credits</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Center Panel */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Black Header */}
+          <div className="bg-gray-900 rounded-t-3xl px-8 py-4 text-white flex items-center justify-between">
             <div className="flex items-center gap-4">
               <ChevronLeft className="w-4 h-4 cursor-pointer" />
               <div className="flex gap-6">
@@ -335,118 +338,120 @@ export default function CreateVideoPage() {
               <span className="text-sm font-semibold">0 Credits</span>
             </div>
           </div>
-        </div>
 
-        {/* Main Content */}
-        <div className="flex-1 overflow-y-auto p-8 flex flex-col items-center justify-center bg-gray-50">
-          {!selectedImage ? (
-            <div className="text-center max-w-md">
-              <div className="w-32 h-40 mx-auto mb-6 rounded-lg bg-gray-300 flex items-center justify-center border-2 border-dashed border-gray-400">
-                <ImageIcon className="w-16 h-16 text-gray-500" />
-              </div>
-              <h2 className="text-lg font-semibold mb-2 text-gray-900">Select image</h2>
-              <p className="text-sm text-gray-600 mb-6">Choose a starting image for your video</p>
+          {/* Content */}
+          <div className="flex-1 bg-white rounded-b-3xl shadow-lg overflow-y-auto p-8 flex flex-col items-center justify-center">
+            {!selectedImage ? (
+              <div className="text-center max-w-md">
+                <div className="w-32 h-40 mx-auto mb-6 rounded-lg bg-gray-300 flex items-center justify-center border-2 border-dashed border-gray-400">
+                  <ImageIcon className="w-16 h-16 text-gray-500" />
+                </div>
+                <h2 className="text-lg font-semibold mb-2 text-gray-900">Select image</h2>
+                <p className="text-sm text-gray-600 mb-6">Choose a starting image for your video</p>
 
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm font-medium transition-all"
-                >
-                  Import Image
-                </button>
-                <button
-                  onClick={() => {
-                    loadLibraryImages()
-                    setShowImageLibrary(true)
-                  }}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-all"
-                >
-                  Choose from Library
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="w-full max-w-2xl space-y-6">
-              {/* Image Preview */}
-              <div className="bg-white rounded-lg overflow-hidden border border-gray-300 shadow-sm">
-                <div className="aspect-video bg-gray-200 flex items-center justify-center">
-                  <img
-                    src={selectedImage.image}
-                    alt="Selected"
-                    className="w-full h-full object-contain"
-                  />
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-all"
+                  >
+                    Import Image
+                  </button>
+                  <button
+                    onClick={() => {
+                      loadLibraryImages()
+                      setShowImageLibrary(true)
+                    }}
+                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-all"
+                  >
+                    Choose from Library
+                  </button>
                 </div>
               </div>
+            ) : (
+              <div className="w-full max-w-2xl space-y-6">
+                {/* Image Preview */}
+                <div className="bg-gray-50 rounded-lg overflow-hidden border border-gray-300 shadow-sm">
+                  <div className="aspect-video bg-gray-200 flex items-center justify-center">
+                    <img
+                      src={selectedImage.image}
+                      alt="Selected"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                </div>
 
-              {/* Prompt */}
-              <div className="bg-white rounded-lg border border-gray-300 p-6 shadow-sm">
-                <textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Describe what you want to create..."
-                  rows={6}
-                  maxLength={10000}
-                  className="w-full px-4 py-3 border border-gray-300 rounded text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-300">
-                  <p className="text-xs text-gray-500">{prompt.length} / 10000</p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        loadVoices()
-                        setShowVoiceLibrary(true)
-                      }}
-                      className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded text-xs font-medium transition-all"
-                    >
-                      Voice
-                    </button>
-                    <button
-                      onClick={() => setShowScriptEditor(true)}
-                      className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded text-xs font-medium transition-all"
-                    >
-                      Script
-                    </button>
-                    <button
-                      onClick={() => setShowAudioUpload(true)}
-                      className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded text-xs font-medium transition-all"
-                    >
-                      Audio
-                    </button>
-                    <button
-                      onClick={handleGenerateVideo}
-                      disabled={isGenerating || !prompt}
-                      className="ml-auto px-6 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded text-sm font-medium transition-all"
-                    >
-                      Generate
-                    </button>
+                {/* Prompt */}
+                <div className="bg-gray-50 rounded-lg border border-gray-300 p-6 shadow-sm">
+                  <textarea
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="Describe what you want to create..."
+                    rows={6}
+                    maxLength={10000}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  />
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-300">
+                    <p className="text-xs text-gray-500">{prompt.length} / 10000</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          loadVoices()
+                          setShowVoiceLibrary(true)
+                        }}
+                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-xs font-medium transition-all"
+                      >
+                        Voice
+                      </button>
+                      <button
+                        onClick={() => setShowScriptEditor(true)}
+                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-xs font-medium transition-all"
+                      >
+                        Script
+                      </button>
+                      <button
+                        onClick={() => setShowAudioUpload(true)}
+                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-xs font-medium transition-all"
+                      >
+                        Audio
+                      </button>
+                      <button
+                        onClick={handleGenerateVideo}
+                        disabled={isGenerating || !prompt}
+                        className="ml-auto px-6 py-2 bg-gray-600 hover:bg-gray-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-all"
+                      >
+                        Generate
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Right Sidebar */}
-      <div className="w-72 bg-white border-l border-gray-300 flex flex-col overflow-hidden">
-        <div className="border-b border-gray-300 px-6 py-4">
-          <div className="flex gap-2">
-            <button className="px-4 py-1 bg-blue-600 text-white text-xs font-medium rounded">
-              Library
-            </button>
-            <button className="px-4 py-1 bg-gray-300 text-gray-700 text-xs font-medium rounded">
-              Projects
-            </button>
-            <button className="px-4 py-1 bg-gray-300 text-gray-700 text-xs font-medium rounded">
-              Trash
-            </button>
+            )}
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center justify-center">
-          <div className="text-center">
-            <Grid3x3 className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-            <p className="text-sm text-gray-500">No videos yet</p>
+        {/* Right Panel */}
+        <div className="w-80 flex flex-col">
+          {/* Black Header */}
+          <div className="bg-gray-900 rounded-t-3xl px-6 py-4 text-white">
+            <div className="flex gap-2">
+              <button className="px-4 py-1 bg-blue-600 text-white text-xs font-medium rounded-lg">
+                Library
+              </button>
+              <button className="px-4 py-1 bg-gray-700 text-gray-200 text-xs font-medium rounded-lg hover:bg-gray-600">
+                Projects
+              </button>
+              <button className="px-4 py-1 bg-gray-700 text-gray-200 text-xs font-medium rounded-lg hover:bg-gray-600">
+                Trash
+              </button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 bg-white rounded-b-3xl shadow-lg overflow-y-auto p-6 flex flex-col items-center justify-center">
+            <div className="text-center">
+              <Grid3x3 className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+              <p className="text-sm text-gray-500">No videos yet</p>
+            </div>
           </div>
         </div>
       </div>
@@ -454,7 +459,7 @@ export default function CreateVideoPage() {
       {/* Image Library Modal */}
       {showImageLibrary && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] flex flex-col border border-gray-300">
+          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[80vh] flex flex-col border border-gray-300 shadow-2xl">
             <div className="flex items-center justify-between p-6 border-b border-gray-300">
               <h2 className="text-lg font-bold text-gray-900">Select an Image</h2>
               <button
@@ -495,14 +500,14 @@ export default function CreateVideoPage() {
       {/* Script Editor Modal */}
       {showScriptEditor && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full border border-gray-300">
-            <div className="flex items-center justify-between p-6 border-b border-gray-300">
-              <h2 className="text-lg font-bold text-gray-900">Script Editor</h2>
+          <div className="bg-white rounded-3xl max-w-2xl w-full border border-gray-300 shadow-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-gray-300 bg-gray-900 rounded-t-3xl text-white">
+              <h2 className="text-lg font-bold">Script Editor</h2>
               <button
                 onClick={() => setShowScriptEditor(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
               >
-                <X className="w-5 h-5 text-gray-900" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -512,7 +517,7 @@ export default function CreateVideoPage() {
                 onChange={(e) => setScript(e.target.value)}
                 placeholder="Type exactly what the actor should say…"
                 rows={8}
-                className="w-full px-4 py-3 border border-gray-300 rounded text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <p className="text-xs text-gray-500">{script.length} / 2,000 characters</p>
             </div>
@@ -520,13 +525,13 @@ export default function CreateVideoPage() {
             <div className="border-t border-gray-300 p-6 flex justify-end gap-2">
               <button
                 onClick={() => setShowScriptEditor(false)}
-                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-900 rounded text-sm font-medium transition-all"
+                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-900 rounded-lg text-sm font-medium transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={() => setShowScriptEditor(false)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-all"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-all"
               >
                 Save
               </button>
@@ -538,14 +543,14 @@ export default function CreateVideoPage() {
       {/* Voice Library Modal */}
       {showVoiceLibrary && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col border border-gray-300">
-            <div className="flex items-center justify-between p-6 border-b border-gray-300">
-              <h2 className="text-lg font-bold text-gray-900">Select Voice</h2>
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[80vh] flex flex-col border border-gray-300 shadow-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-gray-300 bg-gray-900 rounded-t-3xl text-white">
+              <h2 className="text-lg font-bold">Select Voice</h2>
               <button
                 onClick={() => setShowVoiceLibrary(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
               >
-                <X className="w-5 h-5 text-gray-900" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -563,7 +568,7 @@ export default function CreateVideoPage() {
                         setVoiceId(voice.id)
                         setShowVoiceLibrary(false)
                       }}
-                      className="w-full p-4 rounded border text-left transition-all bg-gray-50 border-gray-300 hover:border-blue-400"
+                      className="w-full p-4 rounded-lg border text-left transition-all bg-gray-50 border-gray-300 hover:border-blue-400"
                     >
                       <p className="font-semibold text-sm text-gray-900">{voice.name}</p>
                       <p className="text-xs text-gray-600">{voice.gender} • {voice.accent} • {voice.style}</p>
@@ -579,14 +584,14 @@ export default function CreateVideoPage() {
       {/* Audio Upload Modal */}
       {showAudioUpload && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full border border-gray-300">
-            <div className="flex items-center justify-between p-6 border-b border-gray-300">
-              <h2 className="text-lg font-bold text-gray-900">Add Audio</h2>
+          <div className="bg-white rounded-3xl max-w-2xl w-full border border-gray-300 shadow-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-gray-300 bg-gray-900 rounded-t-3xl text-white">
+              <h2 className="text-lg font-bold">Add Audio</h2>
               <button
                 onClick={() => setShowAudioUpload(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
               >
-                <X className="w-5 h-5 text-gray-900" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -614,7 +619,7 @@ export default function CreateVideoPage() {
                   setShowAudioUpload(false)
                   setShowVideoToAudio(true)
                 }}
-                className="w-full px-4 py-3 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded text-sm font-medium transition-all"
+                className="w-full px-4 py-3 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm font-medium transition-all"
               >
                 Extract from Video
               </button>
