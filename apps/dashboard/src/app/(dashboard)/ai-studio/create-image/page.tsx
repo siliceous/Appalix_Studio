@@ -445,7 +445,9 @@ export default function CreateImagePage() {
         if (response.ok) {
           const data = await response.json()
           if (data.models && Array.isArray(data.models)) {
-            setModels(data.models)
+            const nanoBananaModels = data.models.filter((m: any) => m.id.startsWith('nano-banana'))
+            const otherModels = data.models.filter((m: any) => !m.id.startsWith('nano-banana'))
+            setModels([...nanoBananaModels, ...otherModels])
           } else {
             throw new Error('Invalid response')
           }
@@ -454,10 +456,10 @@ export default function CreateImagePage() {
         }
       } catch (error) {
         setModels([
-          { id: 'gemini-3.1-flash-image', name: 'Gemini 3.1 Flash Image' },
           { id: 'nano-banana-pro', name: 'Nano Banana Pro' },
           { id: 'nano-banana-2', name: 'Nano Banana 2' },
           { id: 'nano-banana', name: 'Nano Banana' },
+          { id: 'gemini-3.1-flash-image', name: 'Gemini 3.1 Flash Image' },
           { id: 'sd3.5-large-turbo', name: 'Stable Diffusion 3.5 Turbo' },
           { id: 'sd3.5-large', name: 'Stable Diffusion 3.5 Large' },
           { id: 'sd3.5-medium', name: 'Stable Diffusion 3.5 Medium' },
