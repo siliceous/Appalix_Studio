@@ -1101,14 +1101,14 @@ export default function CreateVideoPage() {
         className="hidden"
       />
       <input
-        ref={audioInputRef as any}
+        ref={audioInputRef as unknown as React.RefObject<HTMLInputElement>}
         type="file"
         accept="audio/*"
         onChange={handleAudioUpload}
         className="hidden"
       />
       <input
-        ref={videoInputRef as any}
+        ref={videoInputRef as unknown as React.RefObject<HTMLInputElement>}
         type="file"
         accept="video/*"
         onChange={handleVideoToAudioUpload}
