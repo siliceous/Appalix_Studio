@@ -464,7 +464,9 @@ export async function imageRoutes(app: FastifyInstance) {
   // Get all completed images for a workspace
   app.get('/all-images', async (request, reply) => {
     try {
+      console.log('[AllImages] Starting request with auth header:', !!request.headers.authorization)
       const context = await getCurrentWorkspaceContext(request)
+      console.log('[AllImages] Context resolved for workspace:', context.workspaceId)
 
       // Fetch all completed image generations
       const { data: allGenerations, error } = await supabase
@@ -563,9 +565,14 @@ export async function imageRoutes(app: FastifyInstance) {
         total: images.length,
       })
     } catch (error) {
-      console.error('[Image Generation] All images endpoint error:', error instanceof Error ? error.message : String(error))
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      console.error('[AllImages] Error:', errorMsg)
       if (error instanceof Error) {
-        console.error('[Image Generation] Stack:', error.stack)
+        console.error('[AllImages] Stack:', error.stack)
+      }
+      // Check if it's an auth error
+      if (errorMsg.includes('Unauthorized')) {
+        return reply.status(403).send({ error: errorMsg })
       }
       return reply.status(500).send({ error: 'Internal server error' })
     }

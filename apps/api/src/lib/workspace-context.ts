@@ -58,7 +58,7 @@ export async function getCurrentWorkspaceContext(
     } = await supabase.auth.getUser(token)
 
     if (authError || !user) {
-      throw new Error('Invalid or expired token')
+      throw new Error(`Invalid or expired token: ${authError?.message || 'unknown'}`)
     }
 
     // Get workspace ID from header (this is a hint, not authoritative)
@@ -66,6 +66,8 @@ export async function getCurrentWorkspaceContext(
     if (!workspaceId) {
       throw new Error('Missing x-workspace-id header')
     }
+
+    console.log('[WorkspaceContext] Verifying membership:', { userId: user.id, workspaceId })
 
     // CRITICAL: Verify user is actually a member of this workspace
     const { data: membership, error: memberError } = await supabase
@@ -76,7 +78,8 @@ export async function getCurrentWorkspaceContext(
       .single()
 
     if (memberError || !membership) {
-      throw new Error('User is not a member of this workspace')
+      console.error('[WorkspaceContext] Membership check failed:', { memberError: memberError?.message, hasMembership: !!membership })
+      throw new Error(`User is not a member of this workspace: ${memberError?.message || 'not found'}`)
     }
 
     const role = (membership.role as WorkspaceRole) || 'member'

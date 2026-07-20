@@ -32,11 +32,14 @@ export default function RestoreImagesPage() {
         setMessage('Fetching images from database...')
 
         // Fetch completed images from database
-        const response = await fetch('/api/ai-studio/all-images', {
-          headers: {
-            'x-workspace-id': workspaceId,
-          },
-        })
+        const supabase = (await import('@/lib/supabase/client')).createClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const authHeader = session?.access_token ? `Bearer ${session.access_token}` : undefined
+        const headers: Record<string, string> = { 'x-workspace-id': workspaceId }
+        if (authHeader) {
+          headers['Authorization'] = authHeader
+        }
+        const response = await fetch('/api/ai-studio/all-images', { headers })
 
         if (!response.ok) {
           throw new Error(`Failed to fetch images: ${response.status}`)

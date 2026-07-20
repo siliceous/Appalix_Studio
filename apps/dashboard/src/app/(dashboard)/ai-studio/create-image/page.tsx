@@ -402,9 +402,18 @@ export default function CreateImagePage() {
 
     const fetchSupabaseImages = async () => {
       try {
-        const response = await fetch('/api/ai-studio/all-images', {
-          headers: { 'x-workspace-id': wId }
-        })
+        // Get auth token
+        const { createClient } = await import('@/lib/supabase/client')
+        const supabase = createClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const authHeader = session?.access_token ? `Bearer ${session.access_token}` : undefined
+
+        const headers: Record<string, string> = { 'x-workspace-id': wId }
+        if (authHeader) {
+          headers['Authorization'] = authHeader
+        }
+
+        const response = await fetch('/api/ai-studio/all-images', { headers })
         if (response.ok) {
           const data = await response.json()
           const supabaseImages = (data.images || []).map((img: any) => ({

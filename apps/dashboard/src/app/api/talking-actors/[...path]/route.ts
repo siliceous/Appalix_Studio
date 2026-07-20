@@ -14,12 +14,19 @@ export async function GET(
 
     console.log('[Proxy] GET', `${API_URL}/api/talking-actors${pathStr}${query}`)
 
+    const headerObj: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'x-workspace-id': request.headers.get('x-workspace-id') || '',
+    }
+
+    const authHeader = request.headers.get('authorization')
+    if (authHeader) {
+      headerObj['Authorization'] = authHeader
+    }
+
     const response = await fetch(`${API_URL}/api/talking-actors${pathStr}${query}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-workspace-id': request.headers.get('x-workspace-id') || '',
-      },
+      headers: headerObj,
     })
 
     const data = await response.json()
@@ -41,12 +48,19 @@ export async function POST(
 
     console.log('[Proxy] POST', `${API_URL}/api/talking-actors${pathStr}`)
 
+    const headerObj: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'x-workspace-id': request.headers.get('x-workspace-id') || '',
+    }
+
+    const authHeader = request.headers.get('authorization')
+    if (authHeader) {
+      headerObj['Authorization'] = authHeader
+    }
+
     const response = await fetch(`${API_URL}/api/talking-actors${pathStr}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-workspace-id': request.headers.get('x-workspace-id') || '',
-      },
+      headers: headerObj,
       body: JSON.stringify(body),
     })
 

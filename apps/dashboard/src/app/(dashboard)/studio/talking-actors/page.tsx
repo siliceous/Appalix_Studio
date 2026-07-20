@@ -368,6 +368,7 @@ export default function TalkingActors() {
             Authorization: authHeader,
           };
 
+          console.log("[TalkingActors] Fetching with:", { workspaceId, hasAuth: !!requestHeaders.Authorization });
           // Fetch both workspace-specific and preset actors
           [workspaceRes, presetsRes] = await Promise.all([
             fetch(`/api/talking-actors/workspace/${workspaceId}`, {
@@ -396,8 +397,13 @@ export default function TalkingActors() {
             }
           })
         } else if (workspaceRes) {
-          const error = await workspaceRes.text()
-          console.error('[TalkingActors] Workspace fetch failed:', workspaceRes.status, error)
+          try {
+            const errorData = await workspaceRes.json()
+            console.error('[TalkingActors] Workspace fetch failed:', workspaceRes.status, errorData)
+          } catch (e) {
+            const errorText = await workspaceRes.text()
+            console.error('[TalkingActors] Workspace fetch failed:', workspaceRes.status, errorText)
+          }
         }
 
         // Get published preset actors (available to all - only on localhost)
