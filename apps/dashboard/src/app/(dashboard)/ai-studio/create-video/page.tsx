@@ -21,6 +21,14 @@ import {
   Loader,
   Zap,
   ChevronRight,
+  Mic,
+  Music,
+  Edit3,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Eye,
+  Copy,
 } from 'lucide-react'
 
 interface GeneratedImage {
@@ -50,6 +58,23 @@ interface VideoGeneration {
   outputUrl?: string
   providerJobId?: string
   workspaceId: string
+}
+
+interface Voice {
+  id: string
+  name: string
+  gender: 'male' | 'female'
+  accent: string
+  language: string
+  style: string
+  preview?: string
+}
+
+interface AudioAsset {
+  id: string
+  waveform?: number[]
+  duration: number
+  url: string
 }
 
 const VIDEO_TOOLS = [
@@ -100,6 +125,20 @@ export default function CreateVideoPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generation, setGeneration] = useState<VideoGeneration | null>(null)
   const [history, setHistory] = useState<VideoGeneration[]>([])
+
+  // Phase 2 - Script, Voice, Audio
+  const [showScriptEditor, setShowScriptEditor] = useState(false)
+  const [showVoiceLibrary, setShowVoiceLibrary] = useState(false)
+  const [showTextToVoice, setShowTextToVoice] = useState(false)
+  const [showAudioUpload, setShowAudioUpload] = useState(false)
+  const [showVideoToAudio, setShowVideoToAudio] = useState(false)
+  const [voices, setVoices] = useState<Voice[]>([])
+  const [loadingVoices, setLoadingVoices] = useState(false)
+  const [selectedAudio, setSelectedAudio] = useState<AudioAsset | null>(null)
+  const [ttsText, setTtsText] = useState('')
+  const [audioInputRef] = useState<React.RefObject<HTMLInputElement>>(useRef(null))
+  const [videoInputRef] = useState<React.RefObject<HTMLInputElement>>(useRef(null))
+  const [isConvertingTts, setIsConvertingTts] = useState(false)
 
   useEffect(() => {
     const wId = typeof window !== 'undefined' ? localStorage.getItem('workspaceId') : ''
@@ -205,6 +244,108 @@ export default function CreateVideoPage() {
       console.error('Generation failed:', error)
     } finally {
       setIsGenerating(false)
+    }
+  }
+
+  const loadVoices = async () => {
+    if (voices.length > 0) return
+    setLoadingVoices(true)
+    try {
+      const response = await fetch('/api/ai-studio/voices', {
+        headers: { 'x-workspace-id': workspaceId },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setVoices(data.voices || [])
+      }
+    } catch (error) {
+      console.error('Failed to load voices:', error)
+      setVoices([
+        { id: 'en-us-male-1', name: 'Alex', gender: 'male', accent: 'US', language: 'English', style: 'Natural' },
+        { id: 'en-us-female-1', name: 'Victoria', gender: 'female', accent: 'US', language: 'English', style: 'Professional' },
+        { id: 'en-us-female-2', name: 'Elena', gender: 'female', accent: 'US', language: 'English', style: 'Friendly' },
+      ])
+    } finally {
+      setLoadingVoices(false)
+    }
+  }
+
+  const handleTtsGeneration = async () => {
+    if (!ttsText || !voiceId || !workspaceId) return
+    setIsConvertingTts(true)
+    try {
+      const response = await fetch('/api/ai-studio/audio/text-to-voice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-workspace-id': workspaceId,
+        },
+        body: JSON.stringify({
+          text: ttsText,
+          voiceId,
+          language: 'en',
+        }),
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setSelectedAudio(data.audio)
+        setAudioAssetId(data.audio.id)
+        setShowTextToVoice(false)
+      }
+    } catch (error) {
+      console.error('TTS failed:', error)
+    } finally {
+      setIsConvertingTts(false)
+    }
+  }
+
+  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !workspaceId) return
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const response = await fetch('/api/ai-studio/audio/upload', {
+        method: 'POST',
+        headers: { 'x-workspace-id': workspaceId },
+        body: formData,
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setSelectedAudio(data.audio)
+        setAudioAssetId(data.audio.id)
+        setShowAudioUpload(false)
+      }
+    } catch (error) {
+      console.error('Audio upload failed:', error)
+    }
+  }
+
+  const handleVideoToAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !workspaceId) return
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const response = await fetch('/api/ai-studio/audio/extract', {
+        method: 'POST',
+        headers: { 'x-workspace-id': workspaceId },
+        body: formData,
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setSelectedAudio(data.audio)
+        setAudioAssetId(data.audio.id)
+        setShowVideoToAudio(false)
+      }
+    } catch (error) {
+      console.error('Video to audio failed:', error)
     }
   }
 
@@ -334,17 +475,37 @@ export default function CreateVideoPage() {
 
                 {/* Action Buttons */}
                 <div className="flex gap-2 flex-wrap">
-                  <button className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-all flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      loadVoices()
+                      setShowVoiceLibrary(true)
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2 border ${
+                      voiceId ? 'bg-blue-600 border-blue-500' : 'bg-gray-700 hover:bg-gray-600 border-gray-600'
+                    }`}
+                  >
                     <Volume2 className="w-4 h-4" />
-                    Voice
+                    Voice {voiceId && '✓'}
                   </button>
-                  <button className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-all">
-                    Script
+                  <button
+                    onClick={() => setShowScriptEditor(true)}
+                    className={`px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2 border ${
+                      script ? 'bg-blue-600 border-blue-500' : 'bg-gray-700 hover:bg-gray-600 border-gray-600'
+                    }`}
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    Script {script && '✓'}
                   </button>
-                  <button className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-all">
-                    Audio
+                  <button
+                    onClick={() => setShowAudioUpload(true)}
+                    className={`px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2 border ${
+                      selectedAudio ? 'bg-blue-600 border-blue-500' : 'bg-gray-700 hover:bg-gray-600 border-gray-600'
+                    }`}
+                  >
+                    <Music className="w-4 h-4" />
+                    Audio {selectedAudio && '✓'}
                   </button>
-                  <button className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-all">
+                  <button className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-all border border-gray-600">
                     Reference Video
                   </button>
 
@@ -600,12 +761,332 @@ export default function CreateVideoPage() {
         </div>
       )}
 
-      {/* Hidden file input */}
+      {/* Script Editor Modal */}
+      {showScriptEditor && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-lg max-w-2xl w-full border border-gray-800">
+            <div className="flex items-center justify-between p-6 border-b border-gray-800">
+              <h2 className="text-xl font-bold">Script Editor</h2>
+              <button
+                onClick={() => setShowScriptEditor(false)}
+                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-gray-400 mb-2 block">Spoken Script</label>
+                <textarea
+                  value={script}
+                  onChange={(e) => setScript(e.target.value)}
+                  placeholder="Type exactly what the actor should say…"
+                  rows={8}
+                  maxLength={2000}
+                  className="w-full bg-gray-800 text-white rounded-lg px-4 py-3 border border-gray-700 focus:border-blue-500 focus:outline-none resize-none"
+                />
+                <p className="text-xs text-gray-400 mt-2">{script.length} / 2,000 characters</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-gray-400 mb-2 block">Tone</label>
+                  <select className="w-full bg-gray-800 text-white border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
+                    <option>Natural</option>
+                    <option>Professional</option>
+                    <option>Friendly</option>
+                    <option>Energetic</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-400 mb-2 block">Speed</label>
+                  <input type="range" min="0.5" max="2" step="0.1" defaultValue="1" className="w-full" />
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-800 p-6 flex justify-end gap-2">
+              <button
+                onClick={() => setShowScriptEditor(false)}
+                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setShowScriptEditor(false)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-all"
+              >
+                Save Script
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Voice Library Modal */}
+      {showVoiceLibrary && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-lg max-w-4xl w-full max-h-[90vh] flex flex-col border border-gray-800">
+            <div className="flex items-center justify-between p-6 border-b border-gray-800">
+              <h2 className="text-xl font-bold">Voice Library</h2>
+              <button
+                onClick={() => setShowVoiceLibrary(false)}
+                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              {loadingVoices ? (
+                <div className="flex items-center justify-center h-48">
+                  <Loader className="w-8 h-8 animate-spin text-gray-600" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-3">
+                  {voices.map((voice) => (
+                    <button
+                      key={voice.id}
+                      onClick={() => {
+                        setVoiceId(voice.id)
+                        setShowVoiceLibrary(false)
+                      }}
+                      className={`p-4 rounded-lg border transition-all text-left flex items-center justify-between ${
+                        voiceId === voice.id
+                          ? 'bg-blue-600 border-blue-500'
+                          : 'bg-gray-800 border-gray-700 hover:border-gray-600'
+                      }`}
+                    >
+                      <div>
+                        <p className="font-semibold">{voice.name}</p>
+                        <p className="text-xs text-gray-300">
+                          {voice.gender} • {voice.accent} • {voice.style}
+                        </p>
+                      </div>
+                      {voice.preview && (
+                        <button className="p-2 bg-white/20 rounded-full hover:bg-white/30">
+                          <Play className="w-4 h-4" />
+                        </button>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-gray-800 p-6 flex justify-end gap-2">
+              <button
+                onClick={() => setShowVoiceLibrary(false)}
+                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowVoiceLibrary(false)
+                  setShowTextToVoice(true)
+                }}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium transition-all"
+              >
+                Generate Text to Voice
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Text to Voice Modal */}
+      {showTextToVoice && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-lg max-w-2xl w-full border border-gray-800">
+            <div className="flex items-center justify-between p-6 border-b border-gray-800">
+              <h2 className="text-xl font-bold">Text to Voice</h2>
+              <button
+                onClick={() => setShowTextToVoice(false)}
+                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-gray-400 mb-2 block">Text to Convert</label>
+                <textarea
+                  value={ttsText}
+                  onChange={(e) => setTtsText(e.target.value)}
+                  placeholder="Enter text to convert to speech…"
+                  rows={6}
+                  maxLength={1000}
+                  className="w-full bg-gray-800 text-white rounded-lg px-4 py-3 border border-gray-700 focus:border-blue-500 focus:outline-none resize-none"
+                />
+                <p className="text-xs text-gray-400 mt-2">{ttsText.length} / 1,000 characters</p>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-400 mb-2 block">Selected Voice</label>
+                <div className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm">
+                  {voices.find((v) => v.id === voiceId)?.name || 'No voice selected'}
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-800 p-6 flex justify-end gap-2">
+              <button
+                onClick={() => setShowTextToVoice(false)}
+                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleTtsGeneration}
+                disabled={isConvertingTts || !ttsText || !voiceId}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg font-medium transition-all flex items-center gap-2"
+              >
+                {isConvertingTts ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Converting...
+                  </>
+                ) : (
+                  <>
+                    <Mic className="w-4 h-4" />
+                    Generate Audio
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Audio Upload Modal */}
+      {showAudioUpload && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-lg max-w-2xl w-full border border-gray-800">
+            <div className="flex items-center justify-between p-6 border-b border-gray-800">
+              <h2 className="text-xl font-bold">Add Audio</h2>
+              <button
+                onClick={() => setShowAudioUpload(false)}
+                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center cursor-pointer hover:border-gray-600 transition-colors">
+                <Music className="w-12 h-12 mx-auto mb-3 text-gray-500" />
+                <p className="font-semibold mb-1">Upload Audio File</p>
+                <p className="text-xs text-gray-400 mb-4">MP3, WAV, M4A, AAC</p>
+                <button
+                  onClick={() => audioInputRef?.current?.click()}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium"
+                >
+                  Choose File
+                </button>
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-700"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-gray-900 text-gray-400">or</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowVideoToAudio(true)}
+                className="w-full px-4 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-sm font-medium transition-all"
+              >
+                Extract from Video
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowAudioUpload(false)
+                  setShowTextToVoice(true)
+                }}
+                className="w-full px-4 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-sm font-medium transition-all"
+              >
+                Generate from Text
+              </button>
+            </div>
+
+            <div className="border-t border-gray-800 p-6 flex justify-end gap-2">
+              <button
+                onClick={() => setShowAudioUpload(false)}
+                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Video to Audio Modal */}
+      {showVideoToAudio && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-lg max-w-2xl w-full border border-gray-800">
+            <div className="flex items-center justify-between p-6 border-b border-gray-800">
+              <h2 className="text-xl font-bold">Extract Audio from Video</h2>
+              <button
+                onClick={() => setShowVideoToAudio(false)}
+                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center cursor-pointer hover:border-gray-600 transition-colors">
+                <FileVideo className="w-12 h-12 mx-auto mb-3 text-gray-500" />
+                <p className="font-semibold mb-1">Upload Video</p>
+                <p className="text-xs text-gray-400 mb-4">MP4, MOV, WEBM</p>
+                <button
+                  onClick={() => videoInputRef?.current?.click()}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium"
+                >
+                  Choose File
+                </button>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-800 p-6 flex justify-end gap-2">
+              <button
+                onClick={() => setShowVideoToAudio(false)}
+                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hidden file inputs */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
         onChange={handleImageUpload}
+        className="hidden"
+      />
+      <input
+        ref={audioInputRef as any}
+        type="file"
+        accept="audio/*"
+        onChange={handleAudioUpload}
+        className="hidden"
+      />
+      <input
+        ref={videoInputRef as any}
+        type="file"
+        accept="video/*"
+        onChange={handleVideoToAudioUpload}
         className="hidden"
       />
     </div>
